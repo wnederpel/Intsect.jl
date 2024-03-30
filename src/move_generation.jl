@@ -1,7 +1,6 @@
 
 function validmoves(board::Board)
     # TODO: take queen placement into account
-    # See notepad for notes
     ispinned = get_pinned_pieces(board)
     # loop over all locations with tiles
     white_placement_locs = generate_placement_locs(board, 1)
@@ -21,15 +20,18 @@ function validmoves(board::Board)
                     if bug == Bug.ANT
                         valid_moves = [valid_moves; antmoves(board, loc)]
                     elseif bug == Bug.SPIDER
-                        valid_moves = [valid_moves; spidermoves(board, loc)]
+                        valid_moves = [valid_moves; collect(spidermoves(board, loc))]
                     elseif bug == Bug.QUEEN
-                        valid_moves = [valid_moves; queenmoves(board, loc)]
+                        valid_moves = [valid_moves; collect(queenmoves(board, loc))]
                     elseif bug == Bug.BEETLE
-                        valid_moves = [valid_moves; beetlemoves(board, loc, get_tile_height(tile))]
+                        valid_moves = [
+                            valid_moves
+                            collect(beetlemoves(board, loc, get_tile_height(tile)))
+                        ]
                     elseif bug == Bug.GRASSHOPPER
                         valid_moves = [valid_moves; grasshoppermoves(board, loc)]
                     elseif bug == Bug.LADYBUG
-                        valid_moves = [valid_moves; ladybugmoves(board, loc)]
+                        valid_moves = [valid_moves; collect(ladybugmoves(board, loc))]
                     else
                         error("Movement not implemented for bug $bug")
                     end
@@ -43,71 +45,41 @@ function ladybugmoves(board, startloc)
     maxdepth = 3
     tmp_tile = get_tile_on_board(board, startloc)
     set_tile_on_board(board, startloc, EMPTY_TILE)
-    # Temporarily remove the piece to find where it can move to
-    discovered_dict = DefaultDict(false)
-    depth = Dict()
-    stack = Stack{Int}()
 
-    push!(stack, startloc)
-    depth[startloc] = 0
-
-    while !isempty(stack)
-        loc = pop!(stack)
-        discovered_dict[loc] = true
-        if depth[loc] < maxdepth
-            neighlocs = allneighs(loc)
-            foreach(
-                slideloc -> begin
-                    println("loc = $loc, slideloc = $slideloc, depth = $(depth[loc])")
-                    depth[slideloc] = depth[loc] + 1
-                    push!(stack, slideloc)
-                end,
-                map(
-                    i -> neighlocs[i],
-                    filter(
-                        i -> begin
-                            if depth[loc] == 0
-                                # Move up
-                                return get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
-                                       canslideheigh(i, board, neighlocs, 0)
-                            elseif depth[loc] == 1
-                                # Move on hive
-                                return get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
-                                       canslideheigh(
-                                    i,
-                                    board,
-                                    neighlocs,
-                                    get_tile_height(get_tile_on_board(board, loc)),
-                                )
-                            elseif depth[loc] == 2
-                                # Move down
-                                return get_tile_on_board(board, neighlocs[i]) == EMPTY_TILE &&
-                                       canslideheigh(
-                                    i,
-                                    board,
-                                    neighlocs,
-                                    get_tile_height(get_tile_on_board(board, loc)),
-                                )
-                            else
-                                return false
-                            end
-                        end,
-                        1:6,
-                    ),
-                ),
-            )
-        end
-    end
+    moves = Set()
+    moves_to_depth_ladybug!(board, startloc, maxdepth, moves)
 
     set_tile_on_board(board, startloc, tmp_tile)
 
-    moves = []
-    for (goalloc, discovered) in discovered_dict
-        if depth[goalloc] == 3 && discovered && goalloc != startloc
-            push!(moves, Move(startloc, goalloc))
-        end
-    end
     return moves
+end
+
+function moves_to_depth_ladybug!(board, startloc, depth, moves, cur_loc=startloc)
+    if depth == 0
+        return push!(moves, Move(startloc, cur_loc))
+    end
+    neighlocs = allneighs(cur_loc)
+    foreach(
+        slideloc -> moves_to_depth_ladybug!(board, startloc, depth - 1, moves, slideloc),
+        map(
+            i -> neighlocs[i],
+            filter(
+                i -> begin
+                    height = get_tile_height(get_tile_on_board(board, cur_loc))
+                    depth == 3 &&
+                        return get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
+                               canslideheigh(i, board, neighlocs, 0)
+                    depth == 2 &&
+                        return get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
+                               canslideheigh(i, board, neighlocs, height)
+                    depth == 1 &&
+                        return get_tile_on_board(board, neighlocs[i]) == EMPTY_TILE &&
+                               canslideheigh(i, board, neighlocs, height)
+                end,
+                1:6,
+            ),
+        ),
+    )
 end
 
 function grasshoppermoves(board, startloc)
@@ -203,16 +175,13 @@ function antmoves(board, startloc)
 
     while !isempty(stack)
         loc = pop!(stack)
-        if !discovered_dict[loc]
-            discovered_dict[loc] = true
-            push_slidelocs!(board, stack, loc)
-        end
+        push_slidelocs!(board, stack, loc, discovered_dict)
     end
     set_tile_on_board(board, startloc, tmp_tile)
 
     moves = []
     for (goalloc, discovered) in discovered_dict
-        if discovered && goalloc != startloc
+        if discovered
             push!(moves, Move(startloc, goalloc))
         end
     end
@@ -222,30 +191,27 @@ end
 function moves_to_depth(board, startloc, maxdepth)
     tmp_tile = get_tile_on_board(board, startloc)
     set_tile_on_board(board, startloc, EMPTY_TILE)
-    # Temporarily remove the piece to find where it can move to
-    discovered_dict = DefaultDict(false)
-    depth = Dict()
-    stack = Stack{Int}()
 
-    push!(stack, startloc)
-    depth[startloc] = 0
+    moves = Set()
+    moves_to_depth!(board, startloc, maxdepth, moves)
 
-    while !isempty(stack)
-        loc = pop!(stack)
-        discovered_dict[loc] = true
-        if depth[loc] < maxdepth
-            push_slidelocs!(board, stack, depth, discovered_dict, loc)
-        end
-    end
     set_tile_on_board(board, startloc, tmp_tile)
 
-    moves = []
-    for (goalloc, discovered) in discovered_dict
-        if depth[goalloc] == maxdepth && discovered && goalloc != startloc
-            push!(moves, Move(startloc, goalloc))
-        end
-    end
     return moves
+end
+
+function moves_to_depth!(board, startloc, depth, moves, cur_loc=startloc, prev_loc=nothing)
+    if depth == 0
+        return push!(moves, Move(startloc, cur_loc))
+    end
+    neighlocs = allneighs(cur_loc)
+    foreach(
+        slideloc -> moves_to_depth!(board, startloc, depth - 1, moves, slideloc, cur_loc),
+        map(
+            i -> neighlocs[i],
+            filter(i -> canslide(i, board, neighlocs) && neighlocs[i] != prev_loc, 1:6),
+        ),
+    )
 end
 
 """
@@ -254,10 +220,16 @@ From the current position, one can travel in a direcion when:
  1. the direction itself is not filled
  2. one of the two neighbouring directions is filled
 """
-function push_slidelocs!(board::Board, stack::Stack, loc)
+function push_slidelocs!(board::Board, stack::Stack, loc, discovered_dict)
     neighlocs = allneighs(loc)
     foreach(
-        slideloc -> push!(stack, slideloc),
+        slideloc -> begin
+            if !discovered_dict[slideloc]
+                println("pushing $slideloc")
+                push!(stack, slideloc)
+                discovered_dict[slideloc] = true
+            end
+        end,
         map(i -> neighlocs[i], filter(i -> canslide(i, board, neighlocs), 1:6)),
     )
 end
@@ -286,6 +258,7 @@ end
 end
 
 function get_pinned_pieces(board)
+    # TODO implemente
     return Dict()
 end
 

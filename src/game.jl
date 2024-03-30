@@ -198,8 +198,8 @@ function set_loc(board, tile::UInt8, loc::Int)
 end
 
 struct Move
-    goal_loc::Int
     moving_loc::Int
+    goal_loc::Int
 end
 
 struct Placement
@@ -208,8 +208,8 @@ struct Placement
 end
 
 struct Climb
-    goal_loc::Int
     moving_loc::Int
+    goal_loc::Int
 end
 
 struct Pass end
