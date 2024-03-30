@@ -16,5 +16,5 @@ do_action(board, action)
 show(action)
 show(board)
 
-println("spider moves moves for white at 12")
-println(spidermoves(board, 12))
+println("ant moves moves for white at 12")
+println(antmoves(board, 12))

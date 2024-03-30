@@ -112,9 +112,15 @@ Arguments
     except we know that the highest number reached is by a wG3 (num comes first so is most Important) e.g. 0b100011 = 35 (+1 for zero), this is still higher then the true number of tiles, which is 28.
     The 36 array is zero indexed, so again use get_loc / set_loc.
 """
-struct Board
+mutable struct Board
     tiles::SizedVector{GRID_SIZE,UInt8}
     tile_locs::SizedVector{36,Int}
+    just_moved_loc::Int
+    moved_by_pillbug_loc::Int
+end
+
+function board(tiles, tile_locs)
+    return Board(tiles, tile_locs, INVALID_LOC, INVALID_LOC)
 end
 
 const BUG_NUM_MASK::UInt8 = 0b11000000
@@ -133,15 +139,6 @@ const INVALID_LOC::Int = -2
 
 const WHITE::Int = 1
 
-function slides(bug)
-    slides == Integer(IntBug.ANT) && return true
-    slides == Integer(IntBug.BEETLE) && return true
-    slides == Integer(IntBug.SPIDER) && return true
-    slides == Integer(IntBug.QUEEN) && return true
-    slides == Integer(IntBug.PILLBUG) && return true
-    return false
-end
-
 function get_tile_color(tile)
     return (tile & COLOR_MASK) >> COLOR_SHIFT
 end
@@ -155,7 +152,10 @@ function get_tile_bug_num(tile)
 end
 
 function get_tile_height(tile)
-    return (tile & HEIGHT_MASK) >> HEIGHT_SHIFT
+    if tile == EMPTY_TILE
+        return 0x00
+    end
+    return (tile & HEIGHT_MASK) >> HEIGHT_SHIFT + 1
 end
 
 """
@@ -231,8 +231,8 @@ function handle_newgame_command(game_type)
                 tile_locs[index_from_tile] = INVALID_LOC
             end
         end
-        board = Board(tiles, tile_locs)
-        return board
+        newboard = board(tiles, tile_locs)
+        return newboard
     else
         return "game type $game_type unknown"
     end
@@ -350,6 +350,9 @@ function allneighs(loc)
         apply_direction(loc, Direction.NW),
     )
 end
+
+# TODO: take just moved, moved by pillbug into account
+# TODO: add climb actions, and add underworld
 
 function do_action(board, pass::Pass) end
 

@@ -42,6 +42,8 @@ export spidermoves
 export beetlemoves
 export grasshoppermoves
 export ladybugmoves
+export pillbugmoves
+export mosquitomoves
 
 # Files
 include("game.jl")

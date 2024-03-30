@@ -1,6 +1,12 @@
 
 function validmoves(board::Board)
-    # TODO: take queen placement into account
+    # TODO: add basic testing of move generation
+    # TODO: take no movement before queen placement into account
+    # TODO: queen must be placed by turn 4
+    # TODO: implement mosquito moves
+
+    # TODO: ispinned does not need to be recomputed after every move
+    # when an elbow is filled, or when a piece is simply pinnned, the dict only changes locally.
     ispinned = get_pinned_pieces(board)
     # loop over all locations with tiles
     white_placement_locs = generate_placement_locs(board, 1)
@@ -32,6 +38,10 @@ function validmoves(board::Board)
                         valid_moves = [valid_moves; grasshoppermoves(board, loc)]
                     elseif bug == Bug.LADYBUG
                         valid_moves = [valid_moves; collect(ladybugmoves(board, loc))]
+                    elseif bug == Bug.MOSQUITO
+                        valid_moves = [valid_moves; collect(mosquitomoves(board, loc))]
+                    elseif bug == Bug.PILLBUG
+                        valid_moves = [valid_moves; collect(pillbugmoves(board, loc, ispinned))]
                     else
                         error("Movement not implemented for bug $bug")
                     end
@@ -39,6 +49,36 @@ function validmoves(board::Board)
             end
         end
     end
+end
+
+function pillbugmoves(board, startloc, ispinned)
+    maxdepth = 1
+    normal_moves = moves_to_depth(board, startloc, maxdepth)
+    # Ladybug also has special moves
+    # For all surrounding tiles, if they are not pinned, and did not just move, 
+    # and can slide on the pillbug, and the piece is not stacked 
+    # they can be slid on top of the pillbug, and then slid off
+    neighlocs = allneighs(startloc)
+    height = get_tile_height(get_tile_on_board(board, startloc))
+    # For each neigh, see if it can slide high
+    canslide = map(i -> canslidehigh(i, board, neighlocs, height), 1:6)
+    foreach(
+        loc -> begin
+            # TODO: add a move from neighlocs[i] to everything in canslide.
+        end,
+        filter(
+            i -> begin
+                loc = neighlocs[i]
+                tile = get_tile_on_board(board, loc)
+                return tile != EMPTY_TILE &&
+                       !ispinned(loc) &&
+                       loc != board.justmoved &&
+                       get_tile_height(tile) == 1 &&
+                       canslide[i]
+            end,
+            1:6,
+        ),
+    )
 end
 
 function ladybugmoves(board, startloc)
@@ -56,7 +96,10 @@ end
 
 function moves_to_depth_ladybug!(board, startloc, depth, moves, cur_loc=startloc)
     if depth == 0
-        return push!(moves, Move(startloc, cur_loc))
+        if cur_loc != startloc
+            push!(moves, Move(startloc, cur_loc))
+        end
+        return nothing
     end
     neighlocs = allneighs(cur_loc)
     foreach(
@@ -68,13 +111,13 @@ function moves_to_depth_ladybug!(board, startloc, depth, moves, cur_loc=startloc
                     height = get_tile_height(get_tile_on_board(board, cur_loc))
                     depth == 3 &&
                         return get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
-                               canslideheigh(i, board, neighlocs, 0)
+                               canslidehigh(i, board, neighlocs, 0)
                     depth == 2 &&
                         return get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
-                               canslideheigh(i, board, neighlocs, height)
+                               canslidehigh(i, board, neighlocs, height)
                     depth == 1 &&
                         return get_tile_on_board(board, neighlocs[i]) == EMPTY_TILE &&
-                               canslideheigh(i, board, neighlocs, height)
+                               canslidehigh(i, board, neighlocs, height)
                 end,
                 1:6,
             ),
@@ -116,9 +159,8 @@ function beetlemoves(board, startloc, height)
                     Move(startloc, neighlocs[neigh])
                 end
             end,
-            filter(i -> canslideheigh(i, board, neighlocs, height), 1:6),
+            filter(i -> canslidehigh(i, board, neighlocs, height), 1:6),
         )
-        # return map(neigh -> Climb(startloc, neighlocs[neigh]), valid_neighs)
     else
         # can go anywhere on top, or where it can slide
         tmp_tile = get_tile_on_board(board, startloc)
@@ -135,7 +177,7 @@ function beetlemoves(board, startloc, height)
                 i ->
                     (
                         get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
-                        canslideheigh(i, board, neighlocs, 0)
+                        canslidehigh(i, board, neighlocs, 0)
                     ) || canslide(i, board, neighlocs),
                 1:6,
             ),
@@ -145,13 +187,13 @@ function beetlemoves(board, startloc, height)
     end
 end
 
-function canslideheigh(i, board, neighlocs, height)
+function canslidehigh(i, board, neighlocs, height)
     neighleft = get_tile_on_board(board, neighlocs[i == 1 ? 6 : i - 1])
     neighright = get_tile_on_board(board, neighlocs[i == 6 ? 1 : i + 1])
-    return neighleft == EMPTY_TILE ||
-           neighright == EMPTY_TILE ||
-           get_tile_height(neighleft) < (height + 1) ||
-           get_tile_height(neighright) < (height + 1)
+    goalheight = get_tile_height(get_tile_on_board(board, neighlocs[i]))
+
+    return get_tile_height(neighleft) <= max(goalheight + 1, height) ||
+           get_tile_height(neighright) <= max(goalheight + 1, height)
 end
 
 function queenmoves(board, startloc)
@@ -181,7 +223,7 @@ function antmoves(board, startloc)
 
     moves = []
     for (goalloc, discovered) in discovered_dict
-        if discovered
+        if discovered && goalloc != startloc
             push!(moves, Move(startloc, goalloc))
         end
     end
@@ -202,7 +244,10 @@ end
 
 function moves_to_depth!(board, startloc, depth, moves, cur_loc=startloc, prev_loc=nothing)
     if depth == 0
-        return push!(moves, Move(startloc, cur_loc))
+        if cur_loc != startloc
+            push!(moves, Move(startloc, cur_loc))
+        end
+        return nothing
     end
     neighlocs = allneighs(cur_loc)
     foreach(
@@ -225,7 +270,6 @@ function push_slidelocs!(board::Board, stack::Stack, loc, discovered_dict)
     foreach(
         slideloc -> begin
             if !discovered_dict[slideloc]
-                println("pushing $slideloc")
                 push!(stack, slideloc)
                 discovered_dict[slideloc] = true
             end
@@ -258,7 +302,7 @@ end
 end
 
 function get_pinned_pieces(board)
-    # TODO implemente
+    # TODO implement
     return Dict()
 end
 
