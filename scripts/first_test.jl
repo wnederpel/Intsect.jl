@@ -1,5 +1,5 @@
 using Revise
-using HiveMind
+using Intsect
 using BenchmarkTools
 
 board = handle_newgame_command(Gametype.MLP)
@@ -9,14 +9,30 @@ do_action(board, action)
 show(action)
 show(board)
 
-action = action_from_move_string(board, "bA2 wA1-")
+action = action_from_move_string(board, "bS2 wA1-")
 do_action(board, action)
 show(action)
 show(board)
 
-println("ant moves for white")
-@btime antmoves(board, 12)
-println("spider moves for white")
-@btime spidermoves(board, 12)
-# println("locs for black")
-# display(generate_placement_locs(board, 0))
+action = action_from_move_string(board, "wB1 /wA1")
+do_action(board, action)
+show(action)
+show(board)
+
+action = action_from_move_string(board, "bB1 bS2-")
+do_action(board, action)
+show(action)
+show(board)
+
+action = action_from_move_string(board, "wG1 wA1\\")
+do_action(board, action)
+show(action)
+show(board)
+
+action = action_from_move_string(board, "wL wA1/")
+do_action(board, action)
+show(action)
+show(board)
+
+println("spider moves moves for white")
+println(spidermoves(board, 7))

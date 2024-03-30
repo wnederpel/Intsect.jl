@@ -198,13 +198,18 @@ function set_loc(board, tile::UInt8, loc::Int)
 end
 
 struct Move
-    moving_loc::Int
     goal_loc::Int
+    moving_loc::Int
 end
 
 struct Placement
-    tile::UInt8
     goal_loc::Int
+    tile::UInt8
+end
+
+struct Climb
+    goal_loc::Int
+    moving_loc::Int
 end
 
 struct Pass end
@@ -320,53 +325,18 @@ function action_from_move_string(board, move_string)
 
         if moving_loc != NOT_PLACED
             # Move; bug has a INVALID_LOCcation
-            action = Move(moving_loc, goal_loc)
+            action = Move(goal_loc, moving_loc)
         else
             # Placement; bug has no location and thus is in hand
-            action = Placement(moving_tile, goal_loc)
+            action = Placement(goal_loc, moving_tile)
         end
-        validate_action(board, action)
     else
         # First move, place in middle 
         goal_loc = (ROW_SIZE + 1) * floor(ROW_SIZE / 2)
         moving_tile = get_tile_from_string(move_string)
-        action = Placement(moving_tile, goal_loc)
-        validate_is_first_placement(board, action)
+        action = Placement(goal_loc, moving_tile)
     end
     return action
-end
-
-function validate_is_first_placement(board, placement::Placement)
-    for tile in board.tiles
-        if tile != EMPTY_TILE
-            error("board is not empty, placement invalid")
-        end
-    end
-end
-
-function validate_action(board, move::Move)
-    # TODO: Add a check that this is in the set of possible moves
-    moving_tile = get_tile_on_board(board, move.moving_loc)
-    if moving_tile == EMPTY_TILE
-        error("no tile at location $move.moving_loc")
-    end
-end
-
-function validate_action(board, placement::Placement)
-    if get_tile_on_board(board, placement.goal_loc) != EMPTY_TILE
-        error("goal location $(placement.goal_loc) is not empty")
-    end
-    color = get_tile_color(placement.tile)
-    neighlocs = allneighs(placement.goal_loc)
-    for neigh in neighlocs
-        if get_tile_on_board(board, neigh) != EMPTY_TILE
-            if color == get_tile_color(neigh)
-                error(
-                    "goal location $(placement.goal_loc) is not surrounded by tiles of the color $(color == 1 ? "white" : "black")",
-                )
-            end
-        end
-    end
 end
 
 function allneighs(loc)

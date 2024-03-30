@@ -1,5 +1,7 @@
-const BUG_NAMES = ["A", "G", "B", "S", "Q", "M", "P", "L"]
-const NUMMED_BUG_NAMES = ["A1", "A2", "A3", "G1", "G2", "G3", "B1", "B2", "S1", "S2", "Q", "M", "P", "L"]
+const BUG_NAMES = ["A", "G", "B", "S", "Q", "L", "M", "P"]
+const NUMMED_BUG_NAMES = [
+    "A1", "A2", "A3", "G1", "G2", "G3", "B1", "B2", "S1", "S2", "Q", "L", "M", "P"
+]
 
 function get_tile_name(tile)
     if tile == EMPTY_TILE
@@ -39,6 +41,15 @@ function Base.show(board::Board)
             index = (row - 1) * ROW_SIZE + col
             tile = board.tiles[index]
             name = get_tile_name(tile)
+            if name == " ⬡ "
+                name = string(index - 1)
+                if length(name) == 1
+                    name = " " * name
+                end
+                if length(name) == 2
+                    name *= " "
+                end
+            end
             print("" * name * " ")
         end
         println("")

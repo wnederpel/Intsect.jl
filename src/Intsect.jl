@@ -1,4 +1,4 @@
-module HiveMind
+module Intsect
 
 using Revise
 using StaticArrays
@@ -39,6 +39,9 @@ export generate_placement_locs
 export push_slidelocs!
 export antmoves
 export spidermoves
+export beetlemoves
+export grasshoppermoves
+export ladybugmoves
 
 # Files
 include("game.jl")
@@ -46,4 +49,4 @@ include("main.jl")
 include("show_methods.jl")
 include("move_generation.jl")
 
-end # module HiveMind
+end # module Intsect
