@@ -23,32 +23,57 @@ function validmoves(board::Board)
                 tile = get_tile_on_board(board, loc)
                 if !ispinned[tile]
                     bug = get_tile_bug(tile)
-                    if bug == Bug.ANT
-                        valid_moves = [valid_moves; antmoves(board, loc)]
-                    elseif bug == Bug.SPIDER
-                        valid_moves = [valid_moves; collect(spidermoves(board, loc))]
-                    elseif bug == Bug.QUEEN
-                        valid_moves = [valid_moves; collect(queenmoves(board, loc))]
-                    elseif bug == Bug.BEETLE
-                        valid_moves = [
-                            valid_moves
-                            collect(beetlemoves(board, loc, get_tile_height(tile)))
-                        ]
-                    elseif bug == Bug.GRASSHOPPER
-                        valid_moves = [valid_moves; grasshoppermoves(board, loc)]
-                    elseif bug == Bug.LADYBUG
-                        valid_moves = [valid_moves; collect(ladybugmoves(board, loc))]
-                    elseif bug == Bug.MOSQUITO
-                        valid_moves = [valid_moves; collect(mosquitomoves(board, loc))]
-                    elseif bug == Bug.PILLBUG
-                        valid_moves = [valid_moves; collect(pillbugmoves(board, loc, ispinned))]
-                    else
-                        error("Movement not implemented for bug $bug")
-                    end
+                    valid_moves = [
+                        valid_moves
+                        bugmoves(board, loc, bug, get_tile_height(tile), ispinned)
+                    ]
                 end
             end
         end
     end
+end
+
+function bugmoves(board, loc, bug, height, ispinned)
+    if bug == Integer(Bug.ANT)
+        return antmoves(board, loc)
+    elseif bug == Integer(Bug.SPIDER)
+        return spidermoves(board, loc)
+    elseif bug == Integer(Bug.QUEEN)
+        return queenmoves(board, loc)
+    elseif bug == Integer(Bug.BEETLE)
+        return beetlemoves(board, loc, height)
+    elseif bug == Integer(Bug.GRASSHOPPER)
+        return grasshoppermoves(board, loc)
+    elseif bug == Integer(Bug.LADYBUG)
+        return ladybugmoves(board, loc)
+    elseif bug == Integer(Bug.MOSQUITO)
+        return mosquitomoves(board, loc, height, ispinned)
+    elseif bug == Integer(Bug.PILLBUG)
+        return pillbugmoves(board, loc, ispinned)
+    else
+        error("Movement not implemented for bug $bug")
+    end
+end
+
+function mosquitomoves(board, loc, height, ispinned)
+    if height != 1
+        return bugmoves(board, loc, Bug.BEETLE, height, ispinned)
+    end
+    neighlocs = allneighs(loc)
+    neighbugs = []
+    foreach(i -> begin
+        neigh = neighlocs[i]
+        tile = get_tile_on_board(board, neigh)
+        bug = get_tile_bug(tile)
+        if tile != EMPTY_TILE && bug != Integer(Bug.MOSQUITO)
+            push!(neighbugs, bug)
+        end
+    end, 1:6)
+    moves = []
+    for bug in neighbugs
+        moves = [moves; bugmoves(board, loc, bug, height, ispinned)]
+    end
+    return moves
 end
 
 function pillbugmoves(board, startloc, ispinned)
@@ -62,23 +87,31 @@ function pillbugmoves(board, startloc, ispinned)
     height = get_tile_height(get_tile_on_board(board, startloc))
     # For each neigh, see if it can slide high
     canslide = map(i -> canslidehigh(i, board, neighlocs, height), 1:6)
+    slidelocs = map(i -> neighlocs[i], filter(i -> canslide[i], 1:6))
+    specialmoves = []
     foreach(
-        loc -> begin
-            # TODO: add a move from neighlocs[i] to everything in canslide.
+        i -> begin
+            loc = neighlocs[i]
+            for slideloc in slidelocs
+                if get_tile_on_board(board, slideloc) == EMPTY_TILE
+                    push!(specialmoves, Move(loc, slideloc))
+                end
+            end
         end,
         filter(
             i -> begin
                 loc = neighlocs[i]
                 tile = get_tile_on_board(board, loc)
                 return tile != EMPTY_TILE &&
-                       !ispinned(loc) &&
-                       loc != board.justmoved &&
+                       !ispinned[loc] &&
+                       loc != board.just_moved_loc &&
                        get_tile_height(tile) == 1 &&
                        canslide[i]
             end,
             1:6,
         ),
     )
+    return [normal_moves; specialmoves]
 end
 
 function ladybugmoves(board, startloc)
@@ -91,7 +124,7 @@ function ladybugmoves(board, startloc)
 
     set_tile_on_board(board, startloc, tmp_tile)
 
-    return moves
+    return collect(moves)
 end
 
 function moves_to_depth_ladybug!(board, startloc, depth, moves, cur_loc=startloc)
@@ -149,7 +182,7 @@ end
 
 function beetlemoves(board, startloc, height)
     neighlocs = allneighs(startloc)
-    if height != 0
+    if height != 1
         # Can go anywhere, so long as it can slide with height
         return map(
             neigh -> begin
@@ -239,7 +272,7 @@ function moves_to_depth(board, startloc, maxdepth)
 
     set_tile_on_board(board, startloc, tmp_tile)
 
-    return moves
+    return collect(moves)
 end
 
 function moves_to_depth!(board, startloc, depth, moves, cur_loc=startloc, prev_loc=nothing)

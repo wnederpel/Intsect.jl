@@ -19,7 +19,7 @@ function get_tile_name(tile)
     return name
 end
 
-function Base.show(board::Board)
+function Base.show(board::Board, show_locs::Bool=false)
     println("-----------------")
     # somehow print this
     #         11  12  13  14  15
@@ -41,13 +41,15 @@ function Base.show(board::Board)
             index = (row - 1) * ROW_SIZE + col
             tile = board.tiles[index]
             name = get_tile_name(tile)
-            if name == " ⬡ "
-                name = string(index - 1)
-                if length(name) == 1
-                    name = " " * name
-                end
-                if length(name) == 2
-                    name *= " "
+            if show_locs
+                if name == " ⬡ "
+                    name = string(index - 1)
+                    if length(name) == 1
+                        name = " " * name
+                    end
+                    if length(name) == 2
+                        name *= " "
+                    end
                 end
             end
             print("" * name * " ")

@@ -68,8 +68,9 @@ end
 # Even the 16 x 16 might be way too small. 
 # Each side as 14 pieces, so everything in a straight line would require
 # 28 * 28 = 784 pieces.
-const ROW_SIZE::Int = 5
+const ROW_SIZE::Int = 8
 const GRID_SIZE::Int = ROW_SIZE * ROW_SIZE
+const MID::Int = (ROW_SIZE + 1) * Int(floor(ROW_SIZE / 2))
 
 function apply_direction(loc::Int, direction)::Int
     if direction == Direction.E
@@ -332,7 +333,7 @@ function action_from_move_string(board, move_string)
         end
     else
         # First move, place in middle 
-        goal_loc = (ROW_SIZE + 1) * floor(ROW_SIZE / 2)
+        goal_loc = MID
         moving_tile = get_tile_from_string(move_string)
         action = Placement(goal_loc, moving_tile)
     end

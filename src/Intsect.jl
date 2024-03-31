@@ -2,7 +2,6 @@ module Intsect
 
 using Revise
 using StaticArrays
-using OffsetArrays
 using EnumX
 using DataStructures
 
@@ -14,6 +13,7 @@ export BOARD
 export EMPTY_TILE
 export NOT_PLACED
 export INVALID_LOC
+export MID
 
 # enums
 export Bug
@@ -38,12 +38,22 @@ export get_tile_on_board
 export generate_placement_locs
 export push_slidelocs!
 export antmoves
+export grasshoppermoves
 export spidermoves
 export beetlemoves
-export grasshoppermoves
 export ladybugmoves
+export queenmoves
 export pillbugmoves
 export mosquitomoves
+export handle_newgame_command
+export set_tile_on_board
+
+# structs
+export Board
+export Move
+export Placement
+export Pass
+export Climb
 
 # Files
 include("game.jl")
