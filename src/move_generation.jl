@@ -57,7 +57,7 @@ end
 
 function mosquitomoves(board, loc, height, ispinned)
     if height != 1
-        return bugmoves(board, loc, Bug.BEETLE, height, ispinned)
+        return bugmoves(board, loc, Integer(Bug.BEETLE), height, ispinned)
     end
     neighlocs = allneighs(loc)
     neighbugs = []
@@ -80,8 +80,8 @@ function pillbugmoves(board, startloc, ispinned)
     maxdepth = 1
     normal_moves = moves_to_depth(board, startloc, maxdepth)
     # Ladybug also has special moves
-    # For all surrounding tiles, if they are not pinned, and did not just move, 
-    # and can slide on the pillbug, and the piece is not stacked 
+    # For all surrounding tiles, if they are not pinned, and did not just move,
+    # and can slide on the pillbug, and the piece is not stacked
     # they can be slid on top of the pillbug, and then slid off
     neighlocs = allneighs(startloc)
     height = get_tile_height(get_tile_on_board(board, startloc))
@@ -189,7 +189,7 @@ function beetlemoves(board, startloc, height)
                 if get_tile_on_board(board, neighlocs[neigh]) != EMPTY_TILE
                     return Climb(startloc, neighlocs[neigh])
                 else
-                    Move(startloc, neighlocs[neigh])
+                    return Move(startloc, neighlocs[neigh])
                 end
             end,
             filter(i -> canslidehigh(i, board, neighlocs, height), 1:6),
@@ -210,7 +210,7 @@ function beetlemoves(board, startloc, height)
                 i ->
                     (
                         get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
-                        canslidehigh(i, board, neighlocs, 0)
+                        canslidehigh(i, board, neighlocs, 1)
                     ) || canslide(i, board, neighlocs),
                 1:6,
             ),
@@ -225,8 +225,8 @@ function canslidehigh(i, board, neighlocs, height)
     neighright = get_tile_on_board(board, neighlocs[i == 6 ? 1 : i + 1])
     goalheight = get_tile_height(get_tile_on_board(board, neighlocs[i]))
 
-    return get_tile_height(neighleft) <= max(goalheight + 1, height) ||
-           get_tile_height(neighright) <= max(goalheight + 1, height)
+    return get_tile_height(neighleft) < max(goalheight + 1, height) ||
+           get_tile_height(neighright) < max(goalheight + 1, height)
 end
 
 function queenmoves(board, startloc)

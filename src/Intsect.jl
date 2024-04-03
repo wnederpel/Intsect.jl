@@ -28,6 +28,7 @@ export handle_newgame_command
 export get_tile_from_string
 export get_tile_info
 export get_tile_name
+export get_tile_height
 export allneighs
 export apply_direction
 export action_from_move_string
