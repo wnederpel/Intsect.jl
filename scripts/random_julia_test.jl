@@ -1,5 +1,5 @@
 using BenchmarkTools
-
+# TODO: test MVectors vs SizedVectors of static arrays
 n = 100_000_000
 
 x = rand(n)

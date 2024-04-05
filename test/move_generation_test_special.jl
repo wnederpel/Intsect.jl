@@ -213,8 +213,6 @@ end
 
     set_tile_on_board(board, wS1_loc, wS1)
 
-    show(board)
-
     moves = spidermoves(board, wS1_loc)
 
     @test length(moves) == 0
@@ -225,7 +223,7 @@ end
     @test length(moves) == 2
 end
 
-@testitem "The board wraps around. The exact location of the pieces should not matter" begin
+@testitem "The board wraps around." begin
     # Define all pieces
     bQ = get_tile_from_string("bQ")
     wQ = get_tile_from_string("wQ")
@@ -268,4 +266,7 @@ end
     @test Move(bA1_loc, apply_direction(wB1_loc, Direction.W)) in moves
     @test Move(bA1_loc, apply_direction(bA1_loc, Direction.W)) in moves
     @test length(moves) == 11
+end
+
+@testitem "The piece that just moved cannot be moved by the pillbug" begin
 end

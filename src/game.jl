@@ -101,27 +101,36 @@ note: at lvl 3 there are at least 3 beetles (2 under + 1 on top), since there ar
 see underworld for covered tiles. \n
 All ones when node is empty (EMPTY_TILE). \n
 
-TODO: add underworld
-
-TODO: since the tiles are UInt8's, we can probably make everything UInt8's. At least the locs can be UInt8's, and the bugs too.
 
 Arguments
 
-  - `tiles::SVector{GRID_SIZE,UInt8}`: All tiles on the board and what is on them. Important! this is 0 indexed, do not directly access, only via get_tile / set_tile
+- `tiles::SVector{GRID_SIZE,UInt8}`: All tiles on the board and what is on them. Important! this is 0 indexed, do not directly access, only via get_tile / set_tile
 
-  - `tile_locs::SizedVector{14,2,Int}`: For each tile, store its tile index, NOT_PLACED (-1) for unplaced tiles, Indexed by UInt8 >> 2 (so a normal tile, withouth height info), size 2^6 INVALID_LOC 64
-    except we know that the highest number reached is by a wG3 (num comes first so is most Important) e.g. 0b100011 = 35 (+1 for zero), this is still higher then the true number of tiles, which is 28.
-    The 36 array is zero indexed, so again use get_loc / set_loc.
+- `tile_locs::SizedVector{14,2,Int}`: For each tile, store its tile index, NOT_PLACED (-1) for unplaced tiles, Indexed by UInt8 >> 2 (so a normal tile, withouth height info), size 2^6 INVALID_LOC 64
+except we know that the highest number reached is by a wG3 (num comes first so is most Important) e.g. 0b100011 = 35 (+1 for zero), this is still higher then the true number of tiles, which is 28.
+The 36 array is zero indexed, so again use get_loc / set_loc.
 """
+# TODO func: add underworld
+# TODO speed: maybe the locs can be UInt8's too, although julia indexing works with integers
 mutable struct Board
+    # TODO speed: Think about making 2 seperate structs, the tiles & tile_locs vectors struct can be static 
+    # TODO speed: Make these MVectors
     tiles::SizedVector{GRID_SIZE,UInt8}
     tile_locs::SizedVector{36,Int}
     just_moved_loc::Int
     moved_by_pillbug_loc::Int
+    current_color::Integer
+    queen_placed::MVector{2,Bool}
+    ply::Int
+    turn::Int
 end
 
+struct QueenPlayed{T} end
+
 function board(tiles, tile_locs)
-    return Board(tiles, tile_locs, INVALID_LOC, INVALID_LOC)
+    return Board(
+        tiles, tile_locs, INVALID_LOC, INVALID_LOC, WHITE, MVector{2,Bool}(false, false), 1, 1
+    )
 end
 
 const BUG_NUM_MASK::UInt8 = 0b11000000
@@ -139,6 +148,7 @@ const NOT_PLACED::Int = -1
 const INVALID_LOC::Int = -2
 
 const WHITE::Int = 1
+const BLACK::Int = 0
 
 function get_tile_color(tile)
     return (tile & COLOR_MASK) >> COLOR_SHIFT
@@ -352,8 +362,8 @@ function allneighs(loc)
     )
 end
 
-# TODO: take just moved, moved by pillbug into account
-# TODO: add climb actions, and add underworld
+# TODO func: add climb actions, and add underworld
+# TODO func: set queen_placed flag in board
 
 function do_action(board, pass::Pass) end
 

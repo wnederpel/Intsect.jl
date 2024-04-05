@@ -14,6 +14,8 @@ export EMPTY_TILE
 export NOT_PLACED
 export INVALID_LOC
 export MID
+export WHITE
+export BLACK
 
 # enums
 export Bug
@@ -29,13 +31,13 @@ export get_tile_from_string
 export get_tile_info
 export get_tile_name
 export get_tile_height
+export get_tile_color
 export allneighs
 export apply_direction
 export action_from_move_string
 export do_action
-export validmoves
+export validactions
 export isvalid_shifted_tile
-export get_tile_on_board
 export generate_placement_locs
 export push_slidelocs!
 export antmoves
@@ -47,7 +49,10 @@ export queenmoves
 export pillbugmoves
 export mosquitomoves
 export handle_newgame_command
+export get_tile_on_board
 export set_tile_on_board
+export set_loc
+export get_loc
 
 # structs
 export Board

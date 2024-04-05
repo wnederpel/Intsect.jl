@@ -30,7 +30,8 @@ status:
 
 command:
 pass
-status:_
+status:
+-
 
 command:
 validmoves

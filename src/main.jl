@@ -1,5 +1,5 @@
 function handle_info_command()
-    println("id HiveMind v0.1")
+    println("id Intsect v0.1")
     println("Mosquito;Ladybug;Pillbug")
     return nothing
 end
@@ -30,6 +30,8 @@ function main()
 
                 println(game_string)
             elseif startswith(command, "play")
+                replace(game_string, "NotStarted", "InProgress")
+                # TODO: add better validation and move game updating (like described in test) to make the right game strings
                 move_string = command[6:end]
                 if board !== nothing
                     action = action_from_move_string(board, move_string)
@@ -48,9 +50,9 @@ function main()
             elseif command == "pass"
                 game_string *= ";pass"
                 println(game_string)
-            elseif command == "validmoved"
-                valid_moves = validmoves(board)
-                println(valid_moves)
+            elseif command == "validmoves"
+                actions = validactions(board)
+                println(actions)
             else
                 println("Unknown command: '$command'")
             end

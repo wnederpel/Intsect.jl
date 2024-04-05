@@ -1,36 +1,153 @@
+function validactions(board::Board)
+    need_to_place_queen = !board.queen_placed[board.current_color + 1] && board.turn == 4
+    first_placement = board.ply == 1
+    second_placement = board.ply == 2
+    (need_to_place_queen, first_placement, second_placement) |> println
+    if need_to_place_queen
+        return queenplacements(board)
+    elseif first_placement
+        return firstplacements(board)
+    elseif second_placement
+        return secondplacements(board)
+    else
+        return validactions_general(board)
+    end
+end
 
-function validmoves(board::Board)
-    # TODO: add basic testing of move generation
-    # TODO: take no movement before queen placement into account
-    # TODO: queen must be placed by turn 4
-    # TODO: implement mosquito moves
+"""
+Valid actions for the default case
+"""
+function validactions_general(board::Board)
+    # TODO func: take just moved, moved by pillbug into account
 
-    # TODO: ispinned does not need to be recomputed after every move
+    # TODO speed: maybe split in two functions, one for placement and one for moves, avoid queen placed checked for each tile, more same checks on all tiles can be extracted perhaps.  
+    # TODO speed: be more carefull about the bugs for which movements should be generated
+    # Once all bugs of type are placed no more placements should be generated for that bug
+
+    # TODO func: queen must be placed by turn 4
+    # TODO func: queen cannot be placed on first turn
+    # TODO func: when game over, no moves can be made
+
+    # TODO speed: ispinned does not need to be recomputed after every move
     # when an elbow is filled, or when a piece is simply pinnned, the dict only changes locally.
     ispinned = get_pinned_pieces(board)
-    # loop over all locations with tiles
-    white_placement_locs = generate_placement_locs(board, 1)
-    black_placement_locs = generate_placement_locs(board, 0)
+
+    my_placement_locs = generate_placement_locs(board, board.current_color)
+
     valid_moves = []
-    for loc in board.tile_locs
-        if loc != INVALID_LOC
-            if loc != NOT_PLACED
-                tile = get_tile_unplaced(loc)
-                my_placement_locs =
-                    get_tile_color(tile) == WHITE ? white_placement_locs : black_placement_locs
-                valid_moves = [valid_moves; generate_placements(my_placement_locs, tile)]
-            else
-                tile = get_tile_on_board(board, loc)
-                if !ispinned[tile]
+
+    # This might be a bit slow, because of allocations, but a copy is slower, normal vec or sized vec is also slower
+    placements_genereated = MVector{8,Bool}(false, false, false, false, false, false, false, false)
+
+    # TODO speed: investigate custom interator that only interates over the right color (and perhaps more)
+    # This loop pattern is repeated in the other validactions functions
+    for (semi_tile, loc) in enumerate(board.tile_locs)
+        # only generate moves for tiles of the current color 
+        # != because the index is 1-based, tiles are 0-based
+        if semi_tile % 2 != board.current_color
+            # only generate moves for tiles that are placed
+            if loc != INVALID_LOC
+                if !all(placements_genereated) && loc == NOT_PLACED
+                    # Generate placements for unplaced tiles that are the first of their kind
+                    tile = get_tile_unplaced(semi_tile)
                     bug = get_tile_bug(tile)
-                    valid_moves = [
-                        valid_moves
-                        bugmoves(board, loc, bug, get_tile_height(tile), ispinned)
-                    ]
+                    if !placements_genereated[bug + 1]
+                        valid_moves = [valid_moves; generate_placements(my_placement_locs, tile)]
+                        placements_genereated[bug + 1] = true
+                    end
+                elseif board.queen_placed[board.current_color]
+                    # Generate moves for placed tiles
+                    tile = get_tile_on_board(board, loc)
+                    if !ispinned[tile]
+                        bug = get_tile_bug(tile)
+                        valid_moves = [
+                            valid_moves
+                            bugmoves(board, loc, bug, get_tile_height(tile), ispinned)
+                        ]
+                    end
                 end
             end
         end
     end
+    return valid_moves
+end
+
+"""
+valid actions for when the queen must be placed
+"""
+function queenplacements(board)
+    my_placement_locs = generate_placement_locs(board, board.current_color)
+
+    return generate_placements(
+        my_placement_locs,
+        board.current_color == WHITE ? get_tile_from_string("wQ") : get_tile_from_string("bQ"),
+    )
+end
+
+"""
+valid actions for when the first move is made
+"""
+function firstplacements(board)
+    my_placement_locs = [MID]
+
+    valid_moves = []
+
+    # This might be a bit slow, because of allocations, but a copy is slower, normal vec or sized vec is also slower
+    placements_genereated = MVector{8,Bool}(false, false, false, false, false, false, false, false)
+
+    # loop over all locations with tiles
+    for (semi_tile, loc) in enumerate(board.tile_locs)
+        # only generate moves for tiles of the current color 
+        # != because the index is 1-based, tiles are 0-based
+        if semi_tile % 2 != board.current_color
+            # only generate moves for tiles that are placed
+            if loc != INVALID_LOC
+                if !all(placements_genereated) && loc == NOT_PLACED
+                    # Generate placements for unplaced tiles that are the first of their kind
+                    tile = get_tile_unplaced(semi_tile)
+                    bug = get_tile_bug(tile)
+                    if !placements_genereated[bug + 1] && bug != Integer(Bug.QUEEN)
+                        valid_moves = [valid_moves; generate_placements(my_placement_locs, tile)]
+                        placements_genereated[bug + 1] = true
+                    end
+                end
+            end
+        end
+    end
+    return valid_moves
+end
+
+"""
+valid actions for second placement (first placement by black)
+"""
+function secondplacements(board)
+    my_placement_locs = generate_placement_locs(board, 1)
+
+    valid_moves = []
+
+    # This might be a bit slow, because of allocations, but a copy is slower, normal vec or sized vec is also slower
+    placements_genereated = MVector{8,Bool}(false, false, false, false, false, false, false, false)
+
+    # loop over all locations with tiles
+    for (semi_tile, loc) in enumerate(board.tile_locs)
+        # only generate moves for tiles of the current color 
+        # != because the index is 1-based, tiles are 0-based
+        if semi_tile % 2 != board.current_color
+            # only generate moves for tiles that are placed
+            if loc != INVALID_LOC
+                if !all(placements_genereated) && loc == NOT_PLACED
+                    # Generate placements for unplaced tiles that are the first of their kind
+                    tile = get_tile_unplaced(semi_tile)
+                    bug = get_tile_bug(tile)
+                    if !placements_genereated[bug + 1] && bug != Integer(Bug.QUEEN)
+                        valid_moves = [valid_moves; generate_placements(my_placement_locs, tile)]
+                        placements_genereated[bug + 1] = true
+                    end
+                end
+            end
+        end
+    end
+    return valid_moves
 end
 
 function bugmoves(board, loc, bug, height, ispinned)
@@ -335,12 +452,12 @@ end
 end
 
 function get_pinned_pieces(board)
-    # TODO implement
-    return Dict()
+    # TODO speed: implement
+    return DefaultDict(false)
 end
 
 function generate_placements(placement_locs, tile)
-    return map(loc -> Placement(loc, tile), placement_locs)
+    return map(loc -> Placement(loc, tile), collect(placement_locs))
 end
 
 function generate_placement_locs(board, color)
