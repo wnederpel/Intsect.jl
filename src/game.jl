@@ -1,26 +1,3 @@
-@enumx Gametype begin
-    MLP
-end
-
-@enumx Bug::UInt8 begin
-    ANT = 0         # 3
-    GRASSHOPPER = 1 # 3
-    BEETLE = 2      # 2
-    SPIDER = 3      # 2
-    QUEEN = 4       # 1
-    LADYBUG = 5     # 1
-    MOSQUITO = 6    # 1
-    PILLBUG = 7     # 1
-end
-
-@enumx Direction::UInt8 begin
-    NW
-    NE
-    E
-    SE
-    SW
-    W
-end
 
 function direction_from_string(tile_string::AbstractString)
     direction = filter(char -> !isletter(char) && !isdigit(char), tile_string)
@@ -48,30 +25,6 @@ function direction_from_string(tile_string::AbstractString)
     )
 end
 
-# Board representation: wrapping grid of tile locations.
-# Rows wrap around, and each row wraps to the next row.
-# It's like a spiral around a torus.
-
-# A 4x4 example: NOTE 4x4, not 16x16
-
-#         11  12  13  14  15
-#           \ / \ / \ / \ /
-#       15 - 0 - 1 - 2 - 3 - 4
-#         \ / \ / \ / \ / \
-#      3 - 4 - 5 - 6 - 7 - 8
-#       \ / \ / \ / \ / \
-#    7 - 8 - 9 -10 -11 -12
-#     \ / \ / \ / \ / \
-# 11 -12 -13 -14 -15 - 0
-#     / \ / \ / \ / \
-#    0   1   2   3   4
-# Even the 16 x 16 might be way too small. 
-# Each side as 14 pieces, so everything in a straight line would require
-# 28 * 28 = 784 pieces.
-const ROW_SIZE::Int = 8
-const GRID_SIZE::Int = ROW_SIZE * ROW_SIZE
-const MID::Int = (ROW_SIZE + 1) * Int(floor(ROW_SIZE / 2))
-
 function apply_direction(loc::Int, direction)::Int
     if direction == Direction.E
         return (loc + 1) % GRID_SIZE
@@ -88,67 +41,6 @@ function apply_direction(loc::Int, direction)::Int
     end
     return error("invalid direction $direction")
 end
-
-"""
-Contains all information of the current board state
-
-Tiles are represented by a UInt8:\n
-bits 6-7: bug num (e.g. the 3 in 3rd ant, num = 0 -> 1st, num = 1 -> 2nd; to save on tile_loc size) \n
-bits 3-5: Bug (folows enum) \n
-bit 2: Color (1 is white) \n
-bits 0-1: tile height; capped at 3, so 0 (floor), 1, 2, >= 3 \n\n
-note: at lvl 3 there are at least 3 beetles (2 under + 1 on top), since there are 6 beetles in total, there cannot be 2 other towers to limit motion. For exact height the underworld can be checked.
-see underworld for covered tiles. \n
-All ones when node is empty (EMPTY_TILE). \n
-
-
-Arguments
-
-- `tiles::SVector{GRID_SIZE,UInt8}`: All tiles on the board and what is on them. Important! this is 0 indexed, do not directly access, only via get_tile / set_tile
-
-- `tile_locs::SizedVector{14,2,Int}`: For each tile, store its tile index, NOT_PLACED (-1) for unplaced tiles, Indexed by UInt8 >> 2 (so a normal tile, withouth height info), size 2^6 INVALID_LOC 64
-except we know that the highest number reached is by a wG3 (num comes first so is most Important) e.g. 0b100011 = 35 (+1 for zero), this is still higher then the true number of tiles, which is 28.
-The 36 array is zero indexed, so again use get_loc / set_loc.
-"""
-# TODO func: add underworld
-# TODO speed: maybe the locs can be UInt8's too, although julia indexing works with integers
-mutable struct Board
-    # TODO speed: Think about making 2 seperate structs, the tiles & tile_locs vectors struct can be static 
-    # TODO speed: Make these MVectors
-    tiles::SizedVector{GRID_SIZE,UInt8}
-    tile_locs::SizedVector{36,Int}
-    just_moved_loc::Int
-    moved_by_pillbug_loc::Int
-    current_color::Integer
-    queen_placed::MVector{2,Bool}
-    ply::Int
-    turn::Int
-end
-
-struct QueenPlayed{T} end
-
-function board(tiles, tile_locs)
-    return Board(
-        tiles, tile_locs, INVALID_LOC, INVALID_LOC, WHITE, MVector{2,Bool}(false, false), 1, 1
-    )
-end
-
-const BUG_NUM_MASK::UInt8 = 0b11000000
-const BUG_NUM_SHIFT::UInt8 = 6
-const BUG_MASK::UInt8 = 0b00111000
-const BUG_SHIFT::UInt8 = 3
-const COLOR_MASK::UInt8 = 0b00000100
-const COLOR_SHIFT::UInt8 = 2
-const HEIGHT_MASK::UInt8 = 0b00000011
-const HEIGHT_SHIFT::UInt8 = 0
-
-const INDEX_SHIFT::UInt8 = 2
-const EMPTY_TILE::UInt8 = 0b11111111
-const NOT_PLACED::Int = -1
-const INVALID_LOC::Int = -2
-
-const WHITE::Int = 1
-const BLACK::Int = 0
 
 function get_tile_color(tile)
     return (tile & COLOR_MASK) >> COLOR_SHIFT
@@ -207,28 +99,6 @@ function set_loc(board, tile::UInt8, loc::Int)
     board.tile_locs[(tile >> INDEX_SHIFT) + 1] = loc
     return nothing
 end
-
-struct Move
-    moving_loc::Int
-    goal_loc::Int
-end
-
-struct Placement
-    goal_loc::Int
-    tile::UInt8
-end
-
-struct Climb
-    moving_loc::Int
-    goal_loc::Int
-end
-
-struct Pass end
-
-# For now these are global constants, later make this configurable if that's interesting
-const BUGS_IN_PLAY::Int = 8
-const TOTAL_NUM_BUGS::Int = 14
-const GAMETYPE::Gametype.T = Gametype.MLP
 
 function handle_newgame_command(game_type)
     if game_type == Gametype.MLP

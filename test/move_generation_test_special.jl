@@ -267,6 +267,3 @@ end
     @test Move(bA1_loc, apply_direction(bA1_loc, Direction.W)) in moves
     @test length(moves) == 11
 end
-
-@testitem "The piece that just moved cannot be moved by the pillbug" begin
-end

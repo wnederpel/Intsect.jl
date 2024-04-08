@@ -6,6 +6,8 @@
     board = handle_newgame_command(Gametype.MLP)
     set_tile_on_board(board, wQ_loc, wQ)
     set_loc(board, wQ, wQ_loc)
+    board.ply += 1
+    board.current_color = BLACK
 
     actions = validactions(board)
     @test count(action -> action isa Placement, actions) == 7 * 6
@@ -107,4 +109,89 @@ end
     @test any(actions -> actions isa Placement, actions)
 end
 
-@testitem "The piece moved by the pillbug cannot be moved the next turn" begin end
+@testitem "The tile moved by the pillbug cannot be moved the next turn" begin
+    # Define all tiles
+    bQ = get_tile_from_string("bQ")
+    wQ = get_tile_from_string("wQ")
+    wG1 = get_tile_from_string("wG1")
+    wB1 = get_tile_from_string("wB1")
+    bB1 = get_tile_from_string("bB1")
+    bA1 = get_tile_from_string("bA1")
+
+    # Define their locs
+    bQ_loc = MID - 1
+    wG1_loc = apply_direction(bQ_loc, Direction.SW)
+    wB1_loc = apply_direction(wG1_loc, Direction.SE)
+    bA1_loc = apply_direction(wB1_loc, Direction.SE)
+    bB1_loc = apply_direction(bA1_loc, Direction.NE)
+    wQ_loc = apply_direction(bB1_loc, Direction.NE)
+
+    # Create the board
+    board = handle_newgame_command(Gametype.MLP)
+
+    set_tile_on_board(board, bQ_loc, bQ)
+    set_tile_on_board(board, wQ_loc, wQ)
+    set_tile_on_board(board, wG1_loc, wG1)
+    set_tile_on_board(board, wB1_loc, wB1)
+    set_tile_on_board(board, bB1_loc, bB1)
+    set_tile_on_board(board, bA1_loc, bA1)
+
+    board.moved_by_pillbug_loc = bA1_loc
+
+    # Generate the moves
+    actions = validactions(board)
+
+    bA1_moves = filter(action -> action isa Move && action.moving_loc == bA1_loc, actions)
+
+    @test isempty(bA1_moves)
+end
+
+@testitem "The tile that just moved cannot be moved by the pillbug" begin
+    using DataStructures
+
+    # Define all pieces
+    bQ = get_tile_from_string("bQ")
+    wQ = get_tile_from_string("wQ")
+    bB1 = get_tile_from_string("bB1")
+    wS1 = get_tile_from_string("wS1")
+    wP = get_tile_from_string("wP")
+    bA1 = get_tile_from_string("bA1")
+
+    # Define their locs
+    bQ_loc = MID - 1
+    wP_loc = apply_direction(bQ_loc, Direction.SE)
+    wQ_loc = apply_direction(wP_loc, Direction.SE)
+    bA1_loc = apply_direction(wQ_loc, Direction.NE)
+    wS1_loc = apply_direction(bA1_loc, Direction.NW)
+    bB1_loc = apply_direction(wS1_loc, Direction.NE)
+
+    # Create the board
+    board = handle_newgame_command(Gametype.MLP)
+
+    set_tile_on_board(board, bQ_loc, bQ)
+    set_tile_on_board(board, wQ_loc, wQ)
+    set_tile_on_board(board, wP_loc, wP)
+    set_tile_on_board(board, bA1_loc, bA1)
+    set_tile_on_board(board, wS1_loc, wS1)
+    set_tile_on_board(board, bB1_loc, bB1)
+
+    board.just_moved_loc = bA1_loc
+
+    # Setup dict of pinned pieces
+    ispinned = DefaultDict(false)
+    ispinned[wS1_loc] = true
+
+    # Generate the moves
+    moves = pillbugmoves(board, wP_loc, ispinned)
+
+    # Check the moves
+    # First the normal moves
+    @test Move(wP_loc, apply_direction(wP_loc, Direction.W)) in moves
+    @test Move(wP_loc, apply_direction(wP_loc, Direction.SW)) in moves
+    # Then the special moves
+    @test Move(bQ_loc, apply_direction(wP_loc, Direction.W)) in moves
+    @test Move(bQ_loc, apply_direction(wP_loc, Direction.SW)) in moves
+    @test Move(wQ_loc, apply_direction(wP_loc, Direction.W)) in moves
+    @test Move(wQ_loc, apply_direction(wP_loc, Direction.SW)) in moves
+    @test length(moves) == 6
+end

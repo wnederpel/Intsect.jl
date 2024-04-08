@@ -5,6 +5,13 @@ using StaticArrays
 using EnumX
 using DataStructures
 
+# structs
+export Board
+export Move
+export Placement
+export Climb
+export Pass
+
 # constants
 export GRID_SIZE
 export ROW_SIZE
@@ -54,14 +61,10 @@ export set_tile_on_board
 export set_loc
 export get_loc
 
-# structs
-export Board
-export Move
-export Placement
-export Pass
-export Climb
-
 # Files
+include("enums.jl")
+include("constants.jl")
+include("structs.jl")
 include("game.jl")
 include("main.jl")
 include("show_methods.jl")

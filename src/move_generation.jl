@@ -2,7 +2,6 @@ function validactions(board::Board)
     need_to_place_queen = !board.queen_placed[board.current_color + 1] && board.turn == 4
     first_placement = board.ply == 1
     second_placement = board.ply == 2
-    (need_to_place_queen, first_placement, second_placement) |> println
     if need_to_place_queen
         return queenplacements(board)
     elseif first_placement
@@ -55,7 +54,7 @@ function validactions_general(board::Board)
                         valid_moves = [valid_moves; generate_placements(my_placement_locs, tile)]
                         placements_genereated[bug + 1] = true
                     end
-                elseif board.queen_placed[board.current_color]
+                elseif board.queen_placed[board.current_color] && loc != board.moved_by_pillbug_loc
                     # Generate moves for placed tiles
                     tile = get_tile_on_board(board, loc)
                     if !ispinned[tile]
