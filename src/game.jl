@@ -233,13 +233,25 @@ function allneighs(loc)
 end
 
 # TODO func: add climb actions, and add underworld
-# TODO func: set queen_placed flag in board
 
-function do_action(board, pass::Pass) end
+function do_action(board, pass::Pass)
+    board.moved_by_pillbug_loc = INVALID_LOC
+    board.just_moved_loc = INVALID_LOC
+
+    handle_ply_increment(board)
+end
 
 function do_action(board, placement::Placement)
     set_tile_on_board(board, placement.goal_loc, placement.tile)
     set_loc(board, placement.tile, placement.goal_loc)
+    if get_tile_bug(placement.tile) == Integer(Bug.QUEEN)
+        board.queen_placed[board.current_color + 1] = true
+    end
+
+    board.moved_by_pillbug_loc = INVALID_LOC
+    board.just_moved_loc = INVALID_LOC
+
+    handle_ply_increment(board)
 end
 
 function do_action(board, move::Move)
@@ -247,6 +259,41 @@ function do_action(board, move::Move)
     set_tile_on_board(board, move.goal_loc, moving_tile)
     set_tile_on_board(board, move.moving_loc, EMPTY_TILE)
     set_loc(board, moving_tile, move.goal_loc)
+
+    board.just_moved_loc = move.goal_loc
+    # When the moving piece is of a different color then the current color, the pillbug has moved it
+    if get_tile_color(moving_tile) != board.current_color
+        board.moved_by_pillbug_loc = move.goal_loc
+    else
+        board.moved_by_pillbug_loc = INVALID_LOC
+    end
+
+    handle_ply_increment(board)
+end
+
+function do_action(board, move::Climb)
+    error("Do climb action not implemented yet.")
+
+    board.just_moved_loc = move.goal_loc
+    # When the moving piece is of a different color then the current color, the pillbug has moved it
+    if get_tile_color(moving_tile) != board.current_color
+        board.moved_by_pillbug_loc = move.goal_loc
+    else
+        board.moved_by_pillbug_loc = INVALID_LOC
+    end
+
+    handle_ply_increment(board)
+end
+
+function handle_ply_increment(board)
+    board.ply += 1
+    if board.current_color == WHITE
+        board.current_color = BLACK
+    else
+        board.turn += 1
+        board.current_color = WHITE
+    end
+    return nothing
 end
 
 """

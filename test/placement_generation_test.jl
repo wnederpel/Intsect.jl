@@ -1,6 +1,4 @@
-
 @testitem "test placement location generation" begin
-    using Intsect
     wQ = get_tile_from_string("wQ")
     bQ = get_tile_from_string("bQ")
     wB1 = get_tile_from_string("wB1") + 0b00000001

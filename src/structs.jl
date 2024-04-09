@@ -25,6 +25,7 @@ mutable struct Board
     # TODO speed: Think about making 2 seperate structs, the tiles & tile_locs vectors struct can be static 
     # TODO speed: Make these MVectors
     tiles::SizedVector{GRID_SIZE,UInt8}
+    # TODO speed: Do not use the 36 entries with invalid locs, but instead use a predefined indexing of tiles
     tile_locs::SizedVector{36,Int}
     just_moved_loc::Int
     moved_by_pillbug_loc::Int
