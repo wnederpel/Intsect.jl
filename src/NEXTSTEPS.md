@@ -16,27 +16,27 @@ https://github.com/jonthysell/Mzinga/wiki/UniversalHiveProtocol#engine-commands
 command:
 info
 status:
--
+done
 
 command:
 newgame
 status:
--
+done for MLP
 
 command:
 play
 status:
--
+climb left to do
 
 command:
 pass
 status:
--
+done
 
 command:
 validmoves
 status:
--
+done
 
 command:
 bestmove

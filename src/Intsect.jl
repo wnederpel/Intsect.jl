@@ -11,6 +11,7 @@ export Move
 export Placement
 export Climb
 export Pass
+export GameString
 
 # constants
 export GRID_SIZE
@@ -60,6 +61,8 @@ export get_tile_on_board
 export set_tile_on_board
 export set_loc
 export get_loc
+export move_string_from_action
+export gamestring
 
 # Files
 include("enums.jl")

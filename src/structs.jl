@@ -21,6 +21,7 @@ The 36 array is zero indexed, so again use get_loc / set_loc.
 """
 # TODO func: add underworld
 # TODO speed: maybe the locs can be UInt8's too, although julia indexing works with integers
+# TODO speed: custom types can be used for tiles for clarity and maybe speed? at least avoids type instability
 mutable struct Board
     # TODO speed: Think about making 2 seperate structs, the tiles & tile_locs vectors struct can be static 
     # TODO speed: Make these MVectors
@@ -33,13 +34,24 @@ mutable struct Board
     queen_placed::MVector{2,Bool}
     ply::Int
     turn::Int
+    gameover::Bool
 end
 
-function board(tiles, tile_locs)
+function Board(tiles, tile_locs)
     return Board(
-        tiles, tile_locs, INVALID_LOC, INVALID_LOC, WHITE, MVector{2,Bool}(false, false), 1, 1
+        tiles,
+        tile_locs,
+        INVALID_LOC,
+        INVALID_LOC,
+        WHITE,
+        MVector{2,Bool}(false, false),
+        1,
+        1,
+        false,
     )
 end
+
+struct AbstractAction end
 
 struct Move
     moving_loc::Int
@@ -56,4 +68,22 @@ struct Climb
     goal_loc::Int
 end
 
-struct Pass end
+struct Pass
+    # All actions have a goal loc
+    goal_loc::Int
+end
+
+function Pass()
+    return Pass(INVALID_LOC)
+end
+
+mutable struct GameString
+    gametype::String
+    gamestate::String
+    player::String
+    movestrings::String
+end
+
+function GameString()
+    return GameString("Base+MLP", "NotStarted", "White[1]", "")
+end

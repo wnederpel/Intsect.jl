@@ -8,7 +8,7 @@ function main()
     println(handle_info_command())
     println("Enter a command:")
     board = nothing
-    game_string = ""
+    gamestring = nothing
     while true
         prev_board = board
         command = readline()
@@ -26,40 +26,47 @@ function main()
 
                 gametype = gametype_from_string(gametype_string)
                 board = handle_newgame_command(gametype)
-                game_string = "Base+MLP;NotStarted;White[1]"
+                gamestring = GameString()
 
-                println(game_string)
-            elseif startswith(command, "play")
-                replace(game_string, "NotStarted", "InProgress")
-                # TODO: add better validation and move game updating (like described in test) to make the right game strings
-                move_string = command[6:end]
-                if board !== nothing
+                show(gamestring)
+            elseif startswith(command, "help")
+                println("Commands:")
+                println("info")
+                println("newgame <gametype>")
+                println("play <move>")
+                println("show")
+                println("pass")
+                println("validmoves")
+                println("exit")
+            elseif board === nothing
+                println("No board is setup, please start a new game first")
+            else
+                if startswith(command, "play")
+                    move_string = command[6:end]
                     action = action_from_move_string(board, move_string)
                     do_action(board, action)
-                    game_string *= ";" * move_string
-                    println(game_string)
-                else
-                    println("unable to move, no board is setup")
-                end
-            elseif command == "show"
-                if board !== nothing
+                    update_gamestring(gamestring, board, action)
+                    show(gamestring)
+                elseif command == "show"
                     show(board)
+                elseif command == "pass"
+                    gamestring *= ";pass"
+                    println(gamestring)
+                elseif command == "validmoves"
+                    actions = validactions(board)
+                    print(move_string_from_action(board, actions[begin]))
+                    for action in actions[(begin + 1):end]
+                        print(";" * move_string_from_action(board, action))
+                    end
+                    println()
                 else
-                    println("nothing to show, no board is setup")
+                    println("Unknown command: '$command'")
                 end
-            elseif command == "pass"
-                game_string *= ";pass"
-                println(game_string)
-            elseif command == "validmoves"
-                actions = validactions(board)
-                println(actions)
-            else
-                println("Unknown command: '$command'")
             end
             println("ok")
         catch e
             if isa(e, ErrorException)
-                println("err" * e.msg)
+                println("err " * e.msg)
             else
                 io = IOBuffer()
                 # Write the error message to the IOBuffer
@@ -79,10 +86,12 @@ function main()
                 Base.show_backtrace(io, short_backtrace)
                 # Print the formatted short stack trace
                 println(String(take!(io)))
+                println()
             end
             if board !== nothing
                 board = prev_board
             end
+            show(gamestring)
             println("ok")
         end
     end

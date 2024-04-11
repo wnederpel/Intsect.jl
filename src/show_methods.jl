@@ -1,8 +1,17 @@
 
-function get_tile_name(tile)
+function get_tile_name_padded(tile, show_locs)
     if tile == EMPTY_TILE
         return " ⬡ "
     end
+    name = get_tile_name(tile)
+
+    if length(name) == 2
+        name = " " * name
+    end
+    return name
+end
+
+function get_tile_name(tile)
     white, bug, bug_num, _ = get_tile_info(tile)
     name = ""
     if white == 1
@@ -11,7 +20,9 @@ function get_tile_name(tile)
         name *= "b"
     end
     name *= BUG_NAMES[bug + 1]
-    name *= string(bug_num + 1)
+    if bug < 4
+        name *= string(bug_num + 1)
+    end
     return name
 end
 
@@ -36,7 +47,7 @@ function Base.show(board::Board, show_locs::Bool=false)
         for col in 1:ROW_SIZE
             index = (row - 1) * ROW_SIZE + col
             tile = board.tiles[index]
-            name = get_tile_name(tile)
+            name = get_tile_name_padded(tile, show_locs)
             if show_locs
                 if name == " ⬡ "
                     name = string(index - 1)
@@ -84,4 +95,15 @@ end
 
 function Base.show(tile::UInt8)
     println(get_tile_name(tile))
+end
+
+function Base.show(gamestring::GameString)
+    println(
+        gamestring.gametype *
+        ";" *
+        gamestring.gamestate *
+        ";" *
+        gamestring.player *
+        gamestring.movestrings,
+    )
 end

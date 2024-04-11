@@ -78,12 +78,12 @@ function get_tile_unplaced(loc::Int)
     return tile_as_index << INDEX_SHIFT
 end
 
-function get_tile_on_board(board, loc::Int)
+function get_tile_on_board(board::Board, loc::Int)
     # Loc is zero indexed
     return board.tiles[loc + 1]
 end
 
-function set_tile_on_board(board, loc::Int, tile::UInt8)
+function set_tile_on_board(board::Board, loc::Int, tile::UInt8)
     # Loc is zero indexed
     board.tiles[loc + 1] = tile
     return nothing
@@ -112,7 +112,7 @@ function handle_newgame_command(game_type)
                 tile_locs[index_from_tile] = INVALID_LOC
             end
         end
-        newboard = board(tiles, tile_locs)
+        newboard = Board(tiles, tile_locs)
         return newboard
     else
         return "game type $game_type unknown"
@@ -217,7 +217,66 @@ function action_from_move_string(board, move_string)
         moving_tile = get_tile_from_string(move_string)
         action = Placement(goal_loc, moving_tile)
     end
+    if action in validactions(board)
+        return action
+    else
+        error("Invalid action $action")
+    end
     return action
+end
+
+function move_string_from_action(board, action::Move)
+    moving_tile = get_tile_on_board(board, action.moving_loc)
+    move_string = get_tile_name(moving_tile)
+
+    move_string *= move_string_goal(board, action.goal_loc)
+    return move_string
+end
+
+function move_string_from_action(board, action::Placement)
+    move_string = get_tile_name(action.tile)
+    move_string *= move_string_goal(board, action.goal_loc)
+    return move_string
+end
+
+function move_string_from_action(board, action::Climb)
+    error("move string from climb not implemented yet")
+end
+
+function move_string_from_action(board, action::Pass)
+    return "pass"
+end
+
+function move_string_goal(board, goal_loc)
+    # Find an occupied neighbor of the goal_loc
+    move_string = ""
+    for dir in instances(Direction.T)
+        loc = apply_direction(goal_loc, dir)
+        if get_tile_on_board(board, loc) != EMPTY_TILE
+            goal_tile = get_tile_on_board(board, loc)
+            if dir == Direction.NW
+                return move_string * " \\" * get_tile_name(goal_tile)
+            elseif dir == Direction.W
+                return move_string * " -" * get_tile_name(goal_tile)
+            elseif dir == Direction.SW
+                return move_string * " /" * get_tile_name(goal_tile)
+            elseif dir == Direction.SE
+                return move_string * " " * get_tile_name(goal_tile) * "\\"
+            elseif dir == Direction.E
+                return move_string * " " * get_tile_name(goal_tile) * "-"
+            elseif dir == Direction.NE
+                return move_string * " " * get_tile_name(goal_tile) * "/"
+            end
+        end
+    end
+    return move_string
+end
+
+function update_gamestring(gamestring, board, last_action)
+    gamestring.gamestate = "InProgress"
+    gamestring.movestrings *= ";" * move_string_from_action(board, last_action)
+    gamestring.player =
+        board.current_color == WHITE ? "White[$(board.turn)]" : "Black[$(board.turn)]"
 end
 
 function allneighs(loc)
@@ -238,7 +297,7 @@ function do_action(board, pass::Pass)
     board.moved_by_pillbug_loc = INVALID_LOC
     board.just_moved_loc = INVALID_LOC
 
-    handle_ply_increment(board)
+    post_action_update(board)
 end
 
 function do_action(board, placement::Placement)
@@ -251,7 +310,7 @@ function do_action(board, placement::Placement)
     board.moved_by_pillbug_loc = INVALID_LOC
     board.just_moved_loc = INVALID_LOC
 
-    handle_ply_increment(board)
+    post_action_update(board)
 end
 
 function do_action(board, move::Move)
@@ -285,7 +344,10 @@ function do_action(board, move::Climb)
     handle_ply_increment(board)
 end
 
-function handle_ply_increment(board)
+function post_action_update(board)
+    # TODO func: also update history
+    # TODO func: also update gameover
+    # TODO func: update just moved loc & moved by pill bug in here as well
     board.ply += 1
     if board.current_color == WHITE
         board.current_color = BLACK
