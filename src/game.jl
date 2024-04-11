@@ -273,7 +273,20 @@ function move_string_goal(board, goal_loc)
 end
 
 function update_gamestring(gamestring, board, last_action)
-    gamestring.gamestate = "InProgress"
+    # TODO func: add history
+    if board.check_gameover
+        if board.victor == DRAW
+            gamestring.gamestate = "Draw"
+        elseif board.victor == WHITE
+            gamestring.gamestate = "WhiteWins"
+        elseif board.victor == BLACK
+            gamestring.gamestate = "BlackWins"
+        else
+            error("Unknown victor $(board.victor)")
+        end
+    else
+        gamestring.gamestate = "InProgress"
+    end
     gamestring.movestrings *= ";" * move_string_from_action(board, last_action)
     gamestring.player =
         board.current_color == WHITE ? "White[$(board.turn)]" : "Black[$(board.turn)]"
@@ -331,7 +344,7 @@ function post_action_update(board, move::Union{Move,Climb})
     post_action_general_update(board)
 end
 
-function post_action_pillbug_update(board, move)
+function post_action_pillbug_update(board, move::Union{Move,Climb})
     board.just_moved_loc = move.goal_loc
     # When the moving piece is of a different color then the current color, the pillbug has moved it
     if get_tile_color(get_tile_on_board(board, move.goal_loc)) != board.current_color
@@ -347,14 +360,36 @@ function post_action_pillbug_update(board)
 end
 
 function post_action_general_update(board)
-    # TODO func: check if some one has won
     # TODO func: update the history correctly
-    board.ply += 1
-    if board.current_color == WHITE
-        board.current_color = BLACK
-    else
-        board.turn += 1
-        board.current_color = WHITE
+    check_gameover(board)
+    if !board.over
+        board.ply += 1
+        if board.current_color == WHITE
+            board.current_color = BLACK
+        else
+            board.turn += 1
+            board.current_color = WHITE
+        end
+    end
+end
+
+function check_gameover(board)
+    wQ = get_tile_from_string("wQ")
+    bQ = get_tile_from_string("bQ")
+    wQ_loc = get_loc(board, wQ)
+    bQ_loc = get_loc(board, bQ)
+
+    if all(loc -> get_tile_on_board(board, loc) != EMPTY_TILE, allneighs(wQ))
+        board.gameover = true
+        board.victor = BLACK
+    end
+    if all(loc -> get_tile_on_board(board, loc) != EMPTY_TILE, allneighs(bQ))
+        if board.gameover
+            board.victor = DRAW
+        else
+            board.gameover = true
+            board.victor = WHITE
+        end
     end
 end
 

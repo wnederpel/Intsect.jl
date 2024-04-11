@@ -35,6 +35,7 @@ mutable struct Board
     ply::Int
     turn::Int
     gameover::Bool
+    victor::Int
 end
 
 function Board(tiles, tile_locs)
@@ -48,6 +49,7 @@ function Board(tiles, tile_locs)
         1,
         1,
         false,
+        nothing,
     )
 end
 
