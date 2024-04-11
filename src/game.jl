@@ -291,12 +291,7 @@ function allneighs(loc)
     )
 end
 
-# TODO func: add climb actions, and add underworld
-
 function do_action(board, pass::Pass)
-    board.moved_by_pillbug_loc = INVALID_LOC
-    board.just_moved_loc = INVALID_LOC
-
     post_action_update(board)
 end
 
@@ -307,9 +302,6 @@ function do_action(board, placement::Placement)
         board.queen_placed[board.current_color + 1] = true
     end
 
-    board.moved_by_pillbug_loc = INVALID_LOC
-    board.just_moved_loc = INVALID_LOC
-
     post_action_update(board)
 end
 
@@ -319,35 +311,44 @@ function do_action(board, move::Move)
     set_tile_on_board(board, move.moving_loc, EMPTY_TILE)
     set_loc(board, moving_tile, move.goal_loc)
 
-    board.just_moved_loc = move.goal_loc
-    # When the moving piece is of a different color then the current color, the pillbug has moved it
-    if get_tile_color(moving_tile) != board.current_color
-        board.moved_by_pillbug_loc = move.goal_loc
-    else
-        board.moved_by_pillbug_loc = INVALID_LOC
-    end
-
-    handle_ply_increment(board)
+    post_action_update(board, move)
 end
 
 function do_action(board, move::Climb)
+    # TODO func: add climb actions, and add underworld
     error("Do climb action not implemented yet.")
 
+    post_action_update(board, move)
+end
+
+function post_action_update(board)
+    post_action_pillbug_update(board)
+    post_action_general_update(board)
+end
+
+function post_action_update(board, move::Union{Move,Climb})
+    post_action_pillbug_update(board, move)
+    post_action_general_update(board)
+end
+
+function post_action_pillbug_update(board, move)
     board.just_moved_loc = move.goal_loc
     # When the moving piece is of a different color then the current color, the pillbug has moved it
-    if get_tile_color(moving_tile) != board.current_color
+    if get_tile_color(get_tile_on_board(board, move.goal_loc)) != board.current_color
         board.moved_by_pillbug_loc = move.goal_loc
     else
         board.moved_by_pillbug_loc = INVALID_LOC
     end
-
-    handle_ply_increment(board)
 end
 
-function post_action_update(board)
-    # TODO func: also update history
-    # TODO func: also update gameover
-    # TODO func: update just moved loc & moved by pill bug in here as well
+function post_action_pillbug_update(board)
+    board.just_moved_loc = INVALID_LOC
+    board.moved_by_pillbug_loc = INVALID_LOC
+end
+
+function post_action_general_update(board)
+    # TODO func: check if some one has won
+    # TODO func: update the history correctly
     board.ply += 1
     if board.current_color == WHITE
         board.current_color = BLACK
@@ -355,7 +356,6 @@ function post_action_update(board)
         board.turn += 1
         board.current_color = WHITE
     end
-    return nothing
 end
 
 """

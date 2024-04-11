@@ -72,8 +72,6 @@
     do_action(board, action6)
     test_board_state(board, 7, WHITE, 4, MVector{2,Bool}(true, true), INVALID_LOC, INVALID_LOC)
 
-    show(board)
-
     action7 = Move(wA1_loc, apply_direction(wS1_loc, Direction.NW))
     @test action7 in validactions(board)
     do_action(board, action7)
