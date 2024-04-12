@@ -85,12 +85,11 @@ function Base.show(board::Board, show_locs::Bool=false)
 end
 
 function Base.show(move::Move)
-    println("Moving piece at loc $(move.moving_loc) to loc $(move.goal_loc)")
+    println("Move: " * move_string_from_action(board, move))
 end
 
 function Base.show(placement::Placement)
-    name = get_tile_name(placement.tile)
-    println("Placing piece $name at loc $(placement.goal_loc)")
+    println("Placement: " * move_string_from_action(board, placement))
 end
 
 function Base.show(tile::UInt8)

@@ -272,9 +272,8 @@ function move_string_goal(board, goal_loc)
     return move_string
 end
 
-function update_gamestring(gamestring, board, last_action)
-    # TODO func: add history
-    if board.check_gameover
+function update_gamestring(gamestring, board)
+    if board.gameover
         if board.victor == DRAW
             gamestring.gamestate = "Draw"
         elseif board.victor == WHITE
@@ -287,7 +286,10 @@ function update_gamestring(gamestring, board, last_action)
     else
         gamestring.gamestate = "InProgress"
     end
-    gamestring.movestrings *= ";" * move_string_from_action(board, last_action)
+    gamestring.movestrings = ""
+    for (_, movestring) in board.history
+        gamestring.movestrings *= ";" * movestring
+    end
     gamestring.player =
         board.current_color == WHITE ? "White[$(board.turn)]" : "Black[$(board.turn)]"
 end
@@ -305,7 +307,7 @@ function allneighs(loc)
 end
 
 function do_action(board, pass::Pass)
-    post_action_update(board)
+    post_action_update(board, pass)
 end
 
 function do_action(board, placement::Placement)
@@ -315,7 +317,7 @@ function do_action(board, placement::Placement)
         board.queen_placed[board.current_color + 1] = true
     end
 
-    post_action_update(board)
+    post_action_update(board, placement)
 end
 
 function do_action(board, move::Move)
@@ -334,14 +336,14 @@ function do_action(board, move::Climb)
     post_action_update(board, move)
 end
 
-function post_action_update(board)
+function post_action_update(board, action::Union{Pass,Placement})
     post_action_pillbug_update(board)
-    post_action_general_update(board)
+    post_action_general_update(board, action)
 end
 
 function post_action_update(board, move::Union{Move,Climb})
     post_action_pillbug_update(board, move)
-    post_action_general_update(board)
+    post_action_general_update(board, move)
 end
 
 function post_action_pillbug_update(board, move::Union{Move,Climb})
@@ -359,10 +361,10 @@ function post_action_pillbug_update(board)
     board.moved_by_pillbug_loc = INVALID_LOC
 end
 
-function post_action_general_update(board)
-    # TODO func: update the history correctly
+function post_action_general_update(board, action)
+    push!(board.history, (action, move_string_from_action(board, action)))
     check_gameover(board)
-    if !board.over
+    if !board.gameover
         board.ply += 1
         if board.current_color == WHITE
             board.current_color = BLACK
@@ -379,11 +381,11 @@ function check_gameover(board)
     wQ_loc = get_loc(board, wQ)
     bQ_loc = get_loc(board, bQ)
 
-    if all(loc -> get_tile_on_board(board, loc) != EMPTY_TILE, allneighs(wQ))
+    if all(loc -> get_tile_on_board(board, loc) != EMPTY_TILE, allneighs(wQ_loc))
         board.gameover = true
         board.victor = BLACK
     end
-    if all(loc -> get_tile_on_board(board, loc) != EMPTY_TILE, allneighs(bQ))
+    if all(loc -> get_tile_on_board(board, loc) != EMPTY_TILE, allneighs(bQ_loc))
         if board.gameover
             board.victor = DRAW
         else
@@ -416,13 +418,13 @@ end
 
 function validate_tile_string(tile::AbstractString)
     # game type dependant
-    if tile[1] in "wb"
-        if tile[2] in "QMLP"
+    if length(tile) >= 1 && tile[1] in "wb"
+        if length(tile) >= 2 && tile[2] in "QMLP"
             return true
         elseif tile[2] in "GA"
-            return tile[3] in "123"
+            return length(tile) == 3 && tile[3] in "123"
         elseif tile[2] in "SB"
-            return tile[3] in "12"
+            return length(tile) == 3 && tile[3] in "12"
         end
     end
     return false

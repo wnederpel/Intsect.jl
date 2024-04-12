@@ -102,7 +102,7 @@ end
 
     set_tile_on_board(board, wQ_loc, wQ)
     set_loc(board, wQ, wQ_loc)
-    board.queen_placed[WHITE] = true
+    board.queen_placed[WHITE + 1] = true
 
     actions = validactions(board)
     @test any(actions -> actions isa Move, actions)

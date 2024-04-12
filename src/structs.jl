@@ -1,3 +1,27 @@
+struct Move
+    moving_loc::Int
+    goal_loc::Int
+end
+
+struct Placement
+    goal_loc::Int
+    tile::UInt8
+end
+
+struct Climb
+    moving_loc::Int
+    goal_loc::Int
+end
+
+struct Pass
+    # All actions have a goal loc
+    goal_loc::Int
+end
+
+function Pass()
+    return Pass(INVALID_LOC)
+end
+
 """
 Contains all information of the current board state
 
@@ -36,6 +60,7 @@ mutable struct Board
     turn::Int
     gameover::Bool
     victor::Int
+    history::Vector{Tuple{Union{Move,Placement,Climb,Pass},String}}
 end
 
 function Board(tiles, tile_locs)
@@ -49,34 +74,9 @@ function Board(tiles, tile_locs)
         1,
         1,
         false,
-        nothing,
+        NO_COLOR,
+        [],
     )
-end
-
-struct AbstractAction end
-
-struct Move
-    moving_loc::Int
-    goal_loc::Int
-end
-
-struct Placement
-    goal_loc::Int
-    tile::UInt8
-end
-
-struct Climb
-    moving_loc::Int
-    goal_loc::Int
-end
-
-struct Pass
-    # All actions have a goal loc
-    goal_loc::Int
-end
-
-function Pass()
-    return Pass(INVALID_LOC)
 end
 
 mutable struct GameString

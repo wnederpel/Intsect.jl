@@ -17,6 +17,9 @@ end
 Valid actions for the default case
 """
 function validactions_general(board::Board)
+    if board.gameover
+        return fill(Pass())
+    end
     # TODO func: take just moved, moved by pillbug into account
 
     # TODO speed: maybe split in two functions, one for placement and one for moves, avoid queen placed checked for each tile, more same checks on all tiles can be extracted perhaps.  
@@ -33,7 +36,7 @@ function validactions_general(board::Board)
 
     my_placement_locs = generate_placement_locs(board, board.current_color)
 
-    valid_moves = []
+    valid_moves = Vector{Union{Move,Placement,Pass,Climb}}()
 
     # This might be a bit slow, because of allocations, but a copy is slower, normal vec or sized vec is also slower
     placements_genereated = MVector{8,Bool}(false, false, false, false, false, false, false, false)
@@ -54,7 +57,8 @@ function validactions_general(board::Board)
                         valid_moves = [valid_moves; generate_placements(my_placement_locs, tile)]
                         placements_genereated[bug + 1] = true
                     end
-                elseif board.queen_placed[+1] && loc != board.moved_by_pillbug_loc
+                elseif board.queen_placed[board.current_color + 1] &&
+                    loc != board.moved_by_pillbug_loc
                     # Generate moves for placed tiles
                     tile = get_tile_on_board(board, loc)
                     if !ispinned[tile]
@@ -67,6 +71,9 @@ function validactions_general(board::Board)
                 end
             end
         end
+    end
+    if isempty(valid_moves)
+        return [valid moves; Pass()]
     end
     return valid_moves
 end

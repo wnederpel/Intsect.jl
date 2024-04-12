@@ -40,6 +40,7 @@ const INVALID_LOC::Int = -2
 const WHITE::Int = 1
 const BLACK::Int = 0
 const DRAW::Int = 2
+const NO_COLOR::Int = 3
 
 # For now these are global constants, later make this configurable if that's interesting
 const BUGS_IN_PLAY::Int = 8

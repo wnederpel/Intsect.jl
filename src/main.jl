@@ -8,7 +8,7 @@ function main()
     println(handle_info_command())
     println("Enter a command:")
     board = nothing
-    gamestring = nothing
+    gamestring = ""
     while true
         prev_board = board
         command = readline()
@@ -16,7 +16,7 @@ function main()
             if command == "info"
                 handle_info_command()
             elseif command == "exit"
-                println("Exiting...")
+                println("ok")
                 break
             elseif startswith(command, "newgame")
                 if occursin(";", command)
@@ -45,7 +45,7 @@ function main()
                     move_string = command[6:end]
                     action = action_from_move_string(board, move_string)
                     do_action(board, action)
-                    update_gamestring(gamestring, board, action)
+                    update_gamestring(gamestring, board)
                     show(gamestring)
                 elseif command == "show"
                     show(board)
