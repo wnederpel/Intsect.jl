@@ -84,11 +84,11 @@ function Base.show(board::Board, show_locs::Bool=false)
     return nothing
 end
 
-function Base.show(move::Move)
+function Base.show(move::Move, board::Board)
     println("Move: " * move_string_from_action(board, move))
 end
 
-function Base.show(placement::Placement)
+function Base.show(placement::Placement, board::Board)
     println("Placement: " * move_string_from_action(board, placement))
 end
 

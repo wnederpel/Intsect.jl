@@ -1,13 +1,12 @@
 ## TODO
 
-so we can do some moves and place some pieces, I think the next step is to 
-look at how the engine should interact and behave according to the UHP.
-There probably should be some validation on the actions that are generated, 
-and then we can show the errors in the correct format, throwing an error to
-exit the entire function call stack back to main in probably best, 
-then catch in main() and log the message. 
+Engine commands are sufficiently implemented
 
-Also look at the desired error handling by the UPH
+1 climbing (and underwold)
+
+2 check TODO: func in code
+
+3 run perft test
 
 ## What do the engines have to do?
 
@@ -41,7 +40,7 @@ done
 command:
 bestmove
 status:
--
+first step
 
 command:
 undo
@@ -51,6 +50,6 @@ done
 command:
 options
 status:
--
+none
 
 

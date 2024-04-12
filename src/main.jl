@@ -39,14 +39,19 @@ function start(board, gamestring)
                 gamestring = GameString()
 
                 show(gamestring)
+            elseif command == "options"
+                println("No options to configure")
             elseif startswith(command, "help")
                 println("Commands:")
                 println("info")
+                println("state")
+                println("undo <moves_to_undo; default = 1>")
                 println("newgame <gametype>")
-                println("play <move>")
+                println("play <action>")
                 println("show")
                 println("pass")
                 println("validmoves")
+                println("bestmove")
                 println("exit")
             elseif board === nothing
                 println("No board is setup, please start a new game first")
@@ -57,6 +62,15 @@ function start(board, gamestring)
                     do_action(board, action)
                     update_gamestring(gamestring, board)
                     show(gamestring)
+                elseif command == "bestmove"
+                    actions = validactions(board)
+
+                    action = rand(filter(action -> !(action isa Climb), actions))
+                    show(action, board)
+                    do_action(board, action)
+                    update_gamestring(gamestring, board)
+                    show(gamestring)
+
                 elseif command == "show"
                     show(board)
                 elseif command == "pass"
