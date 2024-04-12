@@ -46,7 +46,7 @@ status:
 command:
 undo
 status:
--
+done
 
 command:
 options

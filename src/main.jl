@@ -1,20 +1,30 @@
 function handle_info_command()
     println("id Intsect v0.1")
     println("Mosquito;Ladybug;Pillbug")
-    return nothing
 end
 
-function main()
-    println(handle_info_command())
+function start()
+    handle_info_command()
     println("Enter a command:")
+
     board = nothing
-    gamestring = ""
+    gamestring = nothing
+    start(board, gamestring)
+end
+
+function start(board, gamestring)
     while true
         prev_board = board
         command = readline()
         try
             if command == "info"
                 handle_info_command()
+            elseif command == "state"
+                if gamestring === nothing
+                    println("No game is started yet")
+                else
+                    show(gamestring)
+                end
             elseif command == "exit"
                 println("ok")
                 break
@@ -50,8 +60,9 @@ function main()
                 elseif command == "show"
                     show(board)
                 elseif command == "pass"
-                    gamestring *= ";pass"
-                    println(gamestring)
+                    do_action(board, Pass())
+                    update_gamestring(gamestring, board)
+                    show(gamestring)
                 elseif command == "validmoves"
                     actions = validactions(board)
                     print(move_string_from_action(board, actions[begin]))
@@ -59,6 +70,17 @@ function main()
                         print(";" * move_string_from_action(board, action))
                     end
                     println()
+                elseif startswith(command, "undo")
+                    moves_to_undo = tryparse(Int, command[6:end])
+                    if isnothing(moves_to_undo)
+                        moves_to_undo = 1
+                    end
+
+                    for _ in 1:moves_to_undo
+                        undo(board)
+                    end
+                    update_gamestring(gamestring, board)
+                    show(gamestring)
                 else
                     println("Unknown command: '$command'")
                 end
@@ -95,4 +117,20 @@ function main()
             println("ok")
         end
     end
+end
+
+function example()
+    gametype = Gametype.MLP
+    board = handle_newgame_command(gametype)
+    gamestring = GameString()
+    show(gamestring)
+    println("ok")
+
+    action = action_from_move_string(board, "wL")
+    do_action(board, action)
+    update_gamestring(gamestring, board)
+    show(gamestring)
+    println("ok")
+
+    start(board, gamestring)
 end

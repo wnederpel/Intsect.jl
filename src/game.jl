@@ -287,7 +287,7 @@ function update_gamestring(gamestring, board)
         gamestring.gamestate = "InProgress"
     end
     gamestring.movestrings = ""
-    for (_, movestring) in board.history
+    for (_, movestring) in Iterators.reverse(board.history)
         gamestring.movestrings *= ";" * movestring
     end
     gamestring.player =
@@ -336,17 +336,59 @@ function do_action(board, move::Climb)
     post_action_update(board, move)
 end
 
-function post_action_update(board, action::Union{Pass,Placement})
-    post_action_pillbug_update(board)
+function undo(board)
+    if isempty(board.history)
+        error("no moves to undo")
+    end
+    last_action = pop!(board.history)[1]
+    undo_action(board, last_action)
+end
+
+function undo_action(board, action::Placement)
+    set_tile_on_board(board, action.goal_loc, EMPTY_TILE)
+    set_loc(board, action.tile, NOT_PLACED)
+    if get_tile_bug(action.tile) == Integer(Bug.QUEEN)
+        board.queen_placed[board.current_color + 1] = false
+    end
+
+    inverse_post_action_update(board)
+end
+
+function inverse_post_action_update(board)
+    inverse_post_action_pillbug_update(board)
+    inverse_post_action_general_update(board)
+end
+
+function inverse_post_action_general_update(board)
+    board.ply -= 1
+    if board.current_color == WHITE
+        board.current_color = BLACK
+        board.turn -= 1
+    else
+        board.current_color = WHITE
+    end
+    if board.gameover
+        board.gameover = false
+        board.victor = NO_COLOR
+    end
+end
+
+function inverse_post_action_pillbug_update(board)
+    if !isempty(board.history)
+        last_action = first(board.history)[1]
+        post_action_pillbug_update(board, last_action)
+    else
+        board.just_moved_loc = INVALID_LOC
+        board.moved_by_pillbug_loc = INVALID_LOC
+    end
+end
+
+function post_action_update(board, action::Union{Pass,Placement,Move,Climb})
+    post_action_pillbug_update(board, action)
     post_action_general_update(board, action)
 end
 
-function post_action_update(board, move::Union{Move,Climb})
-    post_action_pillbug_update(board, move)
-    post_action_general_update(board, move)
-end
-
-function post_action_pillbug_update(board, move::Union{Move,Climb})
+function post_action_pillbug_update(board, move)
     board.just_moved_loc = move.goal_loc
     # When the moving piece is of a different color then the current color, the pillbug has moved it
     if get_tile_color(get_tile_on_board(board, move.goal_loc)) != board.current_color
@@ -354,11 +396,6 @@ function post_action_pillbug_update(board, move::Union{Move,Climb})
     else
         board.moved_by_pillbug_loc = INVALID_LOC
     end
-end
-
-function post_action_pillbug_update(board)
-    board.just_moved_loc = INVALID_LOC
-    board.moved_by_pillbug_loc = INVALID_LOC
 end
 
 function post_action_general_update(board, action)

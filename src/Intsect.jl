@@ -31,8 +31,9 @@ export Gametype
 export Direction
 
 # methods
+export example
+export start
 export direction_from_string
-export main
 export show
 export handle_newgame_command
 export get_tile_from_string

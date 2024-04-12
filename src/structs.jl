@@ -46,6 +46,7 @@ The 36 array is zero indexed, so again use get_loc / set_loc.
 # TODO func: add underworld
 # TODO speed: maybe the locs can be UInt8's too, although julia indexing works with integers
 # TODO speed: custom types can be used for tiles for clarity and maybe speed? at least avoids type instability
+# TODO speed: the history field does not need to be updated during move simluation, only when an actual game move is made, the long list probably makes it slow
 mutable struct Board
     # TODO speed: Think about making 2 seperate structs, the tiles & tile_locs vectors struct can be static 
     # TODO speed: Make these MVectors
@@ -60,7 +61,7 @@ mutable struct Board
     turn::Int
     gameover::Bool
     victor::Int
-    history::Vector{Tuple{Union{Move,Placement,Climb,Pass},String}}
+    history::Stack{Tuple{Union{Move,Placement,Climb,Pass},String}}
 end
 
 function Board(tiles, tile_locs)
@@ -75,7 +76,7 @@ function Board(tiles, tile_locs)
         1,
         false,
         NO_COLOR,
-        [],
+        Stack{Tuple{Union{Move,Placement,Climb,Pass},String}}(),
     )
 end
 
