@@ -329,11 +329,27 @@ function do_action(board, move::Move)
     post_action_update(board, move)
 end
 
-function do_action(board, move::Climb)
-    # TODO func: add climb actions, and add underworld
-    error("Do climb action not implemented yet.")
+function do_action(board, climb::Climb)
+    burrowed_tile = get_tile_on_board(board, climb.goal_loc)
+    moving_tile = get_tile_on_board(board, climb.moving_loc)
 
-    post_action_update(board, move)
+    set_tile_on_board(board, climb.goal_loc, moving_tile)
+    set_loc(board, moving_tile, climb.goal_loc)
+
+    if burrowed_tile != EMPTY_TILE
+        # put the burrowed tile in the underworld
+        push!(board.underworld[get_loc(board, burrowed_tile)], burrowed_tile)
+    end
+    if get_tile_height(moving_tile) > 1
+        # Release the tile below moving_tile from the underworld
+        released_tile = pop!(board.underworld[climb.moving_loc])
+        set_tile_on_board(board, climb.moving_loc, released_tile)
+        set_loc(board, released_tile, climb.moving_loc)
+    else
+        set_tile_on_board(board, climb.moving_loc, EMPTY_TILE)
+    end
+
+    post_action_update(board, climb)
 end
 
 function undo(board)

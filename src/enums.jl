@@ -2,6 +2,7 @@
     MLP
 end
 
+# TODO speed: maybe replace with a named tuple
 @enumx Bug::UInt8 begin
     ANT = 0         # 3
     GRASSHOPPER = 1 # 3
@@ -13,6 +14,7 @@ end
     PILLBUG = 7     # 1
 end
 
+# TODO speed: maybe replace with a named tuple
 @enumx Direction::UInt8 begin
     NW
     NE

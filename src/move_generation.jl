@@ -17,18 +17,9 @@ end
 Valid actions for the default case
 """
 function validactions_general(board::Board)
-    if board.gameover
-        return fill(Pass())
-    end
-    # TODO func: take just moved, moved by pillbug into account
-
     # TODO speed: maybe split in two functions, one for placement and one for moves, avoid queen placed checked for each tile, more same checks on all tiles can be extracted perhaps.  
     # TODO speed: be more carefull about the bugs for which movements should be generated
     # Once all bugs of type are placed no more placements should be generated for that bug
-
-    # TODO func: queen must be placed by turn 4
-    # TODO func: queen cannot be placed on first turn
-    # TODO func: when game over, no moves can be made
 
     # TODO speed: ispinned does not need to be recomputed after every move
     # when an elbow is filled, or when a piece is simply pinnned, the dict only changes locally.
@@ -37,6 +28,9 @@ function validactions_general(board::Board)
     my_placement_locs = generate_placement_locs(board, board.current_color)
 
     valid_moves = Vector{Union{Move,Placement,Pass,Climb}}()
+    if board.gameover
+        return valid_moves
+    end
 
     # This might be a bit slow, because of allocations, but a copy is slower, normal vec or sized vec is also slower
     placements_genereated = MVector{8,Bool}(false, false, false, false, false, false, false, false)

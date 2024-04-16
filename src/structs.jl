@@ -43,7 +43,6 @@ Arguments
 except we know that the highest number reached is by a wG3 (num comes first so is most Important) e.g. 0b100011 = 35 (+1 for zero), this is still higher then the true number of tiles, which is 28.
 The 36 array is zero indexed, so again use get_loc / set_loc.
 """
-# TODO func: add underworld
 # TODO speed: maybe the locs can be UInt8's too, although julia indexing works with integers
 # TODO speed: custom types can be used for tiles for clarity and maybe speed? at least avoids type instability
 # TODO speed: the history field does not need to be updated during move simluation, only when an actual game move is made, the long list probably makes it slow
@@ -62,6 +61,7 @@ mutable struct Board
     gameover::Bool
     victor::Int
     history::Stack{Tuple{Union{Move,Placement,Climb,Pass},String}}
+    underworld::DefaultDict{Int,Stack{UInt8}}
 end
 
 function Board(tiles, tile_locs)
@@ -77,6 +77,7 @@ function Board(tiles, tile_locs)
         false,
         NO_COLOR,
         Stack{Tuple{Union{Move,Placement,Climb,Pass},String}}(),
+        DefaultDict{Int,Stack{UInt8}}(Stack{UInt8}()),
     )
 end
 
