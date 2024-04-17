@@ -39,7 +39,7 @@ Arguments
 
 - `tiles::SVector{GRID_SIZE,UInt8}`: All tiles on the board and what is on them. Important! this is 0 indexed, do not directly access, only via get_tile / set_tile
 
-- `tile_locs::SizedVector{14,2,Int}`: For each tile, store its tile index, NOT_PLACED (-1) for unplaced tiles, Indexed by UInt8 >> 2 (so a normal tile, withouth height info), size 2^6 INVALID_LOC 64
+- `tile_locs::MVector{36,Int}`: For each tile, store its tile index, NOT_PLACED (-1) for unplaced tiles, Indexed by UInt8 >> 2 (so a normal tile, withouth height info), size 2^6 INVALID_LOC 64
 except we know that the highest number reached is by a wG3 (num comes first so is most Important) e.g. 0b100011 = 35 (+1 for zero), this is still higher then the true number of tiles, which is 28.
 The 36 array is zero indexed, so again use get_loc / set_loc.
 """
@@ -49,9 +49,9 @@ The 36 array is zero indexed, so again use get_loc / set_loc.
 mutable struct Board
     # TODO speed: Think about making 2 seperate structs, the tiles & tile_locs vectors struct can be static 
     # TODO speed: Make these MVectors
-    tiles::SizedVector{GRID_SIZE,UInt8}
+    tiles::MVector{GRID_SIZE,UInt8}
     # TODO speed: Do not use the 36 entries with invalid locs, but instead use a predefined indexing of tiles
-    tile_locs::SizedVector{36,Int}
+    tile_locs::MVector{36,Int}
     just_moved_loc::Int
     moved_by_pillbug_loc::Int
     current_color::Integer
@@ -60,6 +60,7 @@ mutable struct Board
     turn::Int
     gameover::Bool
     victor::Int
+    # TODO speed: this adds a lot of allocations for something that is not necessary for simulated moves
     history::Stack{Tuple{Union{Move,Placement,Climb,Pass},String}}
     underworld::DefaultDict{Int,Stack{UInt8}}
 end
@@ -90,4 +91,10 @@ end
 
 function GameString()
     return GameString("Base+MLP", "NotStarted", "White[1]", "")
+end
+
+function GameString(board)
+    gamestring = GameString()
+    update_gamestring(gamestring, board)
+    return gamestring
 end

@@ -59,7 +59,7 @@ function start(board, gamestring)
                 if startswith(command, "play")
                     move_string = command[6:end]
                     action = action_from_move_string(board, move_string)
-                    do_action(board, action)
+                    do_action(board, action, false)
                     update_gamestring(gamestring, board)
                     show(gamestring)
                 elseif command == "bestmove"
@@ -67,15 +67,19 @@ function start(board, gamestring)
 
                     action = rand(filter(action -> !(action isa Climb), actions))
                     show(action, board)
-                    do_action(board, action)
+                    do_action(board, action, false)
                     update_gamestring(gamestring, board)
                     show(gamestring)
 
                 elseif command == "show"
                     show(board)
                 elseif command == "pass"
-                    do_action(board, Pass())
-                    update_gamestring(gamestring, board)
+                    if Pass() in validactions(board)
+                        do_action(board, Pass(), false)
+                        update_gamestring(gamestring, board)
+                    else
+                        error("pass not a valid action")
+                    end
                     show(gamestring)
                 elseif command == "validmoves"
                     actions = validactions(board)
@@ -141,7 +145,7 @@ function example()
     println("ok")
 
     action = action_from_move_string(board, "wL")
-    do_action(board, action)
+    do_action(board, action, false)
     update_gamestring(gamestring, board)
     show(gamestring)
     println("ok")

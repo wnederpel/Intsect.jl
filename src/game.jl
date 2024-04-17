@@ -80,6 +80,9 @@ end
 
 function get_tile_on_board(board::Board, loc::Int)
     # Loc is zero indexed
+    if loc == INVALID_LOC
+        return EMPTY_TILE
+    end
     return board.tiles[loc + 1]
 end
 
@@ -292,6 +295,7 @@ function update_gamestring(gamestring, board)
     end
     gamestring.player =
         board.current_color == WHITE ? "White[$(board.turn)]" : "Black[$(board.turn)]"
+    return nothing
 end
 
 function allneighs(loc)
@@ -306,30 +310,30 @@ function allneighs(loc)
     )
 end
 
-function do_action(board, pass::Pass)
-    post_action_update(board, pass)
+function do_action(board, pass::Pass, simulated::Bool=true)
+    post_action_update(board, pass, simulated)
 end
 
-function do_action(board, placement::Placement)
+function do_action(board, placement::Placement, simulated::Bool=true)
     set_tile_on_board(board, placement.goal_loc, placement.tile)
     set_loc(board, placement.tile, placement.goal_loc)
     if get_tile_bug(placement.tile) == Integer(Bug.QUEEN)
         board.queen_placed[board.current_color + 1] = true
     end
 
-    post_action_update(board, placement)
+    post_action_update(board, placement, simulated)
 end
 
-function do_action(board, move::Move)
+function do_action(board, move::Move, simulated::Bool=true)
     moving_tile = get_tile_on_board(board, move.moving_loc)
     set_tile_on_board(board, move.goal_loc, moving_tile)
     set_tile_on_board(board, move.moving_loc, EMPTY_TILE)
     set_loc(board, moving_tile, move.goal_loc)
 
-    post_action_update(board, move)
+    post_action_update(board, move, simulated)
 end
 
-function do_action(board, climb::Climb)
+function do_action(board, climb::Climb, simulated::Bool=true)
     burrowed_tile = get_tile_on_board(board, climb.goal_loc)
     moving_tile = get_tile_on_board(board, climb.moving_loc)
 
@@ -349,7 +353,7 @@ function do_action(board, climb::Climb)
         set_tile_on_board(board, climb.moving_loc, EMPTY_TILE)
     end
 
-    post_action_update(board, climb)
+    post_action_update(board, climb, simulated)
 end
 
 function undo(board)
@@ -399,9 +403,9 @@ function inverse_post_action_pillbug_update(board)
     end
 end
 
-function post_action_update(board, action::Union{Pass,Placement,Move,Climb})
+function post_action_update(board, action::Union{Pass,Placement,Move,Climb}, simulated::Bool)
     post_action_pillbug_update(board, action)
-    post_action_general_update(board, action)
+    post_action_general_update(board, action, simulated)
 end
 
 function post_action_pillbug_update(board, move)
@@ -414,8 +418,10 @@ function post_action_pillbug_update(board, move)
     end
 end
 
-function post_action_general_update(board, action)
-    push!(board.history, (action, move_string_from_action(board, action)))
+function post_action_general_update(board, action, simulated)
+    if !simulated
+        push!(board.history, (action, move_string_from_action(board, action)))
+    end
     check_gameover(board)
     if !board.gameover
         board.ply += 1

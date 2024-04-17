@@ -1,0 +1,3 @@
+using Intsect
+
+perft()

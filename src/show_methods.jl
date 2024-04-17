@@ -28,6 +28,8 @@ end
 
 function Base.show(board::Board, show_locs::Bool=false)
     println("-----------------")
+    show(GameString(board))
+    println("-----------------")
     # somehow print this
     #         11  12  13  14  15
     #           \ / \ / \ / \ /

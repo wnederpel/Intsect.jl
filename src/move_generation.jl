@@ -276,8 +276,9 @@ function moves_to_depth_ladybug!(board, startloc, depth, moves, cur_loc=startloc
 end
 
 function grasshoppermoves(board, startloc)
-    return map(
-        dir -> begin
+    moves = []
+    for dir in instances(Direction.T)
+        if get_tile_on_board(board, apply_direction(startloc, dir)) != EMPTY_TILE
             loc = startloc
             while true
                 loc = apply_direction(loc, dir)
@@ -286,15 +287,10 @@ function grasshoppermoves(board, startloc)
                     break
                 end
             end
-            return Move(startloc, loc)
-        end,
-        filter(
-            dir -> begin
-                loc = apply_direction(startloc, dir)
-                return get_tile_on_board(board, loc) != EMPTY_TILE
-            end, instances(Direction.T)
-        ),
-    )
+            push!(moves, Move(startloc, loc))
+        end
+    end
+    return moves
 end
 
 function beetlemoves(board, startloc, height)
@@ -452,7 +448,7 @@ end
 end
 
 function get_pinned_pieces(board)
-    # TODO speed: implement
+    # TODO func: implement
     return DefaultDict(false)
 end
 

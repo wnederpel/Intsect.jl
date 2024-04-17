@@ -5,6 +5,7 @@ using StaticArrays
 using EnumX
 using DataStructures
 using Memoize
+using Base.Threads
 
 # structs
 export Board
