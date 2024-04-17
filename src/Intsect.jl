@@ -4,6 +4,7 @@ using Revise
 using StaticArrays
 using EnumX
 using DataStructures
+using Memoize
 
 # structs
 export Board
@@ -33,6 +34,7 @@ export Direction
 # methods
 export example
 export start
+export perft
 export direction_from_string
 export show
 export handle_newgame_command
@@ -73,5 +75,6 @@ include("game.jl")
 include("main.jl")
 include("show_methods.jl")
 include("move_generation.jl")
+include("perft.jl")
 
 end # module Intsect
