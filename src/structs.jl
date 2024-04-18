@@ -22,6 +22,22 @@ function Pass()
     return Pass(INVALID_LOC)
 end
 
+# Look into abstract typing for this, see https://stackoverflow.com/questions/60218078/why-create-an-abstract-super-type-in-julia
+# julia> abstract type AbstractFoo end
+
+# julia> struct Foo1 <: AbstractFoo end
+
+# julia> struct Foo2 <: AbstractFoo end
+
+# julia> foo_op(x::AbstractFoo) = "yay!"
+# foo_op (generic function with 1 method)
+
+# julia> foo_op(Foo1())
+# "yay!"
+
+# julia> foo_op(Foo2())
+# "yay!"
+
 """
 Contains all information of the current board state
 
@@ -45,7 +61,7 @@ The 36 array is zero indexed, so again use get_loc / set_loc.
 """
 # TODO speed: maybe the locs can be UInt8's too, although julia indexing works with integers
 # TODO speed: custom types can be used for tiles for clarity and maybe speed? at least avoids type instability
-# TODO speed: the history field does not need to be updated during move simluation, only when an actual game move is made, the long list probably makes it slow
+# TODO speed: Only keep 1 instance of board, and update it in place, this will avoid a lot of allocations
 mutable struct Board
     # TODO speed: Think about making 2 seperate structs, the tiles & tile_locs vectors struct can be static 
     # TODO speed: Make these MVectors
@@ -60,7 +76,6 @@ mutable struct Board
     turn::Int
     gameover::Bool
     victor::Int
-    # TODO speed: this adds a lot of allocations for something that is not necessary for simulated moves
     history::Stack{Tuple{Union{Move,Placement,Climb,Pass},String}}
     underworld::DefaultDict{Int,Stack{UInt8}}
 end

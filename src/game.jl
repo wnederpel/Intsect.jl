@@ -228,7 +228,7 @@ function action_from_move_string(board, move_string)
     return action
 end
 
-function move_string_from_action(board, action::Move)
+function move_string_from_action(board, action::Union{Move,Climb})
     moving_tile = get_tile_on_board(board, action.moving_loc)
     move_string = get_tile_name(moving_tile)
 
@@ -240,10 +240,6 @@ function move_string_from_action(board, action::Placement)
     move_string = get_tile_name(action.tile)
     move_string *= move_string_goal(board, action.goal_loc)
     return move_string
-end
-
-function move_string_from_action(board, action::Climb)
-    error("move string from climb not implemented yet")
 end
 
 function move_string_from_action(board, action::Pass)
@@ -310,30 +306,35 @@ function allneighs(loc)
     )
 end
 
-function do_action(board, pass::Pass, simulated::Bool=true)
-    post_action_update(board, pass, simulated)
+function do_action(board, pass::Pass)
+    post_action_update(board, pass)
 end
 
-function do_action(board, placement::Placement, simulated::Bool=true)
+function do_action(board, placement::Placement)
     set_tile_on_board(board, placement.goal_loc, placement.tile)
+    @assert get_loc(board, placement.tile) == NOT_PLACED
     set_loc(board, placement.tile, placement.goal_loc)
     if get_tile_bug(placement.tile) == Integer(Bug.QUEEN)
         board.queen_placed[board.current_color + 1] = true
     end
 
-    post_action_update(board, placement, simulated)
+    post_action_update(board, placement)
 end
 
-function do_action(board, move::Move, simulated::Bool=true)
+function do_action(board, move::Move)
     moving_tile = get_tile_on_board(board, move.moving_loc)
+    if moving_tile == EMPTY_TILE
+        show(board)
+        error("no tile to move at loc $(move.moving_loc)")
+    end
     set_tile_on_board(board, move.goal_loc, moving_tile)
     set_tile_on_board(board, move.moving_loc, EMPTY_TILE)
     set_loc(board, moving_tile, move.goal_loc)
 
-    post_action_update(board, move, simulated)
+    post_action_update(board, move)
 end
 
-function do_action(board, climb::Climb, simulated::Bool=true)
+function do_action(board, climb::Climb)
     burrowed_tile = get_tile_on_board(board, climb.goal_loc)
     moving_tile = get_tile_on_board(board, climb.moving_loc)
 
@@ -353,7 +354,7 @@ function do_action(board, climb::Climb, simulated::Bool=true)
         set_tile_on_board(board, climb.moving_loc, EMPTY_TILE)
     end
 
-    post_action_update(board, climb, simulated)
+    post_action_update(board, climb)
 end
 
 function undo(board)
@@ -366,11 +367,47 @@ end
 
 function undo_action(board, action::Placement)
     set_tile_on_board(board, action.goal_loc, EMPTY_TILE)
+    @assert get_loc(board, action.tile) == action.goal_loc
     set_loc(board, action.tile, NOT_PLACED)
     if get_tile_bug(action.tile) == Integer(Bug.QUEEN)
-        board.queen_placed[board.current_color + 1] = false
+        board.queen_placed[board.current_color == WHITE ? (BLACK + 1) : (WHITE + 1)] = false
     end
 
+    inverse_post_action_update(board)
+end
+
+function undo_action(board, action::Move)
+    moving_tile = get_tile_on_board(board, action.goal_loc)
+    set_tile_on_board(board, action.goal_loc, EMPTY_TILE)
+    set_tile_on_board(board, action.moving_loc, moving_tile)
+    set_loc(board, moving_tile, action.moving_loc)
+
+    inverse_post_action_update(board)
+end
+
+function undo_action(board, climb::Climb)
+    burrowed_tile = get_tile_on_board(board, climb.moving_loc)
+    moving_tile = get_tile_on_board(board, climb.goal_loc)
+
+    set_tile_on_board(board, climb.moving_loc, moving_tile)
+    set_loc(board, moving_tile, climb.moving_loc)
+
+    if burrowed_tile != EMPTY_TILE
+        # put the burrowed tile in the underworld
+        push!(board.underworld[get_loc(board, burrowed_tile)], burrowed_tile)
+    end
+    if get_tile_height(moving_tile) > 1
+        # Release the tile below moving_tile from the underworld
+        released_tile = pop!(board.underworld[climb.goal_loc])
+        set_tile_on_board(board, climb.goal_loc, released_tile)
+        set_loc(board, released_tile, climb.goal_loc)
+    else
+        set_tile_on_board(board, climb.goal_loc, EMPTY_TILE)
+    end
+    inverse_post_action_update(board)
+end
+
+function undo_action(board, pass::Pass)
     inverse_post_action_update(board)
 end
 
@@ -403,9 +440,9 @@ function inverse_post_action_pillbug_update(board)
     end
 end
 
-function post_action_update(board, action::Union{Pass,Placement,Move,Climb}, simulated::Bool)
+function post_action_update(board, action::Union{Pass,Placement,Move,Climb})
     post_action_pillbug_update(board, action)
-    post_action_general_update(board, action, simulated)
+    post_action_general_update(board, action)
 end
 
 function post_action_pillbug_update(board, move)
@@ -418,10 +455,8 @@ function post_action_pillbug_update(board, move)
     end
 end
 
-function post_action_general_update(board, action, simulated)
-    if !simulated
-        push!(board.history, (action, move_string_from_action(board, action)))
-    end
+function post_action_general_update(board, action)
+    push!(board.history, (action, move_string_from_action(board, action)))
     check_gameover(board)
     if !board.gameover
         board.ply += 1

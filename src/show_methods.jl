@@ -6,9 +6,9 @@ function get_tile_name_padded(tile, show_locs)
     name = get_tile_name(tile)
 
     if length(name) == 2
-        name = " " * name
+        name = name * " "
     end
-    return name
+    return "\e[1m" * name * "\e[0m"
 end
 
 function get_tile_name(tile)
@@ -50,8 +50,8 @@ function Base.show(board::Board, show_locs::Bool=false)
             index = (row - 1) * ROW_SIZE + col
             tile = board.tiles[index]
             name = get_tile_name_padded(tile, show_locs)
-            if show_locs
-                if name == " ⬡ "
+            if name == " ⬡ "
+                if show_locs
                     name = string(index - 1)
                     if length(name) == 1
                         name = " " * name
@@ -60,6 +60,7 @@ function Base.show(board::Board, show_locs::Bool=false)
                         name *= " "
                     end
                 end
+                name = "\e[2m" * name * "\e[0m"
             end
             print("" * name * " ")
         end

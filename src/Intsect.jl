@@ -44,6 +44,7 @@ export get_tile_info
 export get_tile_name
 export get_tile_height
 export get_tile_color
+export get_pinned_tiles
 export allneighs
 export apply_direction
 export action_from_move_string
@@ -67,6 +68,7 @@ export set_loc
 export get_loc
 export move_string_from_action
 export gamestring
+export undo
 
 # Files
 include("enums.jl")

@@ -22,8 +22,8 @@ function validactions_general(board::Board)
     # Once all bugs of type are placed no more placements should be generated for that bug
 
     # TODO speed: ispinned does not need to be recomputed after every move
-    # when an elbow is filled, or when a piece is simply pinnned, the dict only changes locally.
-    ispinned = get_pinned_pieces(board)
+    # when an elbow is filled, or when a tile is simply pinnned, the dict only changes locally.
+    ispinned = get_pinned_tiles(board)
 
     my_placement_locs = generate_placement_locs(board, board.current_color)
 
@@ -32,6 +32,7 @@ function validactions_general(board::Board)
         return valid_moves
     end
 
+    # TODO speed: Check if this is necessary
     # This might be a bit slow, because of allocations, but a copy is slower, normal vec or sized vec is also slower
     placements_genereated = MVector{8,Bool}(false, false, false, false, false, false, false, false)
 
@@ -51,23 +52,25 @@ function validactions_general(board::Board)
                         valid_moves = [valid_moves; generate_placements(my_placement_locs, tile)]
                         placements_genereated[bug + 1] = true
                     end
-                elseif board.queen_placed[board.current_color + 1] &&
+                elseif (
+                    !ispinned[loc] &&
+                    board.queen_placed[board.current_color + 1] &&
                     loc != board.moved_by_pillbug_loc
+                )
+
                     # Generate moves for placed tiles
                     tile = get_tile_on_board(board, loc)
-                    if !ispinned[tile]
-                        bug = get_tile_bug(tile)
-                        valid_moves = [
-                            valid_moves
-                            bugmoves(board, loc, bug, get_tile_height(tile), ispinned)
-                        ]
-                    end
+                    bug = get_tile_bug(tile)
+                    valid_moves = [
+                        valid_moves
+                        bugmoves(board, loc, bug, get_tile_height(tile), ispinned)
+                    ]
                 end
             end
         end
     end
     if isempty(valid_moves)
-        return [valid moves; Pass()]
+        return [valid_moves; Pass()]
     end
     return valid_moves
 end
@@ -198,7 +201,7 @@ function pillbugmoves(board, startloc, ispinned)
     normal_moves = moves_to_depth(board, startloc, maxdepth)
     # Ladybug also has special moves
     # For all surrounding tiles, if they are not pinned, and did not just move,
-    # and can slide on the pillbug, and the piece is not stacked
+    # and can slide on the pillbug, and the tile is not stacked
     # they can be slid on top of the pillbug, and then slid off
     neighlocs = allneighs(startloc)
     height = get_tile_height(get_tile_on_board(board, startloc))
@@ -355,7 +358,7 @@ end
 function antmoves(board, startloc)
     tmp_tile = get_tile_on_board(board, startloc)
     set_tile_on_board(board, startloc, EMPTY_TILE)
-    # Temporarily remove the piece to find where it can move to
+    # Temporarily remove the tile to find where it can move to
     discovered_dict = DefaultDict(false)
     stack = Stack{Int}()
 
@@ -447,11 +450,6 @@ end
     )
 end
 
-function get_pinned_pieces(board)
-    # TODO func: implement
-    return DefaultDict(false)
-end
-
 function generate_placements(placement_locs, tile)
     return map(loc -> Placement(loc, tile), collect(placement_locs))
 end
@@ -477,4 +475,87 @@ function generate_placement_locs(board, color)
         end
     end
     return locs
+end
+
+"""
+For enforcing the one hive rule. Alogirthm is as follows:
+articulation point = cut vertex = tile cannot be moved
+
+GetArticulationPoints(i, d)
+    # i = node, d = depth
+    # initialize with some i and d = 0
+
+    visited[i] := true
+    depth[i] := d
+    low[i] := d
+    childCount := 0
+    isArticulation := false
+
+    for each ni in adj[i] do
+        if not visited[ni] then
+            parent[ni] := i
+            GetArticulationPoints(ni, d + 1)
+            childCount := childCount + 1
+            if low[ni] ≥ depth[i] then
+                isArticulation := true
+            low[i] := Min (low[i], low[ni])
+        else if ni ≠ parent[i] then
+            low[i] := Min (low[i], depth[ni])
+    if (parent[i] ≠ null and isArticulation) or (parent[i] = null and childCount > 1) then
+        Output i as articulation point
+"""
+function get_pinned_tiles(board)
+    pinned_tiles = DefaultDict(false)
+    visited_dict = DefaultDict(false)
+    depth_dict = Dict()
+    low_dict = Dict()
+    parent_dict = DefaultDict(INVALID_LOC)
+    for loc in board.tile_locs
+        if loc != INVALID_LOC && loc != NOT_PLACED
+            get_pinned_tiles!(
+                board, pinned_tiles, visited_dict, depth_dict, low_dict, parent_dict, loc, 0
+            )
+            return pinned_tiles
+        end
+    end
+end
+
+function get_pinned_tiles!(
+    board, pinned_tiles_dict, visited_dict, depth_dict, low_dict, parent_dict, loc, depth
+)
+    visited_dict[loc] = true
+    depth_dict[loc] = depth
+    low_dict[loc] = depth
+    child_count = 0
+    is_articulation = false
+
+    for nloc in allneighs(loc)
+        if get_tile_on_board(board, nloc) == EMPTY_TILE
+            continue
+        end
+        if !visited_dict[nloc]
+            parent_dict[nloc] = loc
+            get_pinned_tiles!(
+                board,
+                pinned_tiles_dict,
+                visited_dict,
+                depth_dict,
+                low_dict,
+                parent_dict,
+                nloc,
+                depth + 1,
+            )
+            child_count += 1
+            if low_dict[nloc] >= depth_dict[loc]
+                is_articulation = true
+            end
+            low_dict[loc] = min(low_dict[loc], low_dict[nloc])
+        elseif nloc != parent_dict[loc]
+            low_dict[loc] = min(low_dict[loc], depth_dict[nloc])
+        end
+    end
+    if (parent_dict[loc] != INVALID_LOC && is_articulation) ||
+        (parent_dict[loc] == INVALID_LOC && child_count > 1)
+        pinned_tiles_dict[loc] = true
+    end
 end

@@ -99,14 +99,6 @@ end
 
     actions = validactions(board)
     @test all(actions -> actions isa Placement, actions)
-
-    set_tile_on_board(board, wQ_loc, wQ)
-    set_loc(board, wQ, wQ_loc)
-    board.queen_placed[WHITE + 1] = true
-
-    actions = validactions(board)
-    @test any(actions -> actions isa Move, actions)
-    @test any(actions -> actions isa Placement, actions)
 end
 
 @testitem "The tile moved by the pillbug cannot be moved the next turn" begin

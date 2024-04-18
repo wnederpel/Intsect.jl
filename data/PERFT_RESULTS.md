@@ -38,7 +38,7 @@ time per node = 1.2541246390569994e-5
 memory per node = 4589 bytes
 gc time  = 0.1207167
 
-## Make parallel, but also add history back into the struct, this seems to add a lot of allocations
+### Make parallel, but also add history back into the struct, this seems to add a lot of allocations
 
 Perft(0) = 1
 KN/S = 156.25
@@ -70,6 +70,115 @@ memory per node = 13099 bytes
 gc time  = 0.0%
 total time = 0.6210779 seconds
 
+### Remove history from the struct, and go to perft 5, although it is not correct, lot of gc time
+
+Perft(0) = 1
+KN/S = 0.01
+memory per node = 812048 bytes
+gc time  = 0.0%
+total time = 0.0806565 seconds
+
+Perft(1) = 7
+KN/S = 0.0
+memory per node = 30556509 bytes
+gc time  = 2.35%
+total time = 1.5599508 seconds
+
+Perft(2) = 294
+KN/S = 234.6
+memory per node = 4428 bytes
+gc time  = 0.0%
+total time = 0.0012532 seconds
+
+Perft(3) = 6678
+KN/S = 71.32
+memory per node = 5496 bytes
+gc time  = 0.0%
+total time = 0.0936284 seconds
+
+Perft(4) = 151686
+KN/S = 404.79
+memory per node = 4603 bytes
+gc time  = 2.64%
+total time = 0.3747254 seconds
+
+Perft(5) = 5541678
+KN/S = 259.67
+memory per node = 4503 bytes
+gc time  = 364.88%
+total time = 21.3408372 seconds
+
+### Implemented pinned tile algorithm
+
+Perft(0) = 1
+KN/S = 147.06
+memory per node = 3360 bytes
+gc time  = 0.0%
+total time = 6.8e-6 seconds
+
+Perft(1) = 7
+KN/S = 11.84
+memory per node = 5872 bytes
+gc time  = 0.0%
+total time = 0.0005912 seconds
+
+Perft(2) = 294
+KN/S = 237.81
+memory per node = 4428 bytes
+gc time  = 0.0%
+total time = 0.0012363 seconds
+
+Perft(3) = 6678
+KN/S = 469.19
+memory per node = 4677 bytes
+gc time  = 0.0%
+total time = 0.014233 seconds
+
+Perft(4) = 151686
+KN/S = 504.39
+memory per node = 4695 bytes
+gc time  = 0.0%
+total time = 0.3007334 seconds
+
+Perft(5) = 5487312
+KN/S = 290.58
+memory per node = 4558 bytes
+gc time  = 753.14%
+total time = 18.8842918 seconds
+
+still counting too many moves at perft(5)
+
+## Better allocation management, much faster, but perft 5 not working
+
+Perft(1)         = 7
+KN/S             = 574.0
+memory per node  = 1952 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(2)         = 294
+KN/S             = 6323.0
+memory per node  = 185 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(3)         = 6.678
+KN/S             = 1456.0
+memory per node  = 438 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(4)         = 151.686
+KN/S             = 2032.0
+memory per node  = 457 bytes
+gc time          = 1.0%
+total time       = 0.1 seconds
+
+Perft(5)         = 5.420.628
+KN/S             = 2973.0
+memory per node  = 320 bytes
+gc time          = 12.0%
+total time       = 1.8 seconds
 
 
 https://github.com/jonthysell/Mzinga/wiki/Perft
