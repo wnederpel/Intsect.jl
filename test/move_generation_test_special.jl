@@ -5,6 +5,9 @@
     # Add one height to the beetles
     wB1 = get_tile_from_string("wB1") + 0b00000001
     bB1 = get_tile_from_string("bB1") + 0b00000001
+    # Pieces for underneath the beetles
+    wS1 = get_tile_from_string("wS1")
+    bS1 = get_tile_from_string("bS1")
 
     # Define their locs
     bQ_loc = MID - 1
@@ -19,6 +22,8 @@
     set_tile_on_board(board, wQ_loc, wQ)
     set_tile_on_board(board, wB1_loc, wB1)
     set_tile_on_board(board, bB1_loc, bB1)
+    push!(board.underworld[wB1_loc], wS1)
+    push!(board.underworld[bB1_loc], bS1)
 
     # Generate the moves
     moves = beetlemoves(board, bB1_loc, get_tile_height(bB1))
@@ -26,10 +31,10 @@
     # Check the moves
     @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.NE)) in moves
     @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.NW)) in moves
-    @test Move(bB1_loc, apply_direction(bB1_loc, Direction.E)) in moves
-    @test Move(bB1_loc, apply_direction(bB1_loc, Direction.SE)) in moves
-    @test Move(bB1_loc, apply_direction(bB1_loc, Direction.W)) in moves
-    @test Move(bB1_loc, apply_direction(bB1_loc, Direction.SW)) in moves
+    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.E)) in moves
+    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.SE)) in moves
+    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.W)) in moves
+    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.SW)) in moves
     @test length(moves) == 6
 end
 

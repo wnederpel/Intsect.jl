@@ -72,8 +72,8 @@ function Base.show(board::Board, show_locs::Bool=false)
     for nummed_bug in NUMMED_BUG_NAMES
         wpiece = "w" * nummed_bug
         bpiece = "b" * nummed_bug
-        wloc = get_loc(board, get_tile_from_string(wpiece))
-        bloc = get_loc(board, get_tile_from_string(bpiece))
+        wloc = get_loc(board, get_tile_from_string(board, wpiece))
+        bloc = get_loc(board, get_tile_from_string(board, bpiece))
         if wloc >= 0 && bloc >= 0
             println("$wpiece : $wloc \t $bpiece : $bloc")
         elseif wloc >= 0
@@ -87,12 +87,29 @@ function Base.show(board::Board, show_locs::Bool=false)
     return nothing
 end
 
+function Base.show(validmoves::SizedVector{VALID_BUFFER_SIZE,Action}, board)
+    for (i, action) in enumerate(validmoves)
+        if i == board.action_index
+            break
+        end
+        show(action, board)
+    end
+end
+
 function Base.show(move::Move, board::Board)
     println("Move: " * move_string_from_action(board, move))
 end
 
 function Base.show(placement::Placement, board::Board)
     println("Placement: " * move_string_from_action(board, placement))
+end
+
+function Base.show(climb::Climb, board::Board)
+    println("Climb: " * move_string_from_action(board, climb))
+end
+
+function Base.show(pass::Pass, board::Board)
+    println("Pass")
 end
 
 function Base.show(tile::UInt8)

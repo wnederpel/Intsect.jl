@@ -1,15 +1,16 @@
 function perft()
     # https://github.com/jonthysell/Mzinga/wiki/Perft
     # TODO perft: fix perft 5. Missing ~7.000 nodes
-    empty!(memoize_cache(perft))
-    for depth in 1:5
+    for depth in 2:5
         nodes, time_taken, memory_allocated, gc_time, _ = @timed perft(
             depth, handle_newgame_command(Gametype.MLP)
         )
         println("Perft($depth) \t = $(format_with_dots(nodes))")
         kilo_nodes = nodes / 1000
-        println("KN/S \t\t = $(round(kilo_nodes / time_taken))")
-        println("memory per node  = $(Int(round(memory_allocated / nodes))) bytes")
+        println("KN/S \t\t = $(format_with_dots(Int.(round(kilo_nodes / time_taken))))")
+        println(
+            "memory per node  = $(format_with_dots(Int(round(memory_allocated / nodes)))) bytes"
+        )
         println("gc time \t = $(round(gc_time*100))%")
         println("total time \t = $(round(time_taken, digits=1)) seconds")
         println()

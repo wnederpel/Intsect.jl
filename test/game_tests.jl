@@ -299,8 +299,6 @@ end
     action9 = Placement(wS2_loc, wS2)
     do_action(board, action9)
 
-    show(board)
-
     # Test pinned tiles
     is_pinned = get_pinned_tiles(board)
     @test is_pinned[wS1_loc] == true
@@ -317,8 +315,6 @@ end
     action11 = Move(wS2_loc, apply_direction(wA1_loc, Direction.NE))
     wS2_loc = apply_direction(wA1_loc, Direction.NE)
     do_action(board, action11)
-
-    show(board)
 
     is_pinned = get_pinned_tiles(board)
     @test is_pinned[wS1_loc] == false
@@ -338,8 +334,6 @@ end
     action12 = Placement(wA2_loc, wA2)
     do_action(board, action12)
 
-    show(board)
-
     is_pinned = get_pinned_tiles(board)
     @test is_pinned[wS1_loc] == false
     @test is_pinned[bS1_loc] == false
@@ -354,4 +348,36 @@ end
 end
 
 # TODO test:
-@testitem "Test climb moves and underworld" begin end
+@testitem "Test climb moves and underworld" begin
+    bQ = get_tile_from_string("bQ")
+    wQ = get_tile_from_string("wQ")
+    wB1 = get_tile_from_string("wB1")
+    bG1 = get_tile_from_string("bG1")
+    wA1 = get_tile_from_string("wA1")
+    wS1 = get_tile_from_string("wS1")
+    bG2 = get_tile_from_string("bG2")
+    bG3 = get_tile_from_string("bG3")
+    bS1 = get_tile_from_string("bS1")
+
+    board = handle_newgame_command(Gametype.MLP)
+
+    do_action(board, action_from_move_string(board, "wA1"))
+    do_action(board, action_from_move_string(board, "bG1 wA1\\"))
+
+    do_action(board, action_from_move_string(board, "wQ -wA1"))
+    do_action(board, action_from_move_string(board, "bQ bG1-"))
+
+    do_action(board, action_from_move_string(board, "wS1 \\wA1"))
+    do_action(board, action_from_move_string(board, "bG2 bQ-"))
+
+    do_action(board, action_from_move_string(board, "wB1 wS1-"))
+    do_action(board, action_from_move_string(board, "bG3 bG2-"))
+
+    do_action(board, action_from_move_string(board, "wB1 \\wA1"))
+    @test first(board.underworld[get_loc(board, wB1)]) == wS1
+    @test isempty(board.underworld[get_loc(board, bS1)])
+    do_action(board, action_from_move_string(board, "bS1 bG3-"))
+
+    do_action(board, action_from_move_string(board, "wB1 \\wQ"))
+    @test isempty(board.underworld[get_loc(board, wB1)])
+end

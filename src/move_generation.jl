@@ -1,16 +1,26 @@
+function add_action(board::Board, action::Action)
+    board.validactions[board.action_index] = action
+    board.action_index += 1
+end
+
 function validactions(board::Board)
+    board.action_index = 1
+
     need_to_place_queen = !board.queen_placed[board.current_color + 1] && board.turn == 4
     first_placement = board.ply == 1
     second_placement = board.ply == 2
+
     if need_to_place_queen
-        return queenplacements(board)
+        queenplacements(board)
     elseif first_placement
-        return firstplacements(board)
+        firstplacements(board)
     elseif second_placement
-        return secondplacements(board)
+        secondplacements(board)
     else
-        return validactions_general(board)
+        validactions_general(board)
     end
+
+    return nothing
 end
 
 """
@@ -27,9 +37,8 @@ function validactions_general(board::Board)
 
     my_placement_locs = generate_placement_locs(board, board.current_color)
 
-    valid_moves = Vector{Union{Move,Placement,Pass,Climb}}()
     if board.gameover
-        return valid_moves
+        return nothing
     end
 
     # TODO speed: Check if this is necessary
@@ -38,18 +47,23 @@ function validactions_general(board::Board)
 
     # TODO speed: investigate custom interator that only interates over the right color (and perhaps more)
     # This loop pattern is repeated in the other validactions functions
+
+    # TODO speed: use a preallocated buffer (check https://docs.juliahub.com/General/Bumper/stable/)
+
+    # TODO func: looks like im missing placements..
+    # Actually I am missing queen moves
     for (semi_tile, loc) in enumerate(board.tile_locs)
         # only generate moves for tiles of the current color 
         # != because the index is 1-based, tiles are 0-based
         if semi_tile % 2 != board.current_color
             # only generate moves for tiles that are placed
-            if loc != INVALID_LOC
+            if loc != INVALID_LOC && loc != UNDERGROUND
                 if !all(placements_genereated) && loc == NOT_PLACED
                     # Generate placements for unplaced tiles that are the first of their kind
                     tile = get_tile_unplaced(semi_tile)
                     bug = get_tile_bug(tile)
                     if !placements_genereated[bug + 1]
-                        valid_moves = [valid_moves; generate_placements(my_placement_locs, tile)]
+                        generate_placements(board, my_placement_locs, tile)
                         placements_genereated[bug + 1] = true
                     end
                 elseif (
@@ -61,18 +75,15 @@ function validactions_general(board::Board)
                     # Generate moves for placed tiles
                     tile = get_tile_on_board(board, loc)
                     bug = get_tile_bug(tile)
-                    valid_moves = [
-                        valid_moves
-                        bugmoves(board, loc, bug, get_tile_height(tile), ispinned)
-                    ]
+                    bugmoves(board, loc, bug, get_tile_height(tile), ispinned)
                 end
             end
         end
     end
-    if isempty(valid_moves)
-        return [valid_moves; Pass()]
+    if board.action_index == 1
+        add_action(board, Pass())
     end
-    return valid_moves
+    return nothing
 end
 
 """
@@ -81,10 +92,14 @@ valid actions for when the queen must be placed
 function queenplacements(board)
     my_placement_locs = generate_placement_locs(board, board.current_color)
 
-    return generate_placements(
+    generate_placements(
+        board,
         my_placement_locs,
-        board.current_color == WHITE ? get_tile_from_string("wQ") : get_tile_from_string("bQ"),
+        board.current_color == WHITE ? get_tile_from_string(board, "wQ") :
+        get_tile_from_string(board, "bQ"),
     )
+
+    return nothing
 end
 
 """
@@ -93,8 +108,6 @@ valid actions for when the first move is made
 function firstplacements(board)
     my_placement_locs = [MID]
 
-    valid_moves = []
-
     # This might be a bit slow, because of allocations, but a copy is slower, normal vec or sized vec is also slower
     placements_genereated = MVector{8,Bool}(false, false, false, false, false, false, false, false)
 
@@ -110,14 +123,14 @@ function firstplacements(board)
                     tile = get_tile_unplaced(semi_tile)
                     bug = get_tile_bug(tile)
                     if !placements_genereated[bug + 1] && bug != Integer(Bug.QUEEN)
-                        valid_moves = [valid_moves; generate_placements(my_placement_locs, tile)]
+                        generate_placements(board, my_placement_locs, tile)
                         placements_genereated[bug + 1] = true
                     end
                 end
             end
         end
     end
-    return valid_moves
+    return nothing
 end
 
 """
@@ -126,8 +139,6 @@ valid actions for second placement (first placement by black)
 function secondplacements(board)
     my_placement_locs = generate_placement_locs(board, 1)
 
-    valid_moves = []
-
     # This might be a bit slow, because of allocations, but a copy is slower, normal vec or sized vec is also slower
     placements_genereated = MVector{8,Bool}(false, false, false, false, false, false, false, false)
 
@@ -143,41 +154,42 @@ function secondplacements(board)
                     tile = get_tile_unplaced(semi_tile)
                     bug = get_tile_bug(tile)
                     if !placements_genereated[bug + 1] && bug != Integer(Bug.QUEEN)
-                        valid_moves = [valid_moves; generate_placements(my_placement_locs, tile)]
+                        generate_placements(board, my_placement_locs, tile)
                         placements_genereated[bug + 1] = true
                     end
                 end
             end
         end
     end
-    return valid_moves
+    return nothing
 end
 
 function bugmoves(board, loc, bug, height, ispinned)
     if bug == Integer(Bug.ANT)
-        return antmoves(board, loc)
+        antmoves(board, loc)
     elseif bug == Integer(Bug.SPIDER)
-        return spidermoves(board, loc)
+        spidermoves(board, loc)
     elseif bug == Integer(Bug.QUEEN)
-        return queenmoves(board, loc)
+        queenmoves(board, loc)
     elseif bug == Integer(Bug.BEETLE)
-        return beetlemoves(board, loc, height)
+        beetlemoves(board, loc, height)
     elseif bug == Integer(Bug.GRASSHOPPER)
-        return grasshoppermoves(board, loc)
+        grasshoppermoves(board, loc)
     elseif bug == Integer(Bug.LADYBUG)
-        return ladybugmoves(board, loc)
+        ladybugmoves(board, loc)
     elseif bug == Integer(Bug.MOSQUITO)
-        return mosquitomoves(board, loc, height, ispinned)
+        mosquitomoves(board, loc, height, ispinned)
     elseif bug == Integer(Bug.PILLBUG)
-        return pillbugmoves(board, loc, ispinned)
+        pillbugmoves(board, loc, ispinned)
     else
         error("Movement not implemented for bug $bug")
     end
+    return nothing
 end
 
 function mosquitomoves(board, loc, height, ispinned)
     if height != 1
-        return bugmoves(board, loc, Integer(Bug.BEETLE), height, ispinned)
+        beetlemoves(board, loc, height)
     end
     neighlocs = allneighs(loc)
     neighbugs = []
@@ -189,16 +201,15 @@ function mosquitomoves(board, loc, height, ispinned)
             push!(neighbugs, bug)
         end
     end, 1:6)
-    moves = []
     for bug in neighbugs
-        moves = [moves; bugmoves(board, loc, bug, height, ispinned)]
+        bugmoves(board, loc, bug, height, ispinned)
     end
-    return moves
+    return nothing
 end
 
 function pillbugmoves(board, startloc, ispinned)
     maxdepth = 1
-    normal_moves = moves_to_depth(board, startloc, maxdepth)
+    moves_to_depth(board, startloc, maxdepth)
     # Ladybug also has special moves
     # For all surrounding tiles, if they are not pinned, and did not just move,
     # and can slide on the pillbug, and the tile is not stacked
@@ -208,13 +219,12 @@ function pillbugmoves(board, startloc, ispinned)
     # For each neigh, see if it can slide high
     canslide = map(i -> canslidehigh(i, board, neighlocs, height), 1:6)
     slidelocs = map(i -> neighlocs[i], filter(i -> canslide[i], 1:6))
-    specialmoves = []
     foreach(
         i -> begin
             loc = neighlocs[i]
             for slideloc in slidelocs
                 if get_tile_on_board(board, slideloc) == EMPTY_TILE
-                    push!(specialmoves, Move(loc, slideloc))
+                    add_action(board, Move(loc, slideloc))
                 end
             end
         end,
@@ -231,7 +241,7 @@ function pillbugmoves(board, startloc, ispinned)
             1:6,
         ),
     )
-    return [normal_moves; specialmoves]
+    return nothing
 end
 
 function ladybugmoves(board, startloc)
@@ -241,10 +251,13 @@ function ladybugmoves(board, startloc)
 
     moves = Set()
     moves_to_depth_ladybug!(board, startloc, maxdepth, moves)
+    for move in moves
+        add_action(board, move)
+    end
 
     set_tile_on_board(board, startloc, tmp_tile)
 
-    return collect(moves)
+    return nothing
 end
 
 function moves_to_depth_ladybug!(board, startloc, depth, moves, cur_loc=startloc)
@@ -279,7 +292,6 @@ function moves_to_depth_ladybug!(board, startloc, depth, moves, cur_loc=startloc
 end
 
 function grasshoppermoves(board, startloc)
-    moves = []
     for dir in instances(Direction.T)
         if get_tile_on_board(board, apply_direction(startloc, dir)) != EMPTY_TILE
             loc = startloc
@@ -290,36 +302,33 @@ function grasshoppermoves(board, startloc)
                     break
                 end
             end
-            push!(moves, Move(startloc, loc))
+            add_action(board, Move(startloc, loc))
         end
     end
-    return moves
+    return nothing
 end
 
 function beetlemoves(board, startloc, height)
     neighlocs = allneighs(startloc)
     if height != 1
         # Can go anywhere, so long as it can slide with height
-        return map(
+        map(
             neigh -> begin
-                if get_tile_on_board(board, neighlocs[neigh]) != EMPTY_TILE
-                    return Climb(startloc, neighlocs[neigh])
-                else
-                    return Move(startloc, neighlocs[neigh])
-                end
+                add_action(board, Climb(startloc, neighlocs[neigh]))
             end,
             filter(i -> canslidehigh(i, board, neighlocs, height), 1:6),
         )
+        return nothing
     else
         # can go anywhere on top, or where it can slide
         tmp_tile = get_tile_on_board(board, startloc)
         set_tile_on_board(board, startloc, EMPTY_TILE)
-        moves = map(
+        map(
             neigh -> begin
                 if get_tile_on_board(board, neighlocs[neigh]) != EMPTY_TILE
-                    return Climb(startloc, neighlocs[neigh])
+                    add_action(board, Climb(startloc, neighlocs[neigh]))
                 else
-                    return Move(startloc, neighlocs[neigh])
+                    add_action(board, Move(startloc, neighlocs[neigh]))
                 end
             end,
             filter(
@@ -332,7 +341,7 @@ function beetlemoves(board, startloc, height)
             ),
         )
         set_tile_on_board(board, startloc, tmp_tile)
-        return moves
+        return nothing
     end
 end
 
@@ -347,12 +356,14 @@ end
 
 function queenmoves(board, startloc)
     maxdepth = 1
-    return moves_to_depth(board, startloc, maxdepth)
+    moves_to_depth(board, startloc, maxdepth)
+    return nothing
 end
 
 function spidermoves(board, startloc)
     maxdepth = 3
-    return moves_to_depth(board, startloc, maxdepth)
+    moves_to_depth(board, startloc, maxdepth)
+    return nothing
 end
 
 function antmoves(board, startloc)
@@ -370,13 +381,12 @@ function antmoves(board, startloc)
     end
     set_tile_on_board(board, startloc, tmp_tile)
 
-    moves = []
     for (goalloc, discovered) in discovered_dict
         if discovered && goalloc != startloc
-            push!(moves, Move(startloc, goalloc))
+            add_action(board, Move(startloc, goalloc))
         end
     end
-    return moves
+    return nothing
 end
 
 function moves_to_depth(board, startloc, maxdepth)
@@ -385,10 +395,13 @@ function moves_to_depth(board, startloc, maxdepth)
 
     moves = Set()
     moves_to_depth!(board, startloc, maxdepth, moves)
+    for move in moves
+        add_action(board, move)
+    end
 
     set_tile_on_board(board, startloc, tmp_tile)
 
-    return collect(moves)
+    return nothing
 end
 
 function moves_to_depth!(board, startloc, depth, moves, cur_loc=startloc, prev_loc=nothing)
@@ -450,16 +463,15 @@ end
     )
 end
 
-function generate_placements(placement_locs, tile)
-    return map(loc -> Placement(loc, tile), collect(placement_locs))
+function generate_placements(board, placement_locs, tile)
+    foreach(loc -> add_action(board, Placement(loc, tile)), collect(placement_locs))
 end
 
 function generate_placement_locs(board, color)
     locs = Set{Int}()
     for loc in board.tile_locs
         if loc >= 0
-            neigh_locs = allneighs(loc)
-            empty_neighs = filter(n -> get_tile_on_board(board, n) == EMPTY_TILE, neigh_locs)
+            empty_neighs = filter(n -> get_tile_on_board(board, n) == EMPTY_TILE, allneighs(loc))
 
             for empty_neigh in empty_neighs
                 neigh_locs2 = allneighs(empty_neigh)

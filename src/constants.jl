@@ -36,6 +36,9 @@ const INDEX_SHIFT::UInt8 = 2
 const EMPTY_TILE::UInt8 = 0b11111111
 const NOT_PLACED::Int = -1
 const INVALID_LOC::Int = -2
+const UNDERGROUND::Int = -3
+
+const VALID_BUFFER_SIZE::Int = 100
 
 const WHITE::Int = 1
 const BLACK::Int = 0

@@ -180,5 +180,9 @@ memory per node  = 320 bytes
 gc time          = 12.0%
 total time       = 1.8 seconds
 
+5.420.628 vs 5,427,108
+6.480 te weinig
+ongeveer 0.11%
+
 
 https://github.com/jonthysell/Mzinga/wiki/Perft

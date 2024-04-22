@@ -228,6 +228,18 @@ end
     @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.W)) in moves
     @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.SW)) in moves
     @test length(moves) == 4
+
+    do_action(board, Move(wB1_loc, apply_direction(wB1_loc, Direction.NW)))
+    wB1_loc = apply_direction(wB1_loc, Direction.NW)
+
+    moves = beetlemoves(board, wB1_loc, 2)
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.NW)) in moves
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.SE)) in moves
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.W)) in moves
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.E)) in moves
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.SW)) in moves
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.NE)) in moves
+    @test length(moves) == 6
 end
 
 @testitem "Ladybug movement basic" begin

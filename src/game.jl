@@ -20,9 +20,7 @@ function direction_from_string(tile_string::AbstractString)
             return Direction.NE
         end
     end
-    return error(
-        "char $direction_char is not a valid direction indicator, should be one of \\ - /."
-    )
+    return error("char $direction is not a valid direction indicator, should be one of \\ - /.")
 end
 
 function apply_direction(loc::Int, direction)::Int
@@ -144,6 +142,12 @@ end
 """
 Given a tile string such as bB2, wL, return the tile as a UInt8
 """
+function get_tile_from_string(board, tile_string)
+    tile_without_height = get_tile_from_string(tile_string)
+    height = UInt8(length(board.underworld[get_loc(board, tile_without_height)]))
+    return tile_without_height + height
+end
+
 function get_tile_from_string(tile_string)
     white = tile_string[1] == 'w'
     if tile_string[2] == 'A'
@@ -186,6 +190,8 @@ function action_from_move_string(board, move_string)
         return Pass()
     end
     validate_move_string(move_string)
+
+    # TODO func: when moving on top of the hive, only give the tile that you go on top of as second argument
     if ' ' in move_string
         # either a move or a placement
         # parse input to be some actual action that can be executed
@@ -195,8 +201,8 @@ function action_from_move_string(board, move_string)
         direction = direction_from_string(placement)
 
         # Now from the names, construct the tiles UInt8
-        moving_tile = get_tile_from_string(moving_string)
-        other_tile = get_tile_from_string(other_string)
+        moving_tile = get_tile_from_string(board, moving_string)
+        other_tile = get_tile_from_string(board, other_string)
 
         moving_loc = get_loc(board, moving_tile)
         other_loc = get_loc(board, other_tile)
@@ -208,8 +214,11 @@ function action_from_move_string(board, move_string)
         goal_loc = apply_direction(other_loc, direction)
 
         if moving_loc != NOT_PLACED
-            # Move; bug has a INVALID_LOCcation
-            action = Move(goal_loc, moving_loc)
+            if goal_loc != EMPTY_TILE || get_tile_height(moving_tile) > 1
+                action = Climb(moving_loc, goal_loc)
+            else
+                action = Move(moving_loc, goal_loc)
+            end
         else
             # Placement; bug has no location and thus is in hand
             action = Placement(goal_loc, moving_tile)
@@ -217,18 +226,18 @@ function action_from_move_string(board, move_string)
     else
         # First move, place in middle 
         goal_loc = MID
-        moving_tile = get_tile_from_string(move_string)
+        moving_tile = get_tile_from_string(board, move_string)
         action = Placement(goal_loc, moving_tile)
     end
-    if action in validactions(board)
-        return action
-    else
-        error("Invalid action $action")
+    validactions(board)
+    if !(action in board.validactions)
+        error("Invalid action $(show(action,board)): Not present in valid actions")
     end
+    board.action_index = 1
     return action
 end
 
-function move_string_from_action(board, action::Union{Move,Climb})
+function move_string_from_action(board, action::Action)
     moving_tile = get_tile_on_board(board, action.moving_loc)
     move_string = get_tile_name(moving_tile)
 
@@ -253,17 +262,27 @@ function move_string_goal(board, goal_loc)
         loc = apply_direction(goal_loc, dir)
         if get_tile_on_board(board, loc) != EMPTY_TILE
             goal_tile = get_tile_on_board(board, loc)
-            if dir == Direction.NW
+            # note, the dir is the direction from the goal_loc to the occupied neighbor
+            # for the move_string, we want the direction from the occupied neighbor to the goal_loc
+
+            # TODO func: it is also possible that we find the original moving tile here
+            # That should be avoided
+
+            # TODO func: it is also possible that the only the original moving tile is found
+            # Then the move must have been a climb action, and we should use the top tile from the underworld
+
+            # TODO func: when moving on top of the hive, only give the tile that you go on top of as second argument
+            if dir == Direction.SE
                 return move_string * " \\" * get_tile_name(goal_tile)
-            elseif dir == Direction.W
-                return move_string * " -" * get_tile_name(goal_tile)
-            elseif dir == Direction.SW
-                return move_string * " /" * get_tile_name(goal_tile)
-            elseif dir == Direction.SE
-                return move_string * " " * get_tile_name(goal_tile) * "\\"
             elseif dir == Direction.E
-                return move_string * " " * get_tile_name(goal_tile) * "-"
+                return move_string * " -" * get_tile_name(goal_tile)
             elseif dir == Direction.NE
+                return move_string * " /" * get_tile_name(goal_tile)
+            elseif dir == Direction.NW
+                return move_string * " " * get_tile_name(goal_tile) * "\\"
+            elseif dir == Direction.W
+                return move_string * " " * get_tile_name(goal_tile) * "-"
+            elseif dir == Direction.SW
                 return move_string * " " * get_tile_name(goal_tile) * "/"
             end
         end
@@ -312,7 +331,6 @@ end
 
 function do_action(board, placement::Placement)
     set_tile_on_board(board, placement.goal_loc, placement.tile)
-    @assert get_loc(board, placement.tile) == NOT_PLACED
     set_loc(board, placement.tile, placement.goal_loc)
     if get_tile_bug(placement.tile) == Integer(Bug.QUEEN)
         board.queen_placed[board.current_color + 1] = true
@@ -338,12 +356,10 @@ function do_action(board, climb::Climb)
     burrowed_tile = get_tile_on_board(board, climb.goal_loc)
     moving_tile = get_tile_on_board(board, climb.moving_loc)
 
-    set_tile_on_board(board, climb.goal_loc, moving_tile)
-    set_loc(board, moving_tile, climb.goal_loc)
-
     if burrowed_tile != EMPTY_TILE
         # put the burrowed tile in the underworld
         push!(board.underworld[get_loc(board, burrowed_tile)], burrowed_tile)
+        set_loc(board, burrowed_tile, UNDERGROUND)
     end
     if get_tile_height(moving_tile) > 1
         # Release the tile below moving_tile from the underworld
@@ -353,6 +369,11 @@ function do_action(board, climb::Climb)
     else
         set_tile_on_board(board, climb.moving_loc, EMPTY_TILE)
     end
+
+    set_tile_on_board(
+        board, climb.goal_loc, moving_tile + UInt8(length(board.underworld[climb.goal_loc]))
+    )
+    set_loc(board, moving_tile, climb.goal_loc)
 
     post_action_update(board, climb)
 end
@@ -395,6 +416,7 @@ function undo_action(board, climb::Climb)
     if burrowed_tile != EMPTY_TILE
         # put the burrowed tile in the underworld
         push!(board.underworld[get_loc(board, burrowed_tile)], burrowed_tile)
+        set_loc(board, burrowed_tile, UNDERGROUND)
     end
     if get_tile_height(moving_tile) > 1
         # Release the tile below moving_tile from the underworld
@@ -440,7 +462,7 @@ function inverse_post_action_pillbug_update(board)
     end
 end
 
-function post_action_update(board, action::Union{Pass,Placement,Move,Climb})
+function post_action_update(board, action::Action)
     post_action_pillbug_update(board, action)
     post_action_general_update(board, action)
 end
@@ -470,8 +492,8 @@ function post_action_general_update(board, action)
 end
 
 function check_gameover(board)
-    wQ = get_tile_from_string("wQ")
-    bQ = get_tile_from_string("bQ")
+    wQ = get_tile_from_string(board, "wQ")
+    bQ = get_tile_from_string(board, "bQ")
     wQ_loc = get_loc(board, wQ)
     bQ_loc = get_loc(board, bQ)
 
@@ -500,7 +522,6 @@ function validate_move_string(move_string)
 
         valid = validate_tile_string(moving_tile_string)
         valid &= validate_tile_string(goal_tile_string)
-        valid &= !isempty(intersect(placement, raw"/\-"))
     else
         # single tile_string place move_string
         valid = validate_tile_string(move_string)
@@ -513,7 +534,7 @@ end
 function validate_tile_string(tile::AbstractString)
     # game type dependant
     if length(tile) >= 1 && tile[1] in "wb"
-        if length(tile) >= 2 && tile[2] in "QMLP"
+        if length(tile) == 2 && tile[2] in "QMLP"
             return true
         elseif tile[2] in "GA"
             return length(tile) == 3 && tile[3] in "123"

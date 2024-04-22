@@ -14,6 +14,8 @@ export Placement
 export Climb
 export Pass
 export GameString
+export Action
+export End
 
 # constants
 export GRID_SIZE
@@ -43,6 +45,7 @@ export get_tile_from_string
 export get_tile_info
 export get_tile_name
 export get_tile_height
+export get_tile_bug
 export get_tile_color
 export get_pinned_tiles
 export allneighs
@@ -69,6 +72,7 @@ export get_loc
 export move_string_from_action
 export gamestring
 export undo
+export get_pinned_tiles
 
 # Files
 include("enums.jl")

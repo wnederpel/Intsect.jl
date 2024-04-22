@@ -1,19 +1,21 @@
-struct Move
+abstract type Action end
+
+struct Move <: Action
     moving_loc::Int
     goal_loc::Int
 end
 
-struct Placement
+struct Placement <: Action
     goal_loc::Int
     tile::UInt8
 end
 
-struct Climb
+struct Climb <: Action
     moving_loc::Int
     goal_loc::Int
 end
 
-struct Pass
+struct Pass <: Action
     # All actions have a goal loc
     goal_loc::Int
 end
@@ -76,8 +78,11 @@ mutable struct Board
     turn::Int
     gameover::Bool
     victor::Int
-    history::Stack{Tuple{Union{Move,Placement,Climb,Pass},String}}
+    # TODO speed: tuple with string not strictly necessary, only practical
+    history::Stack{Tuple{Action,String}}
     underworld::DefaultDict{Int,Stack{UInt8}}
+    validactions::SizedVector{VALID_BUFFER_SIZE,Action}
+    action_index::Int
 end
 
 function Board(tiles, tile_locs)
@@ -92,8 +97,10 @@ function Board(tiles, tile_locs)
         1,
         false,
         NO_COLOR,
-        Stack{Tuple{Union{Move,Placement,Climb,Pass},String}}(),
-        DefaultDict{Int,Stack{UInt8}}(Stack{UInt8}()),
+        Stack{Tuple{Action,String}}(),
+        DefaultDict{Int,Stack{UInt8}}(() -> Stack{UInt8}()),
+        SizedVector{VALID_BUFFER_SIZE,Action}(fill(Pass(), VALID_BUFFER_SIZE)),
+        1,
     )
 end
 
