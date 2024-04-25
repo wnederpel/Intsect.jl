@@ -3,7 +3,12 @@ function add_action(board::Board, action::Action)
     board.action_index += 1
 end
 
-function validactions(board::Board)
+function validactions(board)
+    validactions!(board)
+    return board.validactions[1:(board.action_index - 1)]
+end
+
+function validactions!(board::Board)
     board.action_index = 1
 
     need_to_place_queen = !board.queen_placed[board.current_color + 1] && board.turn == 4
@@ -50,8 +55,6 @@ function validactions_general(board::Board)
 
     # TODO speed: use a preallocated buffer (check https://docs.juliahub.com/General/Bumper/stable/)
 
-    # TODO func: looks like im missing placements..
-    # Actually I am missing queen moves
     for (semi_tile, loc) in enumerate(board.tile_locs)
         # only generate moves for tiles of the current color 
         # != because the index is 1-based, tiles are 0-based
@@ -67,11 +70,8 @@ function validactions_general(board::Board)
                         placements_genereated[bug + 1] = true
                     end
                 elseif (
-                    !ispinned[loc] &&
-                    board.queen_placed[board.current_color + 1] &&
-                    loc != board.moved_by_pillbug_loc
+                    board.queen_placed[board.current_color + 1] && loc != board.moved_by_pillbug_loc
                 )
-
                     # Generate moves for placed tiles
                     tile = get_tile_on_board(board, loc)
                     bug = get_tile_bug(tile)
@@ -165,24 +165,28 @@ function secondplacements(board)
 end
 
 function bugmoves(board, loc, bug, height, ispinned)
-    if bug == Integer(Bug.ANT)
-        antmoves(board, loc)
-    elseif bug == Integer(Bug.SPIDER)
-        spidermoves(board, loc)
-    elseif bug == Integer(Bug.QUEEN)
-        queenmoves(board, loc)
-    elseif bug == Integer(Bug.BEETLE)
-        beetlemoves(board, loc, height)
-    elseif bug == Integer(Bug.GRASSHOPPER)
-        grasshoppermoves(board, loc)
-    elseif bug == Integer(Bug.LADYBUG)
-        ladybugmoves(board, loc)
+    # TODO func: the pillbug can add duplicate moves; this should be avoided
+    # Pill bug can yield special moves, even when pinned
+    # Moquito can yield pill bug moves, even when pinned
+    if bug == Integer(Bug.PILLBUG)
+        pillbugmoves(board, loc, ispinned)
     elseif bug == Integer(Bug.MOSQUITO)
         mosquitomoves(board, loc, height, ispinned)
-    elseif bug == Integer(Bug.PILLBUG)
-        pillbugmoves(board, loc, ispinned)
-    else
-        error("Movement not implemented for bug $bug")
+    end
+    if !ispinned[loc]
+        if bug == Integer(Bug.ANT)
+            antmoves(board, loc)
+        elseif bug == Integer(Bug.SPIDER)
+            spidermoves(board, loc)
+        elseif bug == Integer(Bug.QUEEN)
+            queenmoves(board, loc)
+        elseif bug == Integer(Bug.BEETLE)
+            beetlemoves(board, loc, height)
+        elseif bug == Integer(Bug.GRASSHOPPER)
+            grasshoppermoves(board, loc)
+        elseif bug == Integer(Bug.LADYBUG)
+            ladybugmoves(board, loc)
+        end
     end
     return nothing
 end
@@ -209,7 +213,9 @@ end
 
 function pillbugmoves(board, startloc, ispinned)
     maxdepth = 1
-    moves_to_depth(board, startloc, maxdepth)
+    if !ispinned[startloc]
+        moves_to_depth(board, startloc, maxdepth)
+    end
     # Ladybug also has special moves
     # For all surrounding tiles, if they are not pinned, and did not just move,
     # and can slide on the pillbug, and the tile is not stacked
@@ -223,8 +229,10 @@ function pillbugmoves(board, startloc, ispinned)
         i -> begin
             loc = neighlocs[i]
             for slideloc in slidelocs
-                if get_tile_on_board(board, slideloc) == EMPTY_TILE
-                    add_action(board, Move(loc, slideloc))
+                move = Move(loc, slideloc)
+                if get_tile_on_board(board, slideloc) == EMPTY_TILE &&
+                    move_not_duplicate(board, move)
+                    add_action(board, move)
                 end
             end
         end,

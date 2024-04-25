@@ -342,7 +342,7 @@ end
 function do_action(board, move::Move)
     moving_tile = get_tile_on_board(board, move.moving_loc)
     if moving_tile == EMPTY_TILE
-        show(board)
+        show(move, board)
         error("no tile to move at loc $(move.moving_loc)")
     end
     set_tile_on_board(board, move.goal_loc, moving_tile)
@@ -551,4 +551,14 @@ function gametype_from_string(gametype_string)
     else
         return error("game type '$gametype_string' not yet supported")
     end
+end
+
+"""
+Check if a move is not already in the valid actions
+
+    to avoid the pillbug adding duplicate moves
+"""
+function move_not_duplicate(board, move)
+    validactions = view(board.validactions, 1:(board.action_index - 1))
+    return !any(validaction -> validaction isa Move && validaction == move, validactions)
 end

@@ -184,5 +184,67 @@ total time       = 1.8 seconds
 6.480 te weinig
 ongeveer 0.11%
 
+# Reduced allocations, better typing
+
+Perft(1)         = 7
+KN/S             = 361
+memory per node  = 2.149 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(2)         = 294
+KN/S             = 2.860
+memory per node  = 168 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(3)         = 6.678
+KN/S             = 3.184
+memory per node  = 275 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(4)         = 151.686
+KN/S             = 3.912
+memory per node  = 286 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(5)         = 5.420.628
+KN/S             = 5.607
+memory per node  = 217 bytes
+gc time          = 8.0%
+total time       = 1.0 seconds
+
+Perft(6)         = 191.923.272
+KN/S             = 4.924
+memory per node  = 220 bytes
+gc time          = 301.0%
+total time       = 39.0 seconds
+
+Lots of GC time! <- the problem is that the valid moves need to be stored, a single buffer does not work directly because in iterating over moves, new moves need to be created
+
+## Allow pillbug special moves (also via mosquito) even when pillbug itself is pinned
+
+Perft(4)         = 151.686
+KN/S             = 3.612
+memory per node  = 286 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(5)         = 5.427.108
+KN/S             = 5.542
+memory per node  = 218 bytes
+gc time          = 8.0%
+total time       = 1.0 seconds
+
+Perft(6)         = 192.353.928
+KN/S             = 5.262
+memory per node  = 220 bytes
+gc time          = 291.0%
+total time       = 36.6 seconds
+
+Perft 6 is still not working however. Counting 24 too many moves?!
+
 
 https://github.com/jonthysell/Mzinga/wiki/Perft

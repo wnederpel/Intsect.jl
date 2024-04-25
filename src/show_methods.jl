@@ -87,13 +87,12 @@ function Base.show(board::Board, show_locs::Bool=false)
     return nothing
 end
 
-function Base.show(validmoves::SizedVector{VALID_BUFFER_SIZE,Action}, board)
-    for (i, action) in enumerate(validmoves)
-        if i == board.action_index
-            break
-        end
+function Base.show(actions::Vector{Action}, board)
+    println(string(length(actions)) * " valid actions:")
+    for action in actions
         show(action, board)
     end
+    println("End")
 end
 
 function Base.show(move::Move, board::Board)

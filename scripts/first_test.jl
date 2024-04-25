@@ -11,9 +11,9 @@ using BenchmarkTools
 # MOSQUITO = 6    # 1
 # PILLBUG = 7     # 1
 
-w1 = "wB1"
-w2 = "wM"
-b1 = "bM"
+w1 = "wM"
+w2 = "wQ"
+b1 = "bP"
 b2 = "bQ"
 
 board = handle_newgame_command(Gametype.MLP)
@@ -21,12 +21,9 @@ board = handle_newgame_command(Gametype.MLP)
 do_action(board, action_from_move_string(board, w1))
 do_action(board, action_from_move_string(board, b1 * " " * w1 * "-"))
 
-do_action(board, action_from_move_string(board, w2 * " -" * w1))
-do_action(board, action_from_move_string(board, b2 * " " * b1 * "-"))
+do_action(board, action_from_move_string(board, w2 * " /" * w1))
+do_action(board, action_from_move_string(board, b2 * " " * b1 * "/"))
 
 show(board)
-show(board.validactions, board)
-
-validactions(board)
-
-show(board.validactions, board)
+actions = validactions(board)
+show(actions, board)

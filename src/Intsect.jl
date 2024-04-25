@@ -73,6 +73,7 @@ export move_string_from_action
 export gamestring
 export undo
 export get_pinned_tiles
+export format_with_dots
 
 # Files
 include("enums.jl")
