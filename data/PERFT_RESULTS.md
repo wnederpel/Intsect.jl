@@ -246,5 +246,37 @@ total time       = 36.6 seconds
 
 Perft 6 is still not working however. Counting 24 too many moves?!
 
+## Fixing pillbug moves
+
+Perft(4)         = 151.686
+KN/S             = 3.665
+memory per node  = 286 bytes
+gc time          = 1.0%
+total time       = 0.0 seconds
+
+Perft(5)         = 5.427.108
+KN/S             = 5.571
+memory per node  = 219 bytes
+gc time          = 7.0%
+total time       = 1.0 seconds
+
+Perft(6)         = 192.353.904
+KN/S             = 5.248
+memory per node  = 220 bytes
+gc time          = 263.0%
+total time       = 36.7 seconds
+
 
 https://github.com/jonthysell/Mzinga/wiki/Perft
+
+goal:
+ 1:   1
+ 2:   7
+ 3:   294
+ 4:   6,678
+ 5:   151,686
+ 6:   5,427,108
+ 7:   192,353,904
+ 8:   3,151,035,948
+ 9:   50,945,151,390
+10:   2,784,830,280,25

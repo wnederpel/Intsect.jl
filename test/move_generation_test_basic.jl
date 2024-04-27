@@ -32,7 +32,8 @@
     set_tile_on_board(board, bG1_loc, bG1)
 
     # Generate the moves
-    moves = queenmoves(board, bQ_loc)
+    queenmoves(board, bQ_loc)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Move(bQ_loc, apply_direction(bQ_loc, Direction.E)) in moves
@@ -88,7 +89,8 @@ end
     set_tile_on_board(board, wB1_loc, wB1)
 
     # Generate the moves
-    moves = grasshoppermoves(board, wG1_loc)
+    grasshoppermoves(board, wG1_loc)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Move(wG1_loc, apply_direction(bQ_loc, Direction.E)) in moves
@@ -137,7 +139,8 @@ end
     set_tile_on_board(board, wB1_loc, wB1)
 
     # Generate the moves
-    moves = spidermoves(board, bS1_loc)
+    spidermoves(board, bS1_loc)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Move(bS1_loc, apply_direction(wQ_loc, Direction.E)) in moves
@@ -175,7 +178,8 @@ end
     set_tile_on_board(board, bA1_loc, bA1)
 
     # Generate the moves
-    moves = antmoves(board, bA1_loc)
+    antmoves(board, bA1_loc)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Move(bA1_loc, apply_direction(bB1_loc, Direction.E)) in moves
@@ -220,7 +224,8 @@ end
     set_tile_on_board(board, wS1_loc, wS1)
 
     # Generate the moves
-    moves = beetlemoves(board, wB1_loc, 1)
+    beetlemoves(board, wB1_loc, 1)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Move(wB1_loc, apply_direction(wB1_loc, Direction.NW)) in moves
@@ -232,7 +237,9 @@ end
     do_action(board, Move(wB1_loc, apply_direction(wB1_loc, Direction.NW)))
     wB1_loc = apply_direction(wB1_loc, Direction.NW)
 
-    moves = beetlemoves(board, wB1_loc, 2)
+    beetlemoves(board, wB1_loc, 2)
+    moves = extract_valid_actions(board)
+
     @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.NW)) in moves
     @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.SE)) in moves
     @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.W)) in moves
@@ -270,7 +277,8 @@ end
     set_tile_on_board(board, bB1_loc, bB1)
 
     # Generate the moves
-    moves = ladybugmoves(board, wL1_loc)
+    ladybugmoves(board, wL1_loc)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Move(wL1_loc, apply_direction(wL1_loc, Direction.E)) in moves
@@ -287,6 +295,7 @@ end
 end
 
 @testitem "Mosquito movement basic" begin
+    using DataStructures
     # Define all pieces
     bQ = get_tile_from_string("bQ")
     wQ = get_tile_from_string("wQ")
@@ -311,7 +320,8 @@ end
     set_tile_on_board(board, wM_loc, wM)
 
     # Generate the moves
-    moves = mosquitomoves(board, wM_loc, 1, nothing)
+    mosquitomoves(board, wM_loc, 1, DefaultDict(false))
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Move(wM_loc, apply_direction(wM_loc, Direction.W)) in moves
@@ -357,7 +367,8 @@ end
     ispinned[wS1_loc] = true
 
     # Generate the moves
-    moves = pillbugmoves(board, wP_loc, ispinned)
+    pillbugmoves(board, wP_loc, ispinned)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     # First the normal moves

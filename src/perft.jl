@@ -18,6 +18,8 @@ function perft()
 end
 
 function perft(depth::Int, board)::Int
+    # TODO speed: 
+    # Look into using the smart julia allocation package to get stack allocations. I forgot the name
     if depth == 1
         return length(validactions(board))
     end

@@ -1,11 +1,25 @@
-function add_action(board::Board, action::Action)
-    board.validactions[board.action_index] = action
-    board.action_index += 1
+function add_action(board::Board, action::Action; avoid_duplicates=false)
+    # Do no use show(action) here because tiles might be Temporarily deleted -> string generation does not work
+    if avoid_duplicates
+        if move_not_duplicate(board, action)
+            board.validactions[board.action_index] = action
+            board.action_index += 1
+        end
+    else
+        board.validactions[board.action_index] = action
+        board.action_index += 1
+    end
 end
 
 function validactions(board)
     validactions!(board)
-    return board.validactions[1:(board.action_index - 1)]
+    return extract_valid_actions(board)
+end
+
+function extract_valid_actions(board)
+    tmp = board.action_index
+    board.action_index = 1
+    return board.validactions[1:(tmp - 1)]
 end
 
 function validactions!(board::Board)
@@ -81,7 +95,7 @@ function validactions_general(board::Board)
         end
     end
     if board.action_index == 1
-        add_action(board, Pass())
+        add_action(board, Pass(); avoid_duplicates=false)
     end
     return nothing
 end
@@ -164,28 +178,28 @@ function secondplacements(board)
     return nothing
 end
 
-function bugmoves(board, loc, bug, height, ispinned)
+function bugmoves(board, loc, bug, height, ispinned; avoid_duplicates=false)
     # TODO func: the pillbug can add duplicate moves; this should be avoided
     # Pill bug can yield special moves, even when pinned
     # Moquito can yield pill bug moves, even when pinned
     if bug == Integer(Bug.PILLBUG)
-        pillbugmoves(board, loc, ispinned)
+        pillbugmoves(board, loc, ispinned; avoid_duplicates)
     elseif bug == Integer(Bug.MOSQUITO)
         mosquitomoves(board, loc, height, ispinned)
     end
     if !ispinned[loc]
         if bug == Integer(Bug.ANT)
-            antmoves(board, loc)
+            antmoves(board, loc; avoid_duplicates)
         elseif bug == Integer(Bug.SPIDER)
-            spidermoves(board, loc)
+            spidermoves(board, loc; avoid_duplicates)
         elseif bug == Integer(Bug.QUEEN)
-            queenmoves(board, loc)
+            queenmoves(board, loc; avoid_duplicates)
         elseif bug == Integer(Bug.BEETLE)
-            beetlemoves(board, loc, height)
+            beetlemoves(board, loc, height; avoid_duplicates)
         elseif bug == Integer(Bug.GRASSHOPPER)
-            grasshoppermoves(board, loc)
+            grasshoppermoves(board, loc; avoid_duplicates)
         elseif bug == Integer(Bug.LADYBUG)
-            ladybugmoves(board, loc)
+            ladybugmoves(board, loc; avoid_duplicates)
         end
     end
     return nothing
@@ -206,33 +220,33 @@ function mosquitomoves(board, loc, height, ispinned)
         end
     end, 1:6)
     for bug in neighbugs
-        bugmoves(board, loc, bug, height, ispinned)
+        bugmoves(board, loc, bug, height, ispinned; avoid_duplicates=true)
     end
     return nothing
 end
 
-function pillbugmoves(board, startloc, ispinned)
+function pillbugmoves(board, startloc, ispinned; avoid_duplicates=false)
+    # TODO func: fix the problem where it does not slide units into elbows
     maxdepth = 1
     if !ispinned[startloc]
-        moves_to_depth(board, startloc, maxdepth)
+        moves_to_depth(board, startloc, maxdepth; avoid_duplicates)
     end
     # Ladybug also has special moves
     # For all surrounding tiles, if they are not pinned, and did not just move,
     # and can slide on the pillbug, and the tile is not stacked
     # they can be slid on top of the pillbug, and then slid off
     neighlocs = allneighs(startloc)
-    height = get_tile_height(get_tile_on_board(board, startloc))
     # For each neigh, see if it can slide high
-    canslide = map(i -> canslidehigh(i, board, neighlocs, height), 1:6)
+    canslide = map(i -> canslidepillbug(i, board, neighlocs), 1:6)
     slidelocs = map(i -> neighlocs[i], filter(i -> canslide[i], 1:6))
+
     foreach(
         i -> begin
             loc = neighlocs[i]
             for slideloc in slidelocs
                 move = Move(loc, slideloc)
-                if get_tile_on_board(board, slideloc) == EMPTY_TILE &&
-                    move_not_duplicate(board, move)
-                    add_action(board, move)
+                if get_tile_on_board(board, slideloc) == EMPTY_TILE
+                    add_action(board, move; avoid_duplicates=true)
                 end
             end
         end,
@@ -252,7 +266,7 @@ function pillbugmoves(board, startloc, ispinned)
     return nothing
 end
 
-function ladybugmoves(board, startloc)
+function ladybugmoves(board, startloc; avoid_duplicates=false)
     maxdepth = 3
     tmp_tile = get_tile_on_board(board, startloc)
     set_tile_on_board(board, startloc, EMPTY_TILE)
@@ -260,7 +274,7 @@ function ladybugmoves(board, startloc)
     moves = Set()
     moves_to_depth_ladybug!(board, startloc, maxdepth, moves)
     for move in moves
-        add_action(board, move)
+        add_action(board, move; avoid_duplicates)
     end
 
     set_tile_on_board(board, startloc, tmp_tile)
@@ -268,7 +282,7 @@ function ladybugmoves(board, startloc)
     return nothing
 end
 
-function moves_to_depth_ladybug!(board, startloc, depth, moves, cur_loc=startloc)
+function moves_to_depth_ladybug!(board, startloc, depth, moves; cur_loc=startloc)
     if depth == 0
         if cur_loc != startloc
             push!(moves, Move(startloc, cur_loc))
@@ -277,7 +291,7 @@ function moves_to_depth_ladybug!(board, startloc, depth, moves, cur_loc=startloc
     end
     neighlocs = allneighs(cur_loc)
     foreach(
-        slideloc -> moves_to_depth_ladybug!(board, startloc, depth - 1, moves, slideloc),
+        slideloc -> moves_to_depth_ladybug!(board, startloc, depth - 1, moves; cur_loc=slideloc),
         map(
             i -> neighlocs[i],
             filter(
@@ -299,7 +313,7 @@ function moves_to_depth_ladybug!(board, startloc, depth, moves, cur_loc=startloc
     )
 end
 
-function grasshoppermoves(board, startloc)
+function grasshoppermoves(board, startloc; avoid_duplicates=true)
     for dir in instances(Direction.T)
         if get_tile_on_board(board, apply_direction(startloc, dir)) != EMPTY_TILE
             loc = startloc
@@ -310,19 +324,19 @@ function grasshoppermoves(board, startloc)
                     break
                 end
             end
-            add_action(board, Move(startloc, loc))
+            add_action(board, Move(startloc, loc); avoid_duplicates)
         end
     end
     return nothing
 end
 
-function beetlemoves(board, startloc, height)
+function beetlemoves(board, startloc, height; avoid_duplicates=false)
     neighlocs = allneighs(startloc)
     if height != 1
         # Can go anywhere, so long as it can slide with height
         map(
             neigh -> begin
-                add_action(board, Climb(startloc, neighlocs[neigh]))
+                add_action(board, Climb(startloc, neighlocs[neigh]); avoid_duplicates)
             end,
             filter(i -> canslidehigh(i, board, neighlocs, height), 1:6),
         )
@@ -334,9 +348,9 @@ function beetlemoves(board, startloc, height)
         map(
             neigh -> begin
                 if get_tile_on_board(board, neighlocs[neigh]) != EMPTY_TILE
-                    add_action(board, Climb(startloc, neighlocs[neigh]))
+                    add_action(board, Climb(startloc, neighlocs[neigh]); avoid_duplicates)
                 else
-                    add_action(board, Move(startloc, neighlocs[neigh]))
+                    add_action(board, Move(startloc, neighlocs[neigh]); avoid_duplicates)
                 end
             end,
             filter(
@@ -353,6 +367,13 @@ function beetlemoves(board, startloc, height)
     end
 end
 
+function canslidepillbug(i, board, neighlocs)
+    neighleft = get_tile_on_board(board, neighlocs[i == 1 ? 6 : i - 1])
+    neighright = get_tile_on_board(board, neighlocs[i == 6 ? 1 : i + 1])
+
+    return get_tile_height(neighleft) < 2 || get_tile_height(neighright) < 2
+end
+
 function canslidehigh(i, board, neighlocs, height)
     neighleft = get_tile_on_board(board, neighlocs[i == 1 ? 6 : i - 1])
     neighright = get_tile_on_board(board, neighlocs[i == 6 ? 1 : i + 1])
@@ -362,19 +383,19 @@ function canslidehigh(i, board, neighlocs, height)
            get_tile_height(neighright) < max(goalheight + 1, height)
 end
 
-function queenmoves(board, startloc)
+function queenmoves(board, startloc; avoid_duplicates=false)
     maxdepth = 1
-    moves_to_depth(board, startloc, maxdepth)
+    moves_to_depth(board, startloc, maxdepth; avoid_duplicates)
     return nothing
 end
 
-function spidermoves(board, startloc)
+function spidermoves(board, startloc; avoid_duplicates=false)
     maxdepth = 3
-    moves_to_depth(board, startloc, maxdepth)
+    moves_to_depth(board, startloc, maxdepth; avoid_duplicates)
     return nothing
 end
 
-function antmoves(board, startloc)
+function antmoves(board, startloc; avoid_duplicates=false)
     tmp_tile = get_tile_on_board(board, startloc)
     set_tile_on_board(board, startloc, EMPTY_TILE)
     # Temporarily remove the tile to find where it can move to
@@ -391,24 +412,23 @@ function antmoves(board, startloc)
 
     for (goalloc, discovered) in discovered_dict
         if discovered && goalloc != startloc
-            add_action(board, Move(startloc, goalloc))
+            add_action(board, Move(startloc, goalloc); avoid_duplicates)
         end
     end
     return nothing
 end
 
-function moves_to_depth(board, startloc, maxdepth)
+function moves_to_depth(board, startloc, maxdepth; avoid_duplicates=false)
     tmp_tile = get_tile_on_board(board, startloc)
     set_tile_on_board(board, startloc, EMPTY_TILE)
 
     moves = Set()
     moves_to_depth!(board, startloc, maxdepth, moves)
     for move in moves
-        add_action(board, move)
+        add_action(board, move; avoid_duplicates)
     end
 
     set_tile_on_board(board, startloc, tmp_tile)
-
     return nothing
 end
 

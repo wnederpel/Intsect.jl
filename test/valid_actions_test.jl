@@ -174,7 +174,8 @@ end
     ispinned[wS1_loc] = true
 
     # Generate the moves
-    moves = pillbugmoves(board, wP_loc, ispinned)
+    pillbugmoves(board, wP_loc, ispinned)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     # First the normal moves

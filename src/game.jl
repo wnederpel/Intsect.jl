@@ -229,16 +229,22 @@ function action_from_move_string(board, move_string)
         moving_tile = get_tile_from_string(board, move_string)
         action = Placement(goal_loc, moving_tile)
     end
-    validactions(board)
-    if !(action in board.validactions)
-        error("Invalid action $(show(action,board)): Not present in valid actions")
-    end
+    # validactions(board)
+    # if !(action in board.validactions)
+    #     error(
+    #         "Invalid action '$(move_string_from_action(board, action))' not present in valid actions",
+    #     )
+    # end
     board.action_index = 1
     return action
 end
 
 function move_string_from_action(board, action::Action)
     moving_tile = get_tile_on_board(board, action.moving_loc)
+    if moving_tile == EMPTY_TILE
+        show(board, true)
+        error("no tile to move at loc $(action.moving_loc)")
+    end
     move_string = get_tile_name(moving_tile)
 
     move_string *= move_string_goal(board, action.goal_loc)
@@ -326,10 +332,12 @@ function allneighs(loc)
 end
 
 function do_action(board, pass::Pass)
+    pre_action_update(board, pass)
     post_action_update(board, pass)
 end
 
 function do_action(board, placement::Placement)
+    pre_action_update(board, placement)
     set_tile_on_board(board, placement.goal_loc, placement.tile)
     set_loc(board, placement.tile, placement.goal_loc)
     if get_tile_bug(placement.tile) == Integer(Bug.QUEEN)
@@ -340,6 +348,7 @@ function do_action(board, placement::Placement)
 end
 
 function do_action(board, move::Move)
+    pre_action_update(board, move)
     moving_tile = get_tile_on_board(board, move.moving_loc)
     if moving_tile == EMPTY_TILE
         show(move, board)
@@ -353,6 +362,7 @@ function do_action(board, move::Move)
 end
 
 function do_action(board, climb::Climb)
+    pre_action_update(board, climb)
     burrowed_tile = get_tile_on_board(board, climb.goal_loc)
     moving_tile = get_tile_on_board(board, climb.moving_loc)
 
@@ -477,8 +487,11 @@ function post_action_pillbug_update(board, move)
     end
 end
 
-function post_action_general_update(board, action)
+function pre_action_update(board, action)
     push!(board.history, (action, move_string_from_action(board, action)))
+end
+
+function post_action_general_update(board, action)
     check_gameover(board)
     if !board.gameover
         board.ply += 1

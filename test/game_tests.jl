@@ -381,3 +381,16 @@ end
     do_action(board, action_from_move_string(board, "wB1 \\wQ"))
     @test isempty(board.underworld[get_loc(board, wB1)])
 end
+
+@testitem "Pillbug special moves can still be valid, even when the pillbug is stuck" begin
+    board = handle_newgame_command(Gametype.MLP)
+
+    do_action(board, action_from_move_string(board, "wP"))
+    do_action(board, action_from_move_string(board, "bS1 wP-"))
+
+    do_action(board, action_from_move_string(board, "wQ -wP"))
+    do_action(board, action_from_move_string(board, "bQ bS1-"))
+
+    @test length(validactions(board)) == 34
+    @test count(action -> action isa Move, validactions(board)) == 4
+end

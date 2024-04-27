@@ -35,16 +35,3 @@
     @test apply_direction(bB1_loc, Direction.SE) in black_placement_locs
     @test apply_direction(bB1_loc, Direction.SW) in black_placement_locs
 end
-
-@testitem "Other placement generation tests" begin
-    # There are problems at the 5thp placement
-    board = handle_newgame_command(Gametype.MLP)
-
-    do_action(board, action_from_move_string(board, "wS1"))
-    do_action(board, action_from_move_string(board, "bS1 wS1-"))
-
-    do_action(board, action_from_move_string(board, "wS2 -wS1"))
-    do_action(board, action_from_move_string(board, "bS2 bS1-"))
-
-    show(board)
-end

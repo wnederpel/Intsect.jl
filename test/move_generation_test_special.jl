@@ -26,7 +26,8 @@
     push!(board.underworld[bB1_loc], bS1)
 
     # Generate the moves
-    moves = beetlemoves(board, bB1_loc, get_tile_height(bB1))
+    beetlemoves(board, bB1_loc, get_tile_height(bB1))
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.NE)) in moves
@@ -60,7 +61,8 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    moves = beetlemoves(board, wB1_loc, get_tile_height(wB1))
+    beetlemoves(board, wB1_loc, get_tile_height(wB1))
+    moves = extract_valid_actions(board)
 
     # Check the moves
     # wB1 cammot move to bB1_loc
@@ -91,7 +93,8 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    moves = beetlemoves(board, wB1_loc, get_tile_height(wB1))
+    beetlemoves(board, wB1_loc, get_tile_height(wB1))
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.E)) in moves
@@ -117,7 +120,8 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    moves = beetlemoves(board, wB1_loc, get_tile_height(wB1))
+    beetlemoves(board, wB1_loc, get_tile_height(wB1))
+    moves = extract_valid_actions(board)
 
     # Check the moves
     # wB1 still cammot move to bB1_loc as it needs to be two higher
@@ -144,7 +148,8 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    moves = beetlemoves(board, wB1_loc, get_tile_height(wB1))
+    beetlemoves(board, wB1_loc, get_tile_height(wB1))
+    moves = extract_valid_actions(board)
 
     # Check the moves
     # wB1 still cammot move to bB1_loc as it needs to be two higher
@@ -173,7 +178,8 @@ end
     set_tile_on_board(board, bM_loc, bM)
 
     # Generate the moves
-    moves = mosquitomoves(board, bM_loc, get_tile_height(bM), nothing)
+    mosquitomoves(board, bM_loc, get_tile_height(bM), nothing)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test length(moves) == 0
@@ -218,12 +224,14 @@ end
 
     set_tile_on_board(board, wS1_loc, wS1)
 
-    moves = spidermoves(board, wS1_loc)
+    spidermoves(board, wS1_loc)
+    moves = extract_valid_actions(board)
 
     @test length(moves) == 0
 
     # Also invalid for ant
-    moves = antmoves(board, wS1_loc)
+    antmoves(board, wS1_loc)
+    moves = extract_valid_actions(board)
 
     @test length(moves) == 2
 end
@@ -256,7 +264,8 @@ end
     set_tile_on_board(board, bA1_loc, bA1)
 
     # Generate the moves
-    moves = antmoves(board, bA1_loc)
+    antmoves(board, bA1_loc)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Move(bA1_loc, apply_direction(bB1_loc, Direction.E)) in moves
@@ -271,4 +280,93 @@ end
     @test Move(bA1_loc, apply_direction(wB1_loc, Direction.W)) in moves
     @test Move(bA1_loc, apply_direction(bA1_loc, Direction.W)) in moves
     @test length(moves) == 11
+end
+
+@testitem "Pillbug special moves can fill elbows" begin
+    using DataStructures
+
+    wP = get_tile_from_string("wP")
+    bP = get_tile_from_string("bP")
+    wQ = get_tile_from_string("wQ")
+    bQ = get_tile_from_string("bQ")
+    wM = get_tile_from_string("wM")
+    bM = get_tile_from_string("bM")
+
+    wP_loc = MID - 1
+    wQ_loc = apply_direction(wP_loc, Direction.SW)
+    wM_loc = apply_direction(wQ_loc, Direction.NW)
+
+    bP_loc = apply_direction(wP_loc, Direction.E)
+    bQ_loc = apply_direction(bP_loc, Direction.NE)
+    bM_loc = apply_direction(bQ_loc, Direction.NE)
+
+    board = handle_newgame_command(Gametype.MLP)
+    set_tile_on_board(board, wP_loc, wP)
+    set_tile_on_board(board, wQ_loc, wQ)
+    set_tile_on_board(board, wM_loc, wM)
+    set_tile_on_board(board, bP_loc, bP)
+    set_tile_on_board(board, bQ_loc, bQ)
+    set_tile_on_board(board, bM_loc, bM)
+
+    ispinned = DefaultDict{Int,Bool}(false)
+    ispinned[wP_loc] = true
+    ispinned[bQ_loc] = true
+    ispinned[bP_loc] = true
+
+    pillbugmoves(board, wP_loc, ispinned)
+    moves = extract_valid_actions(board)
+
+    @test Move(wQ_loc, apply_direction(wP_loc, Direction.SE)) in moves
+    @test Move(wQ_loc, apply_direction(wP_loc, Direction.NE)) in moves
+    @test Move(wQ_loc, apply_direction(wP_loc, Direction.NW)) in moves
+
+    @test Move(wM_loc, apply_direction(wP_loc, Direction.SE)) in moves
+    @test Move(wM_loc, apply_direction(wP_loc, Direction.NE)) in moves
+    @test Move(wM_loc, apply_direction(wP_loc, Direction.NW)) in moves
+
+    @test length(moves) == 6
+end
+
+@testitem "Pillbug cannot special move through a beetle gate" begin
+    using DataStructures
+
+    wP = get_tile_from_string("wP")
+    wB1 = get_tile_from_string("wB1") + 0b00000001
+    bQ = get_tile_from_string("bQ")
+    wM = get_tile_from_string("wM")
+    bM = get_tile_from_string("bM")
+    bB1 = get_tile_from_string("bB1") + 0b00000001
+
+    wP_loc = MID - 1
+    wB1_loc = apply_direction(wP_loc, Direction.SW)
+    wM_loc = apply_direction(wB1_loc, Direction.NW)
+
+    bB1_loc = apply_direction(wP_loc, Direction.E)
+    bQ_loc = apply_direction(bB1_loc, Direction.NE)
+    bM_loc = apply_direction(bQ_loc, Direction.NE)
+
+    board = handle_newgame_command(Gametype.MLP)
+    set_tile_on_board(board, wP_loc, wP)
+    set_tile_on_board(board, wB1_loc, wB1)
+    set_tile_on_board(board, wM_loc, wM)
+    set_tile_on_board(board, bB1_loc, bB1)
+    set_tile_on_board(board, bQ_loc, bQ)
+    set_tile_on_board(board, bM_loc, bM)
+
+    ispinned = DefaultDict{Int,Bool}(false)
+    ispinned[wP_loc] = true
+    ispinned[bQ_loc] = true
+    ispinned[bB1_loc] = true
+
+    pillbugmoves(board, wP_loc, ispinned)
+    moves = extract_valid_actions(board)
+
+    @test Move(wM_loc, apply_direction(wP_loc, Direction.NE)) in moves
+    @test Move(wM_loc, apply_direction(wP_loc, Direction.NW)) in moves
+
+    @test length(moves) == 2
+end
+
+@testitem "Pillbug special moves take into account that a piece sliding on the pill bug might add a possible down sliding move" begin
+    # This should never occur, a piece can only make something new possible when it is stacked, and stacked pieces cannot be moved by this pillbug
 end
