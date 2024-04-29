@@ -14,6 +14,8 @@ end
     PILLBUG = 7     # 1
 end
 
+const NUM_MAP = SVector{8,UInt8}(2, 2, 1, 1, 0, 0, 0, 0)
+
 # TODO speed: maybe replace with a named tuple
 @enumx Direction::UInt8 begin
     NW

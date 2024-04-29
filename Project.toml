@@ -5,6 +5,7 @@ version = "0.1.0"
 
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+Bumper = "8ce10254-0962-460f-a3d8-1f77fea1446e"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 EnumX = "4e289a0a-7415-4d19-859d-a7e5c4648b56"
 Memoize = "c03570c3-d221-55d1-a50c-7939bbd78826"

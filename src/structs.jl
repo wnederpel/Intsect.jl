@@ -24,22 +24,6 @@ function Pass()
     return Pass(INVALID_LOC)
 end
 
-# Look into abstract typing for this, see https://stackoverflow.com/questions/60218078/why-create-an-abstract-super-type-in-julia
-# julia> abstract type AbstractFoo end
-
-# julia> struct Foo1 <: AbstractFoo end
-
-# julia> struct Foo2 <: AbstractFoo end
-
-# julia> foo_op(x::AbstractFoo) = "yay!"
-# foo_op (generic function with 1 method)
-
-# julia> foo_op(Foo1())
-# "yay!"
-
-# julia> foo_op(Foo2())
-# "yay!"
-
 """
 Contains all information of the current board state
 

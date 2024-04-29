@@ -71,8 +71,17 @@ function get_tile_info(tile)
     return color, bug, bug_num, height
 end
 
-function get_tile_unplaced(loc::Int)
-    tile_as_index = UInt8(loc - 1)
+function tile_from_info(color, bug::UInt8, bug_num::UInt8; height::UInt8=0x00)
+    return (
+        (0b00000001 << COLOR_SHIFT) * color +
+        (0b00000001 << BUG_SHIFT) * bug +
+        (0b00000001 << BUG_NUM_SHIFT) * bug_num +
+        (0b00000001 << HEIGHT_SHIFT) * height
+    )
+end
+
+function get_tile_unplaced(semi_tile::Int)
+    tile_as_index = UInt8(semi_tile - 1)
     return tile_as_index << INDEX_SHIFT
 end
 
@@ -178,11 +187,7 @@ function get_tile_from_string(tile_string)
         error("Invalid tile string $tile_string")
     end
     num -= 0x01
-    return (
-        (0b00000001 << COLOR_SHIFT) * white +
-        (0b00000001 << BUG_SHIFT) * bug +
-        (0b00000001 << BUG_NUM_SHIFT) * num
-    )
+    return tile_from_info(white, bug, num)
 end
 
 function action_from_move_string(board, move_string)

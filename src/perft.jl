@@ -1,7 +1,6 @@
 function perft()
     # https://github.com/jonthysell/Mzinga/wiki/Perft
-    # TODO perft: fix perft 5. Missing ~7.000 nodes
-    for depth in 1:6
+    for depth in 1:5
         nodes, time_taken, memory_allocated, gc_time, _ = @timed perft(
             depth, handle_newgame_command(Gametype.MLP)
         )

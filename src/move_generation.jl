@@ -46,57 +46,43 @@ end
 Valid actions for the default case
 """
 function validactions_general(board::Board)
-    # TODO speed: maybe split in two functions, one for placement and one for moves, avoid queen placed checked for each tile, more same checks on all tiles can be extracted perhaps.  
-    # TODO speed: be more carefull about the bugs for which movements should be generated
-    # Once all bugs of type are placed no more placements should be generated for that bug
-
     # TODO speed: ispinned does not need to be recomputed after every move
     # when an elbow is filled, or when a tile is simply pinnned, the dict only changes locally.
     ispinned = get_pinned_tiles(board)
-
-    my_placement_locs = generate_placement_locs(board, board.current_color)
-
     if board.gameover
         return nothing
     end
 
-    # TODO speed: Check if this is necessary
-    # This might be a bit slow, because of allocations, but a copy is slower, normal vec or sized vec is also slower
-    placements_genereated = MVector{8,Bool}(false, false, false, false, false, false, false, false)
+    # TODO speed: maybe the placement locs can be stored in the board struct, updated each move
+    my_placement_locs = generate_placement_locs(board, board.current_color)
 
-    # TODO speed: investigate custom interator that only interates over the right color (and perhaps more)
-    # This loop pattern is repeated in the other validactions functions
+    for bug in 0x00:0x07
+        for num in 0x00:NUM_MAP[bug + 0x01]
+            semi_tile = (tile_from_info(board.current_color, bug, num) >> INDEX_SHIFT) + 1
+            loc = board.tile_locs[semi_tile]
 
-    # TODO speed: use a preallocated buffer (check https://docs.juliahub.com/General/Bumper/stable/)
-
-    for (semi_tile, loc) in enumerate(board.tile_locs)
-        # only generate moves for tiles of the current color 
-        # != because the index is 1-based, tiles are 0-based
-        if semi_tile % 2 != board.current_color
-            # only generate moves for tiles that are placed
-            if loc != INVALID_LOC && loc != UNDERGROUND
-                if !all(placements_genereated) && loc == NOT_PLACED
+            if loc != UNDERGROUND
+                if loc != NOT_PLACED
+                    if board.queen_placed[board.current_color + 1] &&
+                        loc != board.moved_by_pillbug_loc
+                        # Generate moves for placed tiles
+                        tile = get_tile_on_board(board, loc)
+                        bugmoves(board, loc, bug, get_tile_height(tile), ispinned)
+                    end
+                else
                     # Generate placements for unplaced tiles that are the first of their kind
                     tile = get_tile_unplaced(semi_tile)
-                    bug = get_tile_bug(tile)
-                    if !placements_genereated[bug + 1]
-                        generate_placements(board, my_placement_locs, tile)
-                        placements_genereated[bug + 1] = true
-                    end
-                elseif (
-                    board.queen_placed[board.current_color + 1] && loc != board.moved_by_pillbug_loc
-                )
-                    # Generate moves for placed tiles
-                    tile = get_tile_on_board(board, loc)
-                    bug = get_tile_bug(tile)
-                    bugmoves(board, loc, bug, get_tile_height(tile), ispinned)
+                    generate_placements(board, my_placement_locs, tile)
+                    break
                 end
             end
         end
     end
+
     if board.action_index == 1
         add_action(board, Pass(); avoid_duplicates=false)
     end
+
     return nothing
 end
 
@@ -122,26 +108,12 @@ valid actions for when the first move is made
 function firstplacements(board)
     my_placement_locs = [MID]
 
-    # This might be a bit slow, because of allocations, but a copy is slower, normal vec or sized vec is also slower
-    placements_genereated = MVector{8,Bool}(false, false, false, false, false, false, false, false)
-
-    # loop over all locations with tiles
-    for (semi_tile, loc) in enumerate(board.tile_locs)
-        # only generate moves for tiles of the current color 
-        # != because the index is 1-based, tiles are 0-based
-        if semi_tile % 2 != board.current_color
-            # only generate moves for tiles that are placed
-            if loc != INVALID_LOC
-                if !all(placements_genereated) && loc == NOT_PLACED
-                    # Generate placements for unplaced tiles that are the first of their kind
-                    tile = get_tile_unplaced(semi_tile)
-                    bug = get_tile_bug(tile)
-                    if !placements_genereated[bug + 1] && bug != Integer(Bug.QUEEN)
-                        generate_placements(board, my_placement_locs, tile)
-                        placements_genereated[bug + 1] = true
-                    end
-                end
-            end
+    for bug in 0x00:0x07
+        if bug != Integer(Bug.QUEEN)
+            semi_tile = (tile_from_info(board.current_color, bug, 0x00) >> INDEX_SHIFT) + 1
+            # Generate placements for unplaced tiles that are the first of their kind
+            tile = get_tile_unplaced(semi_tile)
+            generate_placements(board, my_placement_locs, tile)
         end
     end
     return nothing
@@ -153,26 +125,12 @@ valid actions for second placement (first placement by black)
 function secondplacements(board)
     my_placement_locs = generate_placement_locs(board, 1)
 
-    # This might be a bit slow, because of allocations, but a copy is slower, normal vec or sized vec is also slower
-    placements_genereated = MVector{8,Bool}(false, false, false, false, false, false, false, false)
-
-    # loop over all locations with tiles
-    for (semi_tile, loc) in enumerate(board.tile_locs)
-        # only generate moves for tiles of the current color 
-        # != because the index is 1-based, tiles are 0-based
-        if semi_tile % 2 != board.current_color
-            # only generate moves for tiles that are placed
-            if loc != INVALID_LOC
-                if !all(placements_genereated) && loc == NOT_PLACED
-                    # Generate placements for unplaced tiles that are the first of their kind
-                    tile = get_tile_unplaced(semi_tile)
-                    bug = get_tile_bug(tile)
-                    if !placements_genereated[bug + 1] && bug != Integer(Bug.QUEEN)
-                        generate_placements(board, my_placement_locs, tile)
-                        placements_genereated[bug + 1] = true
-                    end
-                end
-            end
+    for bug in 0x00:0x07
+        if bug != Integer(Bug.QUEEN)
+            semi_tile = (tile_from_info(board.current_color, bug, 0x00) >> INDEX_SHIFT) + 1
+            # Generate placements for unplaced tiles that are the first of their kind
+            tile = get_tile_unplaced(semi_tile)
+            generate_placements(board, my_placement_locs, tile)
         end
     end
     return nothing
@@ -492,7 +450,7 @@ end
 end
 
 function generate_placements(board, placement_locs, tile)
-    foreach(loc -> add_action(board, Placement(loc, tile)), collect(placement_locs))
+    foreach(loc -> add_action(board, Placement(loc, tile)), placement_locs)
 end
 
 function generate_placement_locs(board, color)

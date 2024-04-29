@@ -6,6 +6,7 @@ using EnumX
 using DataStructures
 using Memoize
 using Base.Threads
+using Bumper
 
 # structs
 export Board
@@ -28,6 +29,7 @@ export INVALID_LOC
 export MID
 export WHITE
 export BLACK
+export NUM_MAP
 
 # enums
 export Bug

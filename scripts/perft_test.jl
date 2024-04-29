@@ -1,3 +1,4 @@
 using Intsect
+using BenchmarkTools
 
-perft()
+@benchmark perft()
