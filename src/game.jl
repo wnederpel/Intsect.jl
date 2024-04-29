@@ -191,7 +191,6 @@ function action_from_move_string(board, move_string)
     end
     validate_move_string(move_string)
 
-    # TODO func: when moving on top of the hive, only give the tile that you go on top of as second argument
     if ' ' in move_string
         # either a move or a placement
         # parse input to be some actual action that can be executed
@@ -229,12 +228,12 @@ function action_from_move_string(board, move_string)
         moving_tile = get_tile_from_string(board, move_string)
         action = Placement(goal_loc, moving_tile)
     end
-    # validactions(board)
-    # if !(action in board.validactions)
-    #     error(
-    #         "Invalid action '$(move_string_from_action(board, action))' not present in valid actions",
-    #     )
-    # end
+    validactions(board)
+    if !(action in board.validactions)
+        error(
+            "Invalid action: '$(move_string_from_action(board, action))' not present in valid actions",
+        )
+    end
     board.action_index = 1
     return action
 end
