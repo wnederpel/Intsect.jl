@@ -54,3 +54,5 @@ const BUG_NAMES = ["A", "G", "B", "S", "Q", "L", "M", "P"]
 const NUMMED_BUG_NAMES = [
     "A1", "A2", "A3", "G1", "G2", "G3", "B1", "B2", "S1", "S2", "Q", "L", "M", "P"
 ]
+
+const MAX_NUMS::SVector{8,UInt8} = [2, 2, 1, 1, 0, 0, 0, 0]

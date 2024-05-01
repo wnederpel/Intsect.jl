@@ -53,9 +53,56 @@ function validactions_general(board::Board)
         return nothing
     end
 
-    # TODO speed: maybe the placement locs can be stored in the board struct, updated each move
-    my_placement_locs = generate_placement_locs(board, board.current_color)
+    add_placements(board)
 
+    if board.queen_placed[board.current_color + 1]
+        add_moves(board, ispinned)
+    end
+
+    if board.action_index == 1
+        add_action(board, Pass(); avoid_duplicates=false)
+    end
+
+    return nothing
+end
+
+function generate_placements(board, placement_locs, tile)
+    foreach(loc -> add_action(board, Placement(loc, tile)), placement_locs)
+end
+
+function generate_placement_locs(board, color)
+    locs = Set{Int}()
+    for loc in board.tile_locs
+        if loc >= 0
+            empty_neighs = filter(n -> get_tile_on_board(board, n) == EMPTY_TILE, allneighs(loc))
+
+            for empty_neigh in empty_neighs
+                neigh_locs2 = allneighs(empty_neigh)
+                if all(
+                    n ->
+                        get_tile_on_board(board, n) == EMPTY_TILE ||
+                            get_tile_color(get_tile_on_board(board, n)) == color,
+                    neigh_locs2,
+                )
+                    push!(locs, empty_neigh)
+                end
+            end
+        end
+    end
+    return locs
+end
+
+function add_placements(board)
+    for loc in board.placement_locs[board.current_color + 1]
+        for tile in board.placeable_tiles[board.current_color + 1]
+            if tile != EMPTY_TILE
+                add_action(board, Placement(loc, tile))
+            end
+        end
+    end
+end
+
+function add_moves(board, ispinned)
     for bug in 0x00:0x07
         for num in 0x00:NUM_MAP[bug + 0x01]
             semi_tile = (tile_from_info(board.current_color, bug, num) >> INDEX_SHIFT) + 1
@@ -70,20 +117,11 @@ function validactions_general(board::Board)
                         bugmoves(board, loc, bug, get_tile_height(tile), ispinned)
                     end
                 else
-                    # Generate placements for unplaced tiles that are the first of their kind
-                    tile = get_tile_unplaced(semi_tile)
-                    generate_placements(board, my_placement_locs, tile)
                     break
                 end
             end
         end
     end
-
-    if board.action_index == 1
-        add_action(board, Pass(); avoid_duplicates=false)
-    end
-
-    return nothing
 end
 
 """
@@ -447,32 +485,6 @@ end
         (get_tile_on_board(board, neighlocs[i == 1 ? 6 : i - 1]) == EMPTY_TILE) ⊻
         (get_tile_on_board(board, neighlocs[i == 6 ? 1 : i + 1]) == EMPTY_TILE)
     )
-end
-
-function generate_placements(board, placement_locs, tile)
-    foreach(loc -> add_action(board, Placement(loc, tile)), placement_locs)
-end
-
-function generate_placement_locs(board, color)
-    locs = Set{Int}()
-    for loc in board.tile_locs
-        if loc >= 0
-            empty_neighs = filter(n -> get_tile_on_board(board, n) == EMPTY_TILE, allneighs(loc))
-
-            for empty_neigh in empty_neighs
-                neigh_locs2 = allneighs(empty_neigh)
-                if all(
-                    n ->
-                        get_tile_on_board(board, n) == EMPTY_TILE ||
-                            get_tile_color(get_tile_on_board(board, n)) == color,
-                    neigh_locs2,
-                )
-                    push!(locs, empty_neigh)
-                end
-            end
-        end
-    end
-    return locs
 end
 
 """

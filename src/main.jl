@@ -72,7 +72,7 @@ function start(board, gamestring)
                     show(gamestring)
 
                 elseif command == "show"
-                    show(board)
+                    show(board, false)
                 elseif command == "pass"
                     if Pass() in validactions(board)
                         do_action(board, Pass())

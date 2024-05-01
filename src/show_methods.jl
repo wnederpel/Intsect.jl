@@ -26,7 +26,7 @@ function get_tile_name(tile)
     return name
 end
 
-function Base.show(board::Board, show_locs::Bool=false)
+function Base.show(board::Board, show_locs::Bool=true)
     println("-----------------")
     show(GameString(board))
     println("-----------------")

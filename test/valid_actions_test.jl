@@ -89,16 +89,11 @@ end
     wQ_loc = apply_direction(wL_loc, Direction.W)
 
     board = handle_newgame_command(Gametype.MLP)
-    set_tile_on_board(board, wL_loc, wL)
-    set_loc(board, wL, wL_loc)
-    board.ply += 1
-    set_tile_on_board(board, bL_loc, bL)
-    set_loc(board, bL, bL_loc)
-    board.ply += 1
-    board.turn += 1
 
-    actions = validactions(board)
-    @test all(actions -> actions isa Placement, actions)
+    do_action(board, action_from_move_string(board, "wL"))
+    do_action(board, action_from_move_string(board, "bL wL-"))
+
+    @test all(actions -> actions isa Placement, validactions(board))
 end
 
 @testitem "The tile moved by the pillbug cannot be moved the next turn" begin

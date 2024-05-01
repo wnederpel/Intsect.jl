@@ -347,6 +347,50 @@ end
     @test is_pinned[wA2_loc] == false
 end
 
+@testitem "Test undo climbs" begin
+    using StaticArrays
+
+    function test_board_state(
+        board, ply, current_color, turn, queen_placed, just_moved_loc, moved_by_pillbug_loc
+    )
+        @test board.ply == ply
+        @test board.current_color == current_color
+        @test board.turn == turn
+        @test board.queen_placed == queen_placed
+        @test board.just_moved_loc == just_moved_loc
+        @test board.moved_by_pillbug_loc == moved_by_pillbug_loc
+    end
+
+    board = handle_newgame_command(Gametype.MLP)
+
+    do_action(board, action_from_move_string(board, "wL"))
+    undo(board)
+    do_action(board, action_from_move_string(board, "wL"))
+
+    do_action(board, action_from_move_string(board, "bL wL-"))
+    undo(board)
+    do_action(board, action_from_move_string(board, "bL wL-"))
+
+    do_action(board, action_from_move_string(board, "wQ -wL"))
+    do_action(board, action_from_move_string(board, "bQ bL-"))
+    undo(board)
+    undo(board)
+    do_action(board, action_from_move_string(board, "wQ -wL"))
+    do_action(board, action_from_move_string(board, "bQ bL-"))
+
+    do_action(board, action_from_move_string(board, "wB1 -wQ"))
+    do_action(board, action_from_move_string(board, "bB1 bQ-"))
+
+    do_action(board, action_from_move_string(board, "wB1 -wL"))
+    do_action(board, action_from_move_string(board, "bB1 bL-"))
+
+    undo(board)
+    undo(board)
+
+    # TODO TEST: extend with tests, also test under world
+    @test false
+end
+
 # TODO test:
 @testitem "Test climb moves and underworld" begin
     bQ = get_tile_from_string("bQ")

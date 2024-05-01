@@ -29,7 +29,7 @@ export INVALID_LOC
 export MID
 export WHITE
 export BLACK
-export NUM_MAP
+export MAX_NUMS
 
 # enums
 export Bug
@@ -48,6 +48,7 @@ export get_tile_info
 export get_tile_name
 export get_tile_height
 export get_tile_bug
+export get_tile_bug_num
 export get_tile_color
 export get_pinned_tiles
 export allneighs

@@ -67,6 +67,8 @@ mutable struct Board
     underworld::DefaultDict{Int,Stack{UInt8}}
     validactions::SizedVector{VALID_BUFFER_SIZE,Action}
     action_index::Int
+    placeable_tiles::SVector{2,MVector{8,UInt8}}
+    placement_locs::SVector{2,BitSet}
 end
 
 function Board(tiles, tile_locs)
@@ -85,6 +87,15 @@ function Board(tiles, tile_locs)
         DefaultDict{Int,Stack{UInt8}}(() -> Stack{UInt8}()),
         SizedVector{VALID_BUFFER_SIZE,Action}(fill(Pass(), VALID_BUFFER_SIZE)),
         1,
+        SVector{2,MVector{8,UInt8}}(
+            MVector{8,UInt8}(
+                get_tile_from_string.(["bA1", "bG1", "bB1", "bS1", "bQ", "bL", "bM", "bP"])
+            ),
+            MVector{8,UInt8}(
+                get_tile_from_string.(["wA1", "wG1", "wB1", "wS1", "wQ", "wL", "wM", "wP"])
+            ),
+        ),
+        SVector{2,Set}(BitSet(), BitSet()),
     )
 end
 

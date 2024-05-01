@@ -56,7 +56,16 @@ function get_tile_height(tile)
     if tile == EMPTY_TILE
         return 0x00
     end
-    return (tile & HEIGHT_MASK) >> HEIGHT_SHIFT + 1
+    return (tile & HEIGHT_MASK) >> HEIGHT_SHIFT + 0x01
+end
+
+function next_bug_num(tile)
+    color, bug, bug_num, height = get_tile_info(tile)
+    max_num = MAX_NUMS[bug + 0x01]
+    if bug_num == max_num
+        return EMPTY_TILE
+    end
+    return tile_from_info(color, bug, bug_num + 0x01; height=height - 0x01)
 end
 
 """
@@ -236,7 +245,7 @@ function action_from_move_string(board, move_string)
     validactions(board)
     if !(action in board.validactions)
         error(
-            "Invalid action: '$(move_string_from_action(board, action))' not present in valid actions",
+            "Invalid action: '$(move_string_from_action(board, action))' or '$action' not present in valid actions",
         )
     end
     board.action_index = 1
@@ -348,6 +357,11 @@ function do_action(board, placement::Placement)
         board.queen_placed[board.current_color + 1] = true
     end
 
+    bug = get_tile_bug(placement.tile)
+    board.placeable_tiles[board.current_color + 1][bug + 0x01] = next_bug_num(placement.tile)
+
+    update_placement_locs_goal(board, placement.goal_loc)
+
     post_action_update(board, placement)
 end
 
@@ -361,6 +375,9 @@ function do_action(board, move::Move)
     set_tile_on_board(board, move.goal_loc, moving_tile)
     set_tile_on_board(board, move.moving_loc, EMPTY_TILE)
     set_loc(board, moving_tile, move.goal_loc)
+
+    update_placement_locs_start(board, move.moving_loc)
+    update_placement_locs_goal(board, move.goal_loc)
 
     post_action_update(board, move)
 end
@@ -389,7 +406,89 @@ function do_action(board, climb::Climb)
     )
     set_loc(board, moving_tile, climb.goal_loc)
 
+    # Many things can go happen with climbs (in terms of placement locs), just recalculate entirely
+    update_placement_locs_recompute(board, climb.moving_loc)
+    update_placement_locs_recompute(board, climb.goal_loc)
+
     post_action_update(board, climb)
+end
+
+function update_placement_locs_recompute(board, changed_loc)
+    for loc in [allneighs(changed_loc)...; changed_loc]
+        for color in 0:1
+            delete!(board.placement_locs[color + 1], loc)
+
+            if get_tile_on_board(board, loc) == EMPTY_TILE
+                if all(
+                    neigh -> begin
+                        neigh_tile = get_tile_on_board(board, neigh)
+                        return neigh_tile == EMPTY_TILE || get_tile_color(neigh_tile) == color
+                    end,
+                    allneighs(loc),
+                ) && any(neigh -> get_tile_on_board(board, neigh) != EMPTY_TILE, allneighs(loc))
+                    push!(board.placement_locs[color + 1], loc)
+                end
+            end
+        end
+    end
+end
+
+function update_placement_locs_goal(board, goal_loc)
+    # We know that we moved to the changed_loc, so that must become unavailable for us
+    delete!(board.placement_locs[board.current_color + 1], goal_loc)
+
+    # Everything touching the goal loc is now unavailable for the opponent
+    for loc in allneighs(goal_loc)
+        delete!(board.placement_locs[board.current_color == WHITE ? BLACK + 1 : WHITE + 1], loc)
+    end
+
+    # Everything we now touch & is free might have become available if it was not before
+    for loc in allneighs(goal_loc)
+        tile = get_tile_on_board(board, loc)
+        if tile == EMPTY_TILE && !(tile in board.placement_locs[board.current_color + 1])
+            if all(
+                neigh -> begin
+                    neigh_tile = get_tile_on_board(board, neigh)
+                    return neigh_tile == EMPTY_TILE ||
+                           get_tile_color(neigh_tile) == board.current_color
+                end,
+                allneighs(loc),
+            )
+                push!(board.placement_locs[board.current_color + 1], loc)
+            end
+        end
+    end
+
+    if board.ply == 2
+        # On ply 2 we can move to a location that the other color is touching
+        delete!(
+            board.placement_locs[board.current_color == WHITE ? BLACK + 1 : WHITE + 1], goal_loc
+        )
+    end
+end
+
+function update_placement_locs_start(board, moving_loc)
+    # remove on of our own color, no changes to other color
+    # The moved loc is now sure available for placement
+    push!(board.placement_locs[board.current_color + 1], moving_loc)
+    # All thouching available locs to check if they still touch an tile
+    for loc in allneighs(moving_loc)
+        if loc in board.placement_locs[board.current_color + 1]
+            if all(neigh -> get_tile_on_board(board, neigh) == EMPTY_TILE, allneighs(loc))
+                delete!(board.placement_locs[board.current_color + 1], loc)
+            end
+        end
+    end
+end
+
+function inverse_update_placement_locs_start(board, moving_loc)
+    # This is like placing it at the moving loc
+    update_placement_locs_goal(board, moving_loc)
+end
+
+function inverse_update_placement_locs_goal(board, goal_loc)
+    # This is like removing the tile from the goal loc
+    update_placement_locs_start(board, goal_loc)
 end
 
 function undo(board)
@@ -409,6 +508,11 @@ function undo_action(board, action::Placement)
     end
 
     inverse_post_action_update(board)
+
+    bug = get_tile_bug(action.tile)
+    board.placeable_tiles[board.current_color + 1][bug + 0x01] = action.tile
+
+    inverse_update_placement_locs_goal(board, action.goal_loc)
 end
 
 function undo_action(board, action::Move)
@@ -418,13 +522,21 @@ function undo_action(board, action::Move)
     set_loc(board, moving_tile, action.moving_loc)
 
     inverse_post_action_update(board)
+
+    inverse_update_placement_locs_goal(board, action.goal_loc)
+    inverse_update_placement_locs_start(board, action.moving_loc)
 end
 
 function undo_action(board, climb::Climb)
     burrowed_tile = get_tile_on_board(board, climb.moving_loc)
     moving_tile = get_tile_on_board(board, climb.goal_loc)
 
-    set_tile_on_board(board, climb.moving_loc, moving_tile)
+    set_tile_on_board(
+        board,
+        climb.moving_loc,
+        moving_tile - get_tile_height(moving_tile) +
+        UInt8(length(board.underworld[climb.goal_loc])),
+    )
     set_loc(board, moving_tile, climb.moving_loc)
 
     if burrowed_tile != EMPTY_TILE
@@ -440,7 +552,11 @@ function undo_action(board, climb::Climb)
     else
         set_tile_on_board(board, climb.goal_loc, EMPTY_TILE)
     end
+
     inverse_post_action_update(board)
+
+    update_placement_locs_recompute(board, climb.moving_loc)
+    update_placement_locs_recompute(board, climb.goal_loc)
 end
 
 function undo_action(board, pass::Pass)
