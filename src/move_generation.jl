@@ -103,20 +103,21 @@ function add_placements(board)
 end
 
 function add_moves(board, ispinned)
+    # placement_locs = generate_placement_locs(board, board.current_color)
     for bug in 0x00:0x07
-        for num in 0x00:NUM_MAP[bug + 0x01]
+        for num in 0x00:MAX_NUMS[bug + 0x01]
             semi_tile = (tile_from_info(board.current_color, bug, num) >> INDEX_SHIFT) + 1
             loc = board.tile_locs[semi_tile]
 
             if loc != UNDERGROUND
                 if loc != NOT_PLACED
-                    if board.queen_placed[board.current_color + 1] &&
-                        loc != board.moved_by_pillbug_loc
+                    if loc != board.moved_by_pillbug_loc
                         # Generate moves for placed tiles
                         tile = get_tile_on_board(board, loc)
                         bugmoves(board, loc, bug, get_tile_height(tile), ispinned)
                     end
                 else
+                    # generate_placements(board, placement_locs, get_tile_unplaced(semi_tile))
                     break
                 end
             end

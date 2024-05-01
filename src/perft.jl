@@ -1,5 +1,6 @@
 function perft()
     # https://github.com/jonthysell/Mzinga/wiki/Perft
+    # TODO speed: look into bump allocations for the whole board maybe? would be cool. 
     for depth in 1:5
         nodes, time_taken, memory_allocated, gc_time, _ = @timed perft(
             depth, handle_newgame_command(Gametype.MLP)
@@ -17,8 +18,6 @@ function perft()
 end
 
 function perft(depth::Int, board)::Int
-    # TODO speed: 
-    # Look into using the smart julia allocation package to get stack allocations. I forgot the name
     if depth == 1
         return length(validactions(board))
     end

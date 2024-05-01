@@ -1,4 +1,4 @@
-@testitem "Test placement location generation" begin
+@testitem "Placement location generation" begin
     wQ_loc = MID - 1
     bQ_loc = MID + 2
 
@@ -46,7 +46,22 @@
     @test apply_direction(bQ_loc, Direction.SW) in board.placement_locs[1]
 end
 
-@testitem "Test placement location generation after undo" begin
+@testitem "Placement location generation after undo ply 2" begin
+    board = handle_newgame_command(Gametype.MLP)
+
+    do_action(board, action_from_move_string(board, "wP"))
+    do_action(board, action_from_move_string(board, "bP wP-"))
+    undo(board)
+    do_action(board, action_from_move_string(board, "bP wP\\"))
+    undo(board)
+    do_action(board, action_from_move_string(board, "bP wP/"))
+
+    actions = validactions(board)
+
+    @assert length(actions) == 7 * 3
+end
+
+@testitem "Placement location generation after undo" begin
     wQ_loc = MID - 1
     bQ_loc = MID + 2
 

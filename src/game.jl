@@ -468,16 +468,21 @@ function update_placement_locs_goal(board, goal_loc)
 end
 
 function update_placement_locs_start(board, moving_loc)
-    # remove on of our own color, no changes to other color
-    # The moved loc is now sure available for placement
-    push!(board.placement_locs[board.current_color + 1], moving_loc)
-    # All thouching available locs to check if they still touch an tile
-    for loc in allneighs(moving_loc)
-        if loc in board.placement_locs[board.current_color + 1]
-            if all(neigh -> get_tile_on_board(board, neigh) == EMPTY_TILE, allneighs(loc))
-                delete!(board.placement_locs[board.current_color + 1], loc)
+    if board.ply != 2
+        # remove on of our own color, no changes to other color
+        # The moved loc is now sure available for placement
+        push!(board.placement_locs[board.current_color + 1], moving_loc)
+        # All thouching available locs to check if they still touch an tile
+        for loc in allneighs(moving_loc)
+            if loc in board.placement_locs[board.current_color + 1]
+                if all(neigh -> get_tile_on_board(board, neigh) == EMPTY_TILE, allneighs(loc))
+                    delete!(board.placement_locs[board.current_color + 1], loc)
+                end
             end
         end
+    else
+        # On ply two wild stuff can happen, just recompute
+        update_placement_locs_recompute(board, moving_loc)
     end
 end
 
