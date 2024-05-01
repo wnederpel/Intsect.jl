@@ -23,17 +23,11 @@ board = handle_newgame_command(Gametype.MLP)
 
 do_action(board, action_from_move_string(board, "wP"))
 do_action(board, action_from_move_string(board, "bP wP-"))
-undo(board)
-do_action(board, action_from_move_string(board, "bP wP\\"))
-undo(board)
-do_action(board, action_from_move_string(board, "bP wP/"))
 
-# do_action(board, action_from_move_string(board, w3 * " \\" * w2))
-# do_action(board, action_from_move_string(board, b3 * " " * b2 * "/"))
+do_action(board, action_from_move_string(board, "wQ -wP"))
+do_action(board, action_from_move_string(board, "bQ bP-"))
 
 show(board, true)
-println(board.placeable_tiles[1])
-println(board.placeable_tiles[2])
 
 actions = validactions(board)
 

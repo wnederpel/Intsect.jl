@@ -324,7 +324,8 @@ function update_gamestring(gamestring, board)
         gamestring.gamestate = "InProgress"
     end
     gamestring.movestrings = ""
-    for (_, movestring) in Iterators.reverse(board.history)
+    for (_, movestring_func) in Iterators.reverse(board.history)
+        movestring = movestring_func()
         gamestring.movestrings *= ";" * movestring
     end
     gamestring.player =
@@ -438,9 +439,13 @@ function update_placement_locs_goal(board, goal_loc)
     delete!(board.placement_locs[board.current_color + 1], goal_loc)
 
     # Everything touching the goal loc is now unavailable for the opponent
-    for loc in allneighs(goal_loc)
-        delete!(board.placement_locs[board.current_color == WHITE ? BLACK + 1 : WHITE + 1], loc)
-    end
+    foreach(
+        loc -> delete!(
+            board.placement_locs[board.current_color == WHITE ? BLACK + 1 : WHITE + 1], loc
+        ),
+        allneighs(goal_loc),
+    )
+    delete!(board.placement_locs[board.current_color == WHITE ? BLACK + 1 : WHITE + 1], goal_loc)
 
     # Everything we now touch & is free might have become available if it was not before
     for loc in allneighs(goal_loc)
@@ -613,7 +618,8 @@ function post_action_pillbug_update(board, move)
 end
 
 function pre_action_update(board, action)
-    push!(board.history, (action, move_string_from_action(board, action)))
+    # TODO speed: do not add the string by default, maybe do this lazily
+    push!(board.history, (action, () -> move_string_from_action(board, action)))
 end
 
 function post_action_general_update(board, action)

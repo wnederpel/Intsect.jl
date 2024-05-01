@@ -48,21 +48,25 @@ Valid actions for the default case
 function validactions_general(board::Board)
     # TODO speed: ispinned does not need to be recomputed after every move
     # when an elbow is filled, or when a tile is simply pinnned, the dict only changes locally.
-    ispinned = get_pinned_tiles(board)
     if board.gameover
         return nothing
     end
 
-    add_placements(board)
+    @no_escape begin
+        ispinned = @alloc(eltype(true), GRID_SIZE)
+        ispinned .= false
+        get_pinned_tiles!(board, ispinned)
 
-    if board.queen_placed[board.current_color + 1]
-        add_moves(board, ispinned)
+        add_placements(board)
+
+        if board.queen_placed[board.current_color + 1]
+            add_moves(board, ispinned)
+        end
+
+        if board.action_index == 1
+            add_action(board, Pass(); avoid_duplicates=false)
+        end
     end
-
-    if board.action_index == 1
-        add_action(board, Pass(); avoid_duplicates=false)
-    end
-
     return nothing
 end
 
@@ -93,13 +97,15 @@ function generate_placement_locs(board, color)
 end
 
 function add_placements(board)
-    for loc in board.placement_locs[board.current_color + 1]
-        for tile in board.placeable_tiles[board.current_color + 1]
-            if tile != EMPTY_TILE
-                add_action(board, Placement(loc, tile))
-            end
-        end
-    end
+    foreach(
+        loc -> foreach(
+            tile -> tile != EMPTY_TILE && add_action(board, Placement(loc, tile)),
+            board.placeable_tiles[board.current_color + 1],
+        ),
+        board.placement_locs[board.current_color + 1],
+    )
+
+    return nothing
 end
 
 function add_moves(board, ispinned)
@@ -184,7 +190,7 @@ function bugmoves(board, loc, bug, height, ispinned; avoid_duplicates=false)
     elseif bug == Integer(Bug.MOSQUITO)
         mosquitomoves(board, loc, height, ispinned)
     end
-    if !ispinned[loc]
+    if !ispinned[loc + 1]
         if bug == Integer(Bug.ANT)
             antmoves(board, loc; avoid_duplicates)
         elseif bug == Integer(Bug.SPIDER)
@@ -225,7 +231,7 @@ end
 function pillbugmoves(board, startloc, ispinned; avoid_duplicates=false)
     # TODO func: fix the problem where it does not slide units into elbows
     maxdepth = 1
-    if !ispinned[startloc]
+    if !ispinned[startloc + 1]
         moves_to_depth(board, startloc, maxdepth; avoid_duplicates)
     end
     # Ladybug also has special moves
@@ -252,7 +258,7 @@ function pillbugmoves(board, startloc, ispinned; avoid_duplicates=false)
                 loc = neighlocs[i]
                 tile = get_tile_on_board(board, loc)
                 return tile != EMPTY_TILE &&
-                       !ispinned[loc] &&
+                       !ispinned[loc + 1] &&
                        loc != board.just_moved_loc &&
                        get_tile_height(tile) == 1 &&
                        canslide[i]
@@ -515,18 +521,24 @@ GetArticulationPoints(i, d)
     if (parent[i] ≠ null and isArticulation) or (parent[i] = null and childCount > 1) then
         Output i as articulation point
 """
-function get_pinned_tiles(board)
-    pinned_tiles = DefaultDict(false)
-    visited_dict = DefaultDict(false)
-    depth_dict = Dict()
-    low_dict = Dict()
-    parent_dict = DefaultDict(INVALID_LOC)
-    for loc in board.tile_locs
-        if loc != INVALID_LOC && loc != NOT_PLACED
-            get_pinned_tiles!(
-                board, pinned_tiles, visited_dict, depth_dict, low_dict, parent_dict, loc, 0
-            )
-            return pinned_tiles
+function get_pinned_tiles!(board, pinned_tiles)
+    @no_escape begin
+        # Allocate a `PtrArray` (see StrideArraysCore.jl) using memory from the default buffer.
+        visited_dict = @alloc(eltype(true), GRID_SIZE)
+        depth_dict = @alloc(eltype(board.tile_locs), GRID_SIZE)
+        low_dict = @alloc(eltype(board.tile_locs), GRID_SIZE)
+        parent_dict = @alloc(eltype(board.tile_locs), GRID_SIZE)
+
+        visited_dict .= false
+        parent_dict .= INVALID_LOC
+
+        for loc in board.tile_locs
+            if loc != INVALID_LOC && loc != NOT_PLACED
+                get_pinned_tiles!(
+                    board, pinned_tiles, visited_dict, depth_dict, low_dict, parent_dict, loc, 0
+                )
+                break
+            end
         end
     end
 end
@@ -534,9 +546,9 @@ end
 function get_pinned_tiles!(
     board, pinned_tiles_dict, visited_dict, depth_dict, low_dict, parent_dict, loc, depth
 )
-    visited_dict[loc] = true
-    depth_dict[loc] = depth
-    low_dict[loc] = depth
+    visited_dict[loc + 1] = true
+    depth_dict[loc + 1] = depth
+    low_dict[loc + 1] = depth
     child_count = 0
     is_articulation = false
 
@@ -544,8 +556,8 @@ function get_pinned_tiles!(
         if get_tile_on_board(board, nloc) == EMPTY_TILE
             continue
         end
-        if !visited_dict[nloc]
-            parent_dict[nloc] = loc
+        if !visited_dict[nloc + 1]
+            parent_dict[nloc + 1] = loc
             get_pinned_tiles!(
                 board,
                 pinned_tiles_dict,
@@ -557,16 +569,16 @@ function get_pinned_tiles!(
                 depth + 1,
             )
             child_count += 1
-            if low_dict[nloc] >= depth_dict[loc]
+            if low_dict[nloc + 1] >= depth_dict[loc + 1]
                 is_articulation = true
             end
-            low_dict[loc] = min(low_dict[loc], low_dict[nloc])
-        elseif nloc != parent_dict[loc]
-            low_dict[loc] = min(low_dict[loc], depth_dict[nloc])
+            low_dict[loc + 1] = min(low_dict[loc + 1], low_dict[nloc + 1])
+        elseif nloc != parent_dict[loc + 1]
+            low_dict[loc + 1] = min(low_dict[loc + 1], depth_dict[nloc + 1])
         end
     end
-    if (parent_dict[loc] != INVALID_LOC && is_articulation) ||
-        (parent_dict[loc] == INVALID_LOC && child_count > 1)
-        pinned_tiles_dict[loc] = true
+    if (parent_dict[loc + 1] != INVALID_LOC && is_articulation) ||
+        (parent_dict[loc + 1] == INVALID_LOC && child_count > 1)
+        pinned_tiles_dict[loc + 1] = true
     end
 end

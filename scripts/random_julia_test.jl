@@ -1,30 +1,14 @@
-using BenchmarkTools
-# TODO: test MVectors vs SizedVectors of static arrays
-n = 100_000_000
+using Bumper
 
-x = rand(n)
+abstract type MyType end
 
-y = rand(n)
-
-a = exp(1)
-
-function axpy_multi(x, y, a)
-    Threads.@threads for i in eachindex(x)
-        y[i] += a * x[i]
-    end
-    return y
+struct MyStruct <: MyType
+    x::Int
 end
 
-function axpy_other(x, y, a)
-    return @. a * x + y
+Base.sizeof(::Type{MyType}) = sizeof(Int)
+
+@no_escape begin
+    foo_arr = @alloc(MyType, 10)
+    println(foo_arr)
 end
-
-function axpy_inplace!(x, y, a)
-    @. y += a * x
-end
-
-@btime axpy_multi(x, y, a) setup = (y = rand(n))
-@btime axpy_other(x, y, a) setup = (y = rand(n))
-@btime axpy_inplace!(x, y, a) setup = (y = rand(n))
-
-println()
