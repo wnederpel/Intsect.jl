@@ -29,6 +29,9 @@ do_action(board, action_from_move_string(board, "bQ bP-"))
 
 show(board, true)
 
+is_pinned = get_pinned_tiles(board)
+println(is_pinned)
+
 actions = validactions(board)
 
 show(actions, board)

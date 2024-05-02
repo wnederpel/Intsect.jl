@@ -301,13 +301,13 @@ end
 
     # Test pinned tiles
     is_pinned = get_pinned_tiles(board)
-    @test is_pinned[wS1_loc] == true
-    @test is_pinned[bS1_loc] == true
-    @test is_pinned[wQ_loc] == true
-    @test is_pinned[bQ_loc] == false
-    @test is_pinned[wA1_loc] == false
-    @test is_pinned[bA1_loc] == false
-    @test is_pinned[wS2_loc] == false
+    @test is_pinned[wS1_loc + 1] == true
+    @test is_pinned[bS1_loc + 1] == true
+    @test is_pinned[wQ_loc + 1] == true
+    @test is_pinned[bQ_loc + 1] == false
+    @test is_pinned[wA1_loc + 1] == false
+    @test is_pinned[bA1_loc + 1] == false
+    @test is_pinned[wS2_loc + 1] == false
 
     action10 = Placement(bA2_loc, bA2)
     do_action(board, action10)
@@ -317,14 +317,14 @@ end
     do_action(board, action11)
 
     is_pinned = get_pinned_tiles(board)
-    @test is_pinned[wS1_loc] == false
-    @test is_pinned[bS1_loc] == false
-    @test is_pinned[wQ_loc] == false
-    @test is_pinned[bQ_loc] == false
-    @test is_pinned[wA1_loc] == false
-    @test is_pinned[bA1_loc] == false
-    @test is_pinned[wS2_loc] == false
-    @test is_pinned[bA2_loc] == false
+    @test is_pinned[wS1_loc + 1] == false
+    @test is_pinned[bS1_loc + 1] == false
+    @test is_pinned[wQ_loc + 1] == false
+    @test is_pinned[bQ_loc + 1] == false
+    @test is_pinned[wA1_loc + 1] == false
+    @test is_pinned[bA1_loc + 1] == false
+    @test is_pinned[wS2_loc + 1] == false
+    @test is_pinned[bA2_loc + 1] == false
 
     bA3_loc = apply_direction(bA2_loc, Direction.NE)
     action12 = Placement(bA3_loc, bA3)
@@ -335,16 +335,16 @@ end
     do_action(board, action12)
 
     is_pinned = get_pinned_tiles(board)
-    @test is_pinned[wS1_loc] == false
-    @test is_pinned[bS1_loc] == false
-    @test is_pinned[wQ_loc] == false
-    @test is_pinned[bQ_loc] == false
-    @test is_pinned[wA1_loc] == false
-    @test is_pinned[bA1_loc] == false
-    @test is_pinned[wS2_loc] == true
-    @test is_pinned[bA2_loc] == true
-    @test is_pinned[bA3_loc] == false
-    @test is_pinned[wA2_loc] == false
+    @test is_pinned[wS1_loc + 1] == false
+    @test is_pinned[bS1_loc + 1] == false
+    @test is_pinned[wQ_loc + 1] == false
+    @test is_pinned[bQ_loc + 1] == false
+    @test is_pinned[wA1_loc + 1] == false
+    @test is_pinned[bA1_loc + 1] == false
+    @test is_pinned[wS2_loc + 1] == true
+    @test is_pinned[bA2_loc + 1] == true
+    @test is_pinned[bA3_loc + 1] == false
+    @test is_pinned[wA2_loc + 1] == false
 end
 
 @testitem "Test climb moves and underworld" begin
@@ -381,7 +381,7 @@ end
     @test isempty(board.underworld[get_loc(board, wB1)])
 end
 
-@testitem "Pillbug special moves can still be valid, even when the pillbug is stuck" begin
+@testitem "Pillbug special moves are valid, even when the pillbug is stuck" begin
     board = handle_newgame_command(Gametype.MLP)
 
     do_action(board, action_from_move_string(board, "wP"))
@@ -389,6 +389,19 @@ end
 
     do_action(board, action_from_move_string(board, "wQ -wP"))
     do_action(board, action_from_move_string(board, "bQ bS1-"))
+
+    @test length(validactions(board)) == 34
+    @test count(action -> action isa Move, validactions(board)) == 4
+end
+
+@testitem "Pillbug special moves for mosquito are valid, even when the pillbug and mosquito are stuck" begin
+    board = handle_newgame_command(Gametype.MLP)
+
+    do_action(board, action_from_move_string(board, "wM"))
+    do_action(board, action_from_move_string(board, "bP wM-"))
+
+    do_action(board, action_from_move_string(board, "wQ -wM"))
+    do_action(board, action_from_move_string(board, "bQ bP-"))
 
     @test length(validactions(board)) == 34
     @test count(action -> action isa Move, validactions(board)) == 4

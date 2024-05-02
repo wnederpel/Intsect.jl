@@ -1,7 +1,7 @@
 function perft()
     # https://github.com/jonthysell/Mzinga/wiki/Perft
     # TODO speed: look into bump allocations for the whole board maybe? would be cool. 
-    for depth in 1:5
+    for depth in 1:6
         nodes, time_taken, memory_allocated, gc_time, _ = @timed perft(
             depth, handle_newgame_command(Gametype.MLP)
         )
@@ -19,6 +19,8 @@ end
 
 function perft(depth::Int, board)::Int
     if depth == 1
+        # Not needed to allocate here, use a global valid move buffer,
+        # Here you can just read the action_index.
         return length(validactions(board))
     end
 

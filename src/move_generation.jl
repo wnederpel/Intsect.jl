@@ -582,3 +582,9 @@ function get_pinned_tiles!(
         pinned_tiles_dict[loc + 1] = true
     end
 end
+
+function get_pinned_tiles(board)
+    pinned_tiles = fill(false, GRID_SIZE)
+    get_pinned_tiles!(board, pinned_tiles)
+    return pinned_tiles
+end

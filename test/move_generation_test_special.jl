@@ -309,9 +309,9 @@ end
     set_tile_on_board(board, bM_loc, bM)
 
     ispinned = DefaultDict{Int,Bool}(false)
-    ispinned[wP_loc] = true
-    ispinned[bQ_loc] = true
-    ispinned[bP_loc] = true
+    ispinned[wP_loc + 1] = true
+    ispinned[bQ_loc + 1] = true
+    ispinned[bP_loc + 1] = true
 
     pillbugmoves(board, wP_loc, ispinned)
     moves = extract_valid_actions(board)
@@ -354,9 +354,9 @@ end
     set_tile_on_board(board, bM_loc, bM)
 
     ispinned = DefaultDict{Int,Bool}(false)
-    ispinned[wP_loc] = true
-    ispinned[bQ_loc] = true
-    ispinned[bB1_loc] = true
+    ispinned[wP_loc + 1] = true
+    ispinned[bQ_loc + 1] = true
+    ispinned[bB1_loc + 1] = true
 
     pillbugmoves(board, wP_loc, ispinned)
     moves = extract_valid_actions(board)
