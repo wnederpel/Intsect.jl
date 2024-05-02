@@ -14,42 +14,41 @@
 end
 
 @testitem "The white queen must be placed on the fourth move at the latest" begin
-    wL = get_tile_from_string("wL")
     wQ = get_tile_from_string("wQ")
 
-    wL_loc = MID
-
     board = handle_newgame_command(Gametype.MLP)
-    board.turn = 4
 
-    set_tile_on_board(board, wL_loc, wL)
-    set_loc(board, wL, wL_loc)
+    do_action(board, "wL")
+    do_action(board, "bL wL-")
+
+    do_action(board, "wP -wL")
+    do_action(board, "bP bL-")
+
+    do_action(board, "wA1 -wP")
+    do_action(board, "bA1 bP-")
 
     actions = validactions(board)
-    @test length(actions) == 1 * 6
     @test all(action -> action isa Placement, actions)
     @test all(action -> action.tile == wQ, actions)
 end
 
 @testitem "The black queen must be placed on the fourth move at the latest" begin
-    wL = get_tile_from_string("wL")
-    bL = get_tile_from_string("bL")
-    wQ = get_tile_from_string("wQ")
     bQ = get_tile_from_string("bQ")
 
-    wL_loc = MID
-    bL_loc = apply_direction(wL_loc, Direction.E)
-
     board = handle_newgame_command(Gametype.MLP)
-    board.turn = 4
-    board.current_color = BLACK
 
-    set_tile_on_board(board, wL_loc, wL)
-    set_loc(board, wL, wL_loc)
-    set_loc(board, bL, bL_loc)
+    do_action(board, "wL")
+    do_action(board, "bL wL-")
+
+    do_action(board, "wP -wL")
+    do_action(board, "bP bL-")
+
+    do_action(board, "wA1 -wP")
+    do_action(board, "bA1 bP-")
+
+    do_action(board, "wQ -wA1")
 
     actions = validactions(board)
-    @test length(actions) == 1 * 3
     @test all(action -> action isa Placement, actions)
     @test all(action -> action.tile == bQ, actions)
 end

@@ -57,7 +57,6 @@ export action_from_move_string
 export do_action
 export validactions
 export isvalid_shifted_tile
-export generate_placement_locs
 export push_slidelocs!
 export antmoves
 export grasshoppermoves

@@ -126,3 +126,34 @@ end
     @test apply_direction(bQ_loc, Direction.SE) in board.placement_locs[1]
     @test apply_direction(bQ_loc, Direction.SW) in board.placement_locs[1]
 end
+
+@testitem "Placement location generation after undo 2" begin
+
+    # do a bunch of moves
+    game = raw"wA1;bA1 \wA1;wA2 wA1-;bA2 bA1/;wP wA2/"
+    movestrings = split(game, ';')
+
+    board = handle_newgame_command(Gametype.MLP)
+
+    for movestring in movestrings
+        action = action_from_move_string(board, movestring)
+        do_action(board, action)
+    end
+
+    # Undo a placement that had neighs where black should be able to place after undoing
+    undo(board)
+
+    # then do some other placement
+    action = action_from_move_string(board, "wA3 wA2-")
+    do_action(board, action)
+
+    # Test that it all works out
+    @test length(board.placement_locs[board.current_color + 1]) == 5
+    @test 20 in board.placement_locs[board.current_color + 1]
+
+    # This somehow changed the outcome in the tests
+    GameString(board)
+
+    @test length(board.placement_locs[board.current_color + 1]) == 5
+    @test 20 in board.placement_locs[board.current_color + 1]
+end

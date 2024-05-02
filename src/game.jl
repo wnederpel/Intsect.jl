@@ -221,13 +221,15 @@ function action_from_move_string(board, move_string)
         other_loc = get_loc(board, other_tile)
 
         if other_loc == NOT_PLACED
-            error("the goal piece $other_string is not placed on the board")
+            error(
+                "Processing movestring $move_string: the goal piece $other_string is not placed on the board",
+            )
         end
 
         goal_loc = apply_direction(other_loc, direction)
 
         if moving_loc != NOT_PLACED
-            if goal_loc != EMPTY_TILE || get_tile_height(moving_tile) > 1
+            if get_tile_on_board(board, goal_loc) != EMPTY_TILE || get_tile_height(moving_tile) > 1
                 action = Climb(moving_loc, goal_loc)
             else
                 action = Move(moving_loc, goal_loc)
@@ -255,7 +257,6 @@ end
 function move_string_from_action(board, action::Action)
     moving_tile = get_tile_on_board(board, action.moving_loc)
     if moving_tile == EMPTY_TILE
-        show(board, true)
         error("no tile to move at loc $(action.moving_loc)")
     end
     move_string = get_tile_name(moving_tile)
@@ -323,11 +324,20 @@ function update_gamestring(gamestring, board)
     else
         gamestring.gamestate = "InProgress"
     end
+
     gamestring.movestrings = ""
-    for (_, movestring_func) in Iterators.reverse(board.history)
-        movestring = movestring_func()
-        gamestring.movestrings *= ";" * movestring
+    # Build movestrings from most recent move back to start move
+    history_save = deepcopy(board.history)
+    for action in board.history
+        undo(board)
+        movestring = move_string_from_action(board, action)
+        gamestring.movestrings = ";" * movestring * gamestring.movestrings
     end
+    # Then redo all undone moves
+    for action in Iterators.reverse(history_save)
+        do_action(board, action)
+    end
+
     gamestring.player =
         board.current_color == WHITE ? "White[$(board.turn)]" : "Black[$(board.turn)]"
     return nothing
@@ -343,6 +353,11 @@ function allneighs(loc)
         apply_direction(loc, Direction.W),
         apply_direction(loc, Direction.NW),
     )
+end
+
+function do_action(board, string::AbstractString)
+    action = action_from_move_string(board, string)
+    do_action(board, action)
 end
 
 function do_action(board, pass::Pass)
@@ -370,8 +385,9 @@ function do_action(board, move::Move)
     pre_action_update(board, move)
     moving_tile = get_tile_on_board(board, move.moving_loc)
     if moving_tile == EMPTY_TILE
-        show(move, board)
-        error("no tile to move at loc $(move.moving_loc)")
+        error(
+            "processing move $(move_string_from_action(board, action)); no tile to move at loc $(move.moving_loc)",
+        )
     end
     set_tile_on_board(board, move.goal_loc, moving_tile)
     set_tile_on_board(board, move.moving_loc, EMPTY_TILE)
@@ -473,22 +489,8 @@ function update_placement_locs_goal(board, goal_loc)
 end
 
 function update_placement_locs_start(board, moving_loc)
-    if board.ply != 2
-        # remove on of our own color, no changes to other color
-        # The moved loc is now sure available for placement
-        push!(board.placement_locs[board.current_color + 1], moving_loc)
-        # All thouching available locs to check if they still touch an tile
-        for loc in allneighs(moving_loc)
-            if loc in board.placement_locs[board.current_color + 1]
-                if all(neigh -> get_tile_on_board(board, neigh) == EMPTY_TILE, allneighs(loc))
-                    delete!(board.placement_locs[board.current_color + 1], loc)
-                end
-            end
-        end
-    else
-        # On ply two wild stuff can happen, just recompute
-        update_placement_locs_recompute(board, moving_loc)
-    end
+    # This is an important case, remove a tile is hard to predict, just recompute.
+    update_placement_locs_recompute(board, moving_loc)
 end
 
 function inverse_update_placement_locs_start(board, moving_loc)
@@ -505,7 +507,7 @@ function undo(board)
     if isempty(board.history)
         error("no moves to undo")
     end
-    last_action = pop!(board.history)[1]
+    last_action = pop!(board.history)
     undo_action(board, last_action)
 end
 
@@ -594,7 +596,7 @@ end
 
 function inverse_post_action_pillbug_update(board)
     if !isempty(board.history)
-        last_action = first(board.history)[1]
+        last_action = first(board.history)
         post_action_pillbug_update(board, last_action)
     else
         board.just_moved_loc = INVALID_LOC
@@ -618,8 +620,7 @@ function post_action_pillbug_update(board, move)
 end
 
 function pre_action_update(board, action)
-    # TODO speed: do not add the string by default, maybe do this lazily
-    push!(board.history, (action, () -> move_string_from_action(board, action)))
+    push!(board.history, action)
 end
 
 function post_action_general_update(board, action)

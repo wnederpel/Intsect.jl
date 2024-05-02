@@ -11,27 +11,32 @@ using BenchmarkTools
 # MOSQUITO = 6    # 1
 # PILLBUG = 7     # 1
 
-# w1 = "wP"
-# w2 = "wL"
-# w3 = "wM"
+w1 = "wP"
+w2 = "wQ"
+w3 = "wM"
 
-# b1 = "bA1"
-# b2 = "bA2"
-# b3 = "bA3"
+b1 = "bB1"
+b2 = "bB2"
+b3 = "bA1"
+
+# Add a test case for this!
+game = raw"wA1;bA1 \wA1;wA2 wA1-;bA2 bA1/;wP wA2/"
+movestrings = split(game, ';')
 
 board = handle_newgame_command(Gametype.MLP)
 
-do_action(board, action_from_move_string(board, "wP"))
-do_action(board, action_from_move_string(board, "bP wP-"))
+for movestring in movestrings
+    action = action_from_move_string(board, movestring)
+    do_action(board, action)
+end
+undo(board)
+action = action_from_move_string(board, "wA3 wA2-")
+do_action(board, action)
 
-do_action(board, action_from_move_string(board, "wQ -wP"))
-do_action(board, action_from_move_string(board, "bQ bP-"))
+display(board.placement_locs[board.current_color + 1])
 
-show(board, true)
+show(board)
 
-is_pinned = get_pinned_tiles(board)
-println(is_pinned)
+# actions = filter(action -> action isa Placement, validactions(board))
 
-actions = validactions(board)
-
-show(actions, board)
+# show(actions, board)
