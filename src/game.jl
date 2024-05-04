@@ -254,14 +254,30 @@ function action_from_move_string(board, move_string)
     return action
 end
 
-function move_string_from_action(board, action::Action)
+function move_string_from_action(board, action::Climb)
+    moving_tile = get_tile_on_board(board, action.moving_loc)
+    if moving_tile == EMPTY_TILE
+        error("no tile to move at loc $(action.moving_loc)")
+    end
+    move_string = get_tile_name(moving_tile)
+    # the tile might be moving on top of another piece, if so, the goal string is just that piece
+    # Other wise use the default goal string for movement
+    goal_tile = get_tile_on_board(board, action.goal_loc)
+    if goal_tile != EMPTY_TILE
+        move_string *= " " * get_tile_name(goal_tile)
+    else
+        move_string *= move_string_goal(board, action.goal_loc; moving_loc=action.moving_loc)
+    end
+end
+
+function move_string_from_action(board, action::Move)
     moving_tile = get_tile_on_board(board, action.moving_loc)
     if moving_tile == EMPTY_TILE
         error("no tile to move at loc $(action.moving_loc)")
     end
     move_string = get_tile_name(moving_tile)
 
-    move_string *= move_string_goal(board, action.goal_loc)
+    move_string *= move_string_goal(board, action.goal_loc; moving_loc=action.moving_loc)
     return move_string
 end
 
@@ -275,23 +291,15 @@ function move_string_from_action(board, action::Pass)
     return "pass"
 end
 
-function move_string_goal(board, goal_loc)
+function move_string_goal(board, goal_loc; moving_loc=INVALID_LOC)
     # Find an occupied neighbor of the goal_loc
     move_string = ""
     for dir in instances(Direction.T)
         loc = apply_direction(goal_loc, dir)
-        if get_tile_on_board(board, loc) != EMPTY_TILE
+        if get_tile_on_board(board, loc) != EMPTY_TILE && loc != moving_loc
             goal_tile = get_tile_on_board(board, loc)
             # note, the dir is the direction from the goal_loc to the occupied neighbor
             # for the move_string, we want the direction from the occupied neighbor to the goal_loc
-
-            # TODO func: it is also possible that we find the original moving tile here
-            # That should be avoided
-
-            # TODO func: it is also possible that the only the original moving tile is found
-            # Then the move must have been a climb action, and we should use the top tile from the underworld
-
-            # TODO func: when moving on top of the hive, only give the tile that you go on top of as second argument
             if dir == Direction.SE
                 return move_string * " \\" * get_tile_name(goal_tile)
             elseif dir == Direction.E

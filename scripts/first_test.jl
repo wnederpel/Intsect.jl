@@ -20,7 +20,7 @@ b2 = "bB2"
 b3 = "bA1"
 
 # Add a test case for this!
-game = raw"wA1;bA1 \wA1;wA2 wA1-;bA2 bA1/;wP wA2/"
+game = raw"wA1;bA1 \wA1;wQ wA1-;bQ bA1/;wP wQ/"
 movestrings = split(game, ';')
 
 board = handle_newgame_command(Gametype.MLP)
@@ -30,13 +30,12 @@ for movestring in movestrings
     do_action(board, action)
 end
 undo(board)
-action = action_from_move_string(board, "wA3 wA2-")
+action = action_from_move_string(board, "wA2 wQ-")
 do_action(board, action)
-
-display(board.placement_locs[board.current_color + 1])
+do_action(board, raw"bQ \bA1")
 
 show(board)
 
-# actions = filter(action -> action isa Placement, validactions(board))
+actions = filter(action -> !(action isa Placement), validactions(board))
 
-# show(actions, board)
+show(actions, board)
