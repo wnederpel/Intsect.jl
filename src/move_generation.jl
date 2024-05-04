@@ -175,7 +175,6 @@ function secondplacements(board)
 end
 
 function bugmoves(board, loc, bug, height, ispinned; avoid_duplicates=false)
-    # TODO func: the pillbug can add duplicate moves; this should be avoided
     # Pill bug can yield special moves, even when pinned
     # Moquito can yield pill bug moves, even when pinned
     if bug == Integer(Bug.PILLBUG)
@@ -222,7 +221,6 @@ function mosquitomoves(board, loc, height, ispinned)
 end
 
 function pillbugmoves(board, startloc, ispinned; avoid_duplicates=false)
-    # TODO func: fix the problem where it does not slide units into elbows
     maxdepth = 1
     if !ispinned[startloc + 1]
         moves_to_depth(board, startloc, maxdepth; avoid_duplicates)
