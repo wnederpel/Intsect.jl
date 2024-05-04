@@ -16,7 +16,7 @@ export Climb
 export Pass
 export GameString
 export Action
-export End
+export ValidActions
 
 # constants
 export GRID_SIZE
@@ -30,6 +30,7 @@ export MID
 export WHITE
 export BLACK
 export MAX_NUMS
+export VALID_BUFFER_SIZE
 
 # enums
 export Bug

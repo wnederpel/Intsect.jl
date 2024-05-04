@@ -28,6 +28,39 @@ function Base.sizeof(::Type{Action})
     return 2 * sizeof(Int)
 end
 
+# TODO speed: Maybe convert to abstract arrays
+"""
+We use buffers to compute the valid actions, this can help avoid allocations
+To save the buffers this struct is used. Initialize only with already computed valid actions.
+Bumber unfortunatly does not like it when the arrays are a part of the struct, they are have to be seperate when filled
+"""
+struct ValidActions
+    placements::SizedVector{VALID_BUFFER_SIZE,Placement}
+    placement_index::Integer
+    moves::SizedVector{VALID_BUFFER_SIZE,Move}
+    move_index::Integer
+    clibs::SizedVector{VALID_BUFFER_SIZE,Climb}
+    climb_index::Integer
+    can_pass::Bool
+end
+
+# continue with using the new valid actions approach, the iteration over valid actions needs to be changed
+
+"""
+because the board needs to be initialized with something
+"""
+function ValidActions()
+    return ValidActions(
+        SizedVector{VALID_BUFFER_SIZE,Placement}(undef),
+        1,
+        SizedVector{VALID_BUFFER_SIZE,Move}(undef),
+        1,
+        SizedVector{VALID_BUFFER_SIZE,Climb}(undef),
+        1,
+        false,
+    )
+end
+
 """
 Contains all information of the current board state
 
@@ -51,10 +84,8 @@ The 36 array is zero indexed, so again use get_loc / set_loc.
 """
 # TODO speed: maybe the locs can be UInt8's too, although julia indexing works with integers
 # TODO speed: custom types can be used for tiles for clarity and maybe speed? at least avoids type instability
-# TODO speed: Only keep 1 instance of board, and update it in place, this will avoid a lot of allocations
 mutable struct Board
     # TODO speed: Think about making 2 seperate structs, the tiles & tile_locs vectors struct can be static 
-    # TODO speed: Make these MVectors
     tiles::MVector{GRID_SIZE,UInt8}
     # TODO speed: Do not use the 36 entries with invalid locs, but instead use a predefined indexing of tiles
     tile_locs::MVector{36,Int}
@@ -66,11 +97,9 @@ mutable struct Board
     turn::Int
     gameover::Bool
     victor::Int
-    # TODO speed: tuple with string not strictly necessary, only practical
     history::Stack{Action}
     underworld::DefaultDict{Int,Stack{UInt8}}
-    validactions::SizedVector{VALID_BUFFER_SIZE,Action}
-    action_index::Int
+    validactions::ValidActions
     placeable_tiles::SVector{2,MVector{8,UInt8}}
     placement_locs::SVector{2,BitSet}
 end
@@ -89,8 +118,7 @@ function Board(tiles, tile_locs)
         NO_COLOR,
         Stack{Action}(),
         DefaultDict{Int,Stack{UInt8}}(() -> Stack{UInt8}()),
-        SizedVector{VALID_BUFFER_SIZE,Action}(fill(Pass(), VALID_BUFFER_SIZE)),
-        1,
+        ValidActions(),
         SVector{2,MVector{8,UInt8}}(
             MVector{8,UInt8}(
                 get_tile_from_string.(["bA1", "bG1", "bB1", "bS1", "bQ", "bL", "bM", "bP"])

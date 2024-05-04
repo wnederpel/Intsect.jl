@@ -711,7 +711,7 @@ Check if a move is not already in the valid actions
 
     to avoid the pillbug adding duplicate moves
 """
-function move_not_duplicate(board, move)
-    validactions = view(board.validactions, 1:(board.action_index - 1))
-    return !any(validaction -> validaction isa Move && validaction == move, validactions)
+function move_not_duplicatemove_not_duplicate(move, move_buffer, move_index)
+    validactions = view(move_buffer, 1:(move_index - 1))
+    return !any(validmove -> validmove == move, validactions)
 end
