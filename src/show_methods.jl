@@ -87,7 +87,7 @@ function Base.show(board::Board, show_locs::Bool=true)
     return nothing
 end
 
-function Base.show(actions::Vector{Action}, board)
+function Base.show(actions::ValidActions, board)
     println(string(length(actions)) * " valid actions:")
     for action in actions
         show(action, board)

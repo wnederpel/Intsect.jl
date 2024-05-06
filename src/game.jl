@@ -245,12 +245,11 @@ function action_from_move_string(board, move_string)
         action = Placement(goal_loc, moving_tile)
     end
     validactions(board)
-    if !(action in board.validactions)
+    if !(action in validactions(board))
         error(
             "Invalid action: '$(move_string_from_action(board, action))' or '$action' not present in valid actions",
         )
     end
-    board.action_index = 1
     return action
 end
 
@@ -711,7 +710,7 @@ Check if a move is not already in the valid actions
 
     to avoid the pillbug adding duplicate moves
 """
-function move_not_duplicatemove_not_duplicate(move, move_buffer, move_index)
+function move_not_duplicate(move, move_buffer, move_index)
     validactions = view(move_buffer, 1:(move_index - 1))
     return !any(validmove -> validmove == move, validactions)
 end

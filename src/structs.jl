@@ -28,37 +28,19 @@ function Base.sizeof(::Type{Action})
     return 2 * sizeof(Int)
 end
 
-# TODO speed: Maybe convert to abstract arrays
 """
 We use buffers to compute the valid actions, this can help avoid allocations
 To save the buffers this struct is used. Initialize only with already computed valid actions.
 Bumber unfortunatly does not like it when the arrays are a part of the struct, they are have to be seperate when filled
 """
 struct ValidActions
-    placements::SizedVector{VALID_BUFFER_SIZE,Placement}
-    placement_index::Integer
-    moves::SizedVector{VALID_BUFFER_SIZE,Move}
-    move_index::Integer
-    clibs::SizedVector{VALID_BUFFER_SIZE,Climb}
-    climb_index::Integer
+    placements::AbstractArray
+    placement_index::Int
+    moves::AbstractArray
+    move_index::Int
+    climbs::AbstractArray
+    climb_index::Int
     can_pass::Bool
-end
-
-# continue with using the new valid actions approach, the iteration over valid actions needs to be changed
-
-"""
-because the board needs to be initialized with something
-"""
-function ValidActions()
-    return ValidActions(
-        SizedVector{VALID_BUFFER_SIZE,Placement}(undef),
-        1,
-        SizedVector{VALID_BUFFER_SIZE,Move}(undef),
-        1,
-        SizedVector{VALID_BUFFER_SIZE,Climb}(undef),
-        1,
-        false,
-    )
 end
 
 """
@@ -99,7 +81,6 @@ mutable struct Board
     victor::Int
     history::Stack{Action}
     underworld::DefaultDict{Int,Stack{UInt8}}
-    validactions::ValidActions
     placeable_tiles::SVector{2,MVector{8,UInt8}}
     placement_locs::SVector{2,BitSet}
 end
@@ -118,7 +99,6 @@ function Board(tiles, tile_locs)
         NO_COLOR,
         Stack{Action}(),
         DefaultDict{Int,Stack{UInt8}}(() -> Stack{UInt8}()),
-        ValidActions(),
         SVector{2,MVector{8,UInt8}}(
             MVector{8,UInt8}(
                 get_tile_from_string.(["bA1", "bG1", "bB1", "bS1", "bQ", "bL", "bM", "bP"])
@@ -146,4 +126,55 @@ function GameString(board)
     gamestring = GameString()
     update_gamestring(gamestring, board)
     return gamestring
+end
+
+function Base.iterate(validactions::ValidActions)
+    state = 1
+    if state <= length(validactions.placements)
+        return validactions.placements[state], state
+    elseif state <= length(validactions.placements) + length(validactions.moves)
+        return validactions.moves[state - length(validactions.placements)], state
+    elseif state <=
+        length(validactions.placements) +
+           length(validactions.moves) +
+           length(validactions.climbs)
+        return validactions.climbs[state - length(validactions.placements) - length(
+            validactions.moves
+        )],
+        state
+    else
+        if validactions.can_pass
+            return Pass(), state
+        else
+            return nothing
+        end
+    end
+end
+
+function Base.iterate(validactions::ValidActions, state::Integer)
+    state += 1
+    if state <= length(validactions.placements)
+        return validactions.placements[state], state
+    elseif state <= length(validactions.placements) + length(validactions.moves)
+        return validactions.moves[state - length(validactions.placements)], state
+    elseif state <=
+        length(validactions.placements) +
+           length(validactions.moves) +
+           length(validactions.climbs)
+        return validactions.climbs[state - length(validactions.placements) - length(
+            validactions.moves
+        )],
+        state
+    else
+        if validactions.can_pass
+            return Pass(), state
+        else
+            return nothing
+        end
+    end
+end
+
+function Base.length(validactions::ValidActions)
+    return validactions.placement_index - 1 + validactions.move_index - 1 +
+           validactions.climb_index - 1 + validactions.can_pass
 end
