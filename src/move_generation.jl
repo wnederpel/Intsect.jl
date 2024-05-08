@@ -1,5 +1,18 @@
+# function add_action(board::Board, action::Action; avoid_duplicates=false)
+#     # Do no use show(action) here because tiles might be Temporarily deleted -> string generation does not work
+#     if avoid_duplicates
+#         if move_not_duplicate(board, action)
+#             board.validactions[board.action_index] = action
+#             board.action_index += 1
+#         end
+#     else
+#         board.validactions[board.action_index] = action
+#         board.action_index += 1
+#     end
+# end
+
 function add_placement!(placement::Placement, placement_buffer, placement_index)
-    @inbounds placement_buffer[placement_index] = placement
+    placement_buffer[placement_index] = placement
     placement_index += 1
     return placement_index
 end
@@ -7,59 +20,49 @@ end
 function add_move!(move::Move, move_buffer, move_index; avoid_duplicates=false)
     if avoid_duplicates
         if move_not_duplicate(move, move_buffer, move_index)
-            @inbounds move_buffer[move_index] = move
+            move_buffer[move_index] = move
             move_index += 1
         end
     else
-        @inbounds move_buffer[move_index] = move
+        move_buffer[move_index] = move
         move_index += 1
     end
     return move_index
 end
 
-function add_climb!(climb::Climb, climb_buffer, climb_index; avoid_duplicates=false)
-    if avoid_duplicates
-        if move_not_duplicate(climb, climb_buffer, climb_index)
-            @inbounds climb_buffer[climb_index] = climb
-            climb_index += 1
-        end
-    else
-        @inbounds climb_buffer[climb_index] = climb
-        climb_index += 1
-    end
+function add_climb!(climb::Climb, climb_buffer, climb_index)
+    climb_buffer[climb_index] = climb
+    climb_index += 1
     return climb_index
 end
 
-const PLACEMENT_BUFFER::SizedVector = SizedVector{VALID_BUFFER_SIZE,Placement}(undef)
-const MOVE_BUFFER::SizedVector = SizedVector{VALID_BUFFER_SIZE,Move}(undef)
-const CLIMB_BUFFER::SizedVector = SizedVector{VALID_BUFFER_SIZE,Climb}(undef)
-
 function validactions(board)
+    placement_buffer = SizedVector{VALID_BUFFER_SIZE,Placement}(undef, VALID_BUFFER_SIZE)
     placement_index = 1
+    move_buffer = SizedVector{VALID_BUFFER_SIZE,Move}(undef, VALID_BUFFER_SIZE)
     move_index = 1
+    climb_buffer = SizedVector{VALID_BUFFER_SIZE,Climb}(undef, VALID_BUFFER_SIZE)
     climb_index = 1
 
-    return validactions(
-        board, PLACEMENT_BUFFER, placement_index, MOVE_BUFFER, move_index, CLIMB_BUFFER, climb_index
-    )
-end
-
-function validactions(
-    board, placement_buffer, placement_index, move_buffer, move_index, climb_buffer, climb_index
-)
     placement_index, move_index, climb_index = validactions!(
         board, placement_buffer, placement_index, move_buffer, move_index, climb_buffer, climb_index
     )
 
     return ValidActions(
-        view(placement_buffer, 1:(placement_index - 1)),
+        placement_buffer[1:(placement_index - 1)],
         placement_index,
-        view(move_buffer, 1:(move_index - 1)),
+        move_buffer[1:(move_index - 1)],
         move_index,
-        view(climb_buffer, 1:(climb_index - 1)),
+        climb_buffer[1:(climb_index - 1)],
         climb_index,
         placement_index == 1 && move_index == 1 && climb_index == 1,
     )
+end
+
+function extract_valid_actions(board)
+    tmp = board.action_index
+    board.action_index = 1
+    return board.validactions[1:(tmp - 1)]
 end
 
 function validactions!(
@@ -71,6 +74,8 @@ function validactions!(
     climb_buffer,
     climb_index,
 )
+    board.action_index = 1
+
     need_to_place_queen = !board.queen_placed[board.current_color + 1] && board.turn == 4
     first_placement = board.ply == 1
     second_placement = board.ply == 2
@@ -131,17 +136,17 @@ function validactions_general(
 end
 
 function add_placements(board, placement_buffer, placement_index)
-    placement_locs = board.placement_locs[board.current_color + 1]
-    placeable_tiles = board.placeable_tiles[board.current_color + 1]
-    for loc in placement_locs
-        for tile in placeable_tiles
-            if tile != EMPTY_TILE
+    foreach(
+        loc -> foreach(
+            (tile != EMPTY_TILE) && (
                 placement_index = add_placement!(
-                    Placement(loc, tile), placement_buffer, placement_index
+                    Placement(loc, queen_tile), placement_buffer, placement_index
                 )
-            end
-        end
-    end
+            ),
+            board.placeable_tiles[board.current_color + 1],
+        ),
+        board.placement_locs[board.current_color + 1],
+    )
     return placement_index
 end
 
@@ -203,7 +208,7 @@ function firstplacements(board, placement_buffer, placement_index)
         tile ->
             (tile != EMPTY_TILE) && (
                 placement_index = add_placement!(
-                    Placement(MID, tile), placement_buffer, placement_index
+                    Placement(loc, queen_tile), placement_buffer, placement_index
                 )
             ),
         filter(
@@ -220,12 +225,11 @@ valid actions for second placement (first placement by black)
 function secondplacements(board, placement_buffer, placement_index)
     foreach(
         loc -> foreach(
-            tile ->
-                (tile != EMPTY_TILE) && (
-                    placement_index = add_placement!(
-                        Placement(loc, tile), placement_buffer, placement_index
-                    )
-                ),
+            (tile != EMPTY_TILE) && (
+                placement_index = add_placement!(
+                    Placement(loc, queen_tile), placement_buffer, placement_index
+                )
+            ),
             filter(
                 tile -> get_tile_bug(tile) != Integer(Bug.QUEEN),
                 board.placeable_tiles[board.current_color + 1],
@@ -292,7 +296,6 @@ function mosquitomoves(
         move_index, climb_index = beetlemoves(
             board, loc, height, move_buffer, move_index, climb_buffer, climb_index
         )
-        return move_index, climb_index
     end
     neighlocs = allneighs(loc)
     neighbugs = []
@@ -305,7 +308,7 @@ function mosquitomoves(
         end
     end, 1:6)
     for bug in neighbugs
-        move_index, climb_index = bugmoves(
+        bugmoves(
             board,
             loc,
             bug,
@@ -318,7 +321,7 @@ function mosquitomoves(
             avoid_duplicates=true,
         )
     end
-    return move_index, climb_index
+    return nothing
 end
 
 function pillbugmoves(board, startloc, ispinned, move_buffer, move_index; avoid_duplicates=false)
@@ -553,7 +556,7 @@ function moves_to_depth(board, startloc, maxdepth, move_buffer, move_index; avoi
     moves = Set()
     moves_to_depth!(board, startloc, maxdepth, moves)
     for move in moves
-        move_index = add_move!(move, move_buffer, move_index; avoid_duplicates)
+        move_index = add_action!(move, move_buffer, move_index; avoid_duplicates)
     end
 
     set_tile_on_board(board, startloc, tmp_tile)

@@ -32,16 +32,15 @@
     set_tile_on_board(board, bG1_loc, bG1)
 
     # Generate the moves
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    move_index = queenmoves(board, bQ_loc, moves, move_index)
+    queenmoves(board, bQ_loc)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Move(bQ_loc, apply_direction(bQ_loc, Direction.E)) in moves
     @test Move(bQ_loc, apply_direction(bQ_loc, Direction.SE)) in moves
     @test Move(bQ_loc, apply_direction(bQ_loc, Direction.W)) in moves
     @test Move(bQ_loc, apply_direction(bQ_loc, Direction.NW)) in moves
-    @test move_index - 1 == 4
+    @test length(moves) == 4
 end
 
 @testitem "Grasshopper movement basic" begin
@@ -90,15 +89,14 @@ end
     set_tile_on_board(board, wB1_loc, wB1)
 
     # Generate the moves
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    move_index = grasshoppermoves(board, wG1_loc, moves, move_index)
+    grasshoppermoves(board, wG1_loc)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Move(wG1_loc, apply_direction(bQ_loc, Direction.E)) in moves
     @test Move(wG1_loc, apply_direction(wB1_loc, Direction.W)) in moves
     @test Move(wG1_loc, apply_direction(wQ_loc, Direction.SW)) in moves
-    @test move_index - 1 == 3
+    @test length(moves) == 3
 end
 
 @testitem "Spider movement basic" begin
@@ -141,16 +139,15 @@ end
     set_tile_on_board(board, wB1_loc, wB1)
 
     # Generate the moves
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    move_index = spidermoves(board, bS1_loc, moves, move_index)
+    spidermoves(board, bS1_loc)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Move(bS1_loc, apply_direction(wQ_loc, Direction.E)) in moves
     @test Move(bS1_loc, apply_direction(wB1_loc, Direction.NW)) in moves
     @test Move(bS1_loc, apply_direction(bQ_loc, Direction.E)) in moves
     @test Move(bS1_loc, apply_direction(bB1_loc, Direction.W)) in moves
-    @test move_index - 1 == 4
+    @test length(moves) == 4
 end
 
 @testitem "Ant movement basic" begin
@@ -181,9 +178,8 @@ end
     set_tile_on_board(board, bA1_loc, bA1)
 
     # Generate the moves
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    move_index = antmoves(board, bA1_loc, moves, move_index)
+    antmoves(board, bA1_loc)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Move(bA1_loc, apply_direction(bB1_loc, Direction.E)) in moves
@@ -197,7 +193,7 @@ end
     @test Move(bA1_loc, apply_direction(wG1_loc, Direction.W)) in moves
     @test Move(bA1_loc, apply_direction(wB1_loc, Direction.W)) in moves
     @test Move(bA1_loc, apply_direction(bA1_loc, Direction.W)) in moves
-    @test move_index - 1 == 11
+    @test length(moves) == 11
 end
 
 @testitem "Beetle movement basic" begin
@@ -228,34 +224,29 @@ end
     set_tile_on_board(board, wS1_loc, wS1)
 
     # Generate the moves
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    climbs = Vector{Climb}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    climb_index = 1
-    move_index, climb_index = beetlemoves(board, wB1_loc, 1, moves, move_index, climbs, climb_index)
+    beetlemoves(board, wB1_loc, 1)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Move(wB1_loc, apply_direction(wB1_loc, Direction.NW)) in moves
     @test Move(wB1_loc, apply_direction(wB1_loc, Direction.SE)) in moves
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.W)) in climbs
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.SW)) in climbs
-    @test move_index + climb_index - 2 == 4
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.W)) in moves
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.SW)) in moves
+    @test length(moves) == 4
 
     do_action(board, Move(wB1_loc, apply_direction(wB1_loc, Direction.NW)))
     wB1_loc = apply_direction(wB1_loc, Direction.NW)
 
-    move_index = 1
-    climb_index = 1
-    move_index, climb_index = beetlemoves(board, wB1_loc, 2, moves, move_index, climbs, climb_index)
+    beetlemoves(board, wB1_loc, 2)
+    moves = extract_valid_actions(board)
 
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.NW)) in climbs
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.SE)) in climbs
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.W)) in climbs
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.E)) in climbs
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.SW)) in climbs
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.NE)) in climbs
-    @test climb_index - 1 == 6
-    @test move_index - 1 == 0
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.NW)) in moves
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.SE)) in moves
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.W)) in moves
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.E)) in moves
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.SW)) in moves
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.NE)) in moves
+    @test length(moves) == 6
 end
 
 @testitem "Ladybug movement basic" begin
@@ -286,9 +277,8 @@ end
     set_tile_on_board(board, bB1_loc, bB1)
 
     # Generate the moves
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    move_index = ladybugmoves(board, wL1_loc, moves, move_index)
+    ladybugmoves(board, wL1_loc)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Move(wL1_loc, apply_direction(wL1_loc, Direction.E)) in moves
@@ -301,7 +291,7 @@ end
     @test Move(wL1_loc, apply_direction(wB1_loc, Direction.W)) in moves
     @test Move(wL1_loc, apply_direction(wG1_loc, Direction.W)) in moves
     @test Move(wL1_loc, apply_direction(bQ_loc, Direction.W)) in moves
-    @test move_index - 1 == 10
+    @test length(moves) == 10
 end
 
 @testitem "Mosquito movement basic" begin
@@ -330,23 +320,17 @@ end
     set_tile_on_board(board, wM_loc, wM)
 
     # Generate the moves
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    climbs = Vector{Climb}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    climb_index = 1
-    move_index, climb_index = mosquitomoves(
-        board, wM_loc, 1, DefaultDict(false), moves, move_index, climbs, climb_index
-    )
+    mosquitomoves(board, wM_loc, 1, DefaultDict(false))
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Move(wM_loc, apply_direction(wM_loc, Direction.W)) in moves
     @test Move(wM_loc, apply_direction(wM_loc, Direction.E)) in moves
-    @test Climb(wM_loc, apply_direction(wM_loc, Direction.NE)) in climbs
-    @test Climb(wM_loc, apply_direction(wM_loc, Direction.NW)) in climbs
+    @test Climb(wM_loc, apply_direction(wM_loc, Direction.NE)) in moves
+    @test Climb(wM_loc, apply_direction(wM_loc, Direction.NW)) in moves
     @test Move(wM_loc, apply_direction(wQ_loc, Direction.E)) in moves
     @test Move(wM_loc, apply_direction(bS1_loc, Direction.NW)) in moves
-    @test move_index - 1 == 4
-    @test climb_index - 1 == 2
+    @test length(moves) == 6
 end
 
 @testitem "Pillbug movement basic" begin
@@ -383,9 +367,8 @@ end
     ispinned[wS1_loc + 1] = true
 
     # Generate the moves
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    move_index = pillbugmoves(board, wP_loc, ispinned, moves, move_index)
+    pillbugmoves(board, wP_loc, ispinned)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     # First the normal moves
@@ -398,5 +381,5 @@ end
     @test Move(bA1_loc, apply_direction(wP_loc, Direction.SW)) in moves
     @test Move(wQ_loc, apply_direction(wP_loc, Direction.W)) in moves
     @test Move(wQ_loc, apply_direction(wP_loc, Direction.SW)) in moves
-    @test move_index - 1 == 8
+    @test length(moves) == 8
 end

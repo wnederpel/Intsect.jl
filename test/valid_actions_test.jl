@@ -127,7 +127,7 @@ end
     # Generate the moves
     actions = validactions(board)
 
-    bA1_moves = filter(action -> action.moving_loc == bA1_loc, actions.moves)
+    bA1_moves = filter(action -> action isa Move && action.moving_loc == bA1_loc, actions)
 
     @test isempty(bA1_moves)
 end
@@ -168,9 +168,8 @@ end
     ispinned[wS1_loc + 1] = true
 
     # Generate the moves
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    move_index = pillbugmoves(board, wP_loc, ispinned, moves, move_index)
+    pillbugmoves(board, wP_loc, ispinned)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     # First the normal moves
@@ -181,5 +180,5 @@ end
     @test Move(bQ_loc, apply_direction(wP_loc, Direction.SW)) in moves
     @test Move(wQ_loc, apply_direction(wP_loc, Direction.W)) in moves
     @test Move(wQ_loc, apply_direction(wP_loc, Direction.SW)) in moves
-    @test move_index - 1 == 6
+    @test length(moves) == 6
 end

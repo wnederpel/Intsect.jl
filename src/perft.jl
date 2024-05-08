@@ -5,7 +5,7 @@ function perft()
     # we cannot make an allocator for the actions, as action is an abstract type.
     # Maybe try to have separate buffers for each action type?
 
-    for depth in 1:5
+    for depth in 1:6
         nodes, time_taken, memory_allocated, gc_time, _ = @timed perft(
             depth, handle_newgame_command(Gametype.MLP)
         )
@@ -22,44 +22,18 @@ function perft()
 end
 
 function perft(depth::Int, board)::Int
-    placement_index, move_index, climb_index = 1, 1, 1
+    if depth == 1
+        # Not needed to allocate here, use a global valid move buffer,
+        # Here you can just read the action_index.
+        return length(validactions(board))
+    end
 
-    @no_escape begin
-        placement_buffer = @alloc(Placement, 100)
-        move_buffer = @alloc(Move, 100)
-        climb_buffer = @alloc(Climb, 100)
+    nodes = 0
 
-        if depth == 1
-            # Not needed to allocate here, use a global valid move buffer,
-            # Here you can just read the action_index.
-            nodes = length(
-                validactions(
-                    board,
-                    placement_buffer,
-                    placement_index,
-                    move_buffer,
-                    move_index,
-                    climb_buffer,
-                    climb_index,
-                ),
-            )
-        else
-            nodes = 0
-
-            for action in validactions(
-                board,
-                placement_buffer,
-                placement_index,
-                move_buffer,
-                move_index,
-                climb_buffer,
-                climb_index,
-            )
-                do_action(board, action)
-                nodes += perft(depth - 1, board)
-                undo(board)
-            end
-        end
+    for action in validactions(board)
+        do_action(board, action)
+        nodes += perft(depth - 1, board)
+        undo(board)
     end
 
     return nodes

@@ -26,23 +26,17 @@
     push!(board.underworld[bB1_loc], bS1)
 
     # Generate the moves
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    climbs = Vector{Climb}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    climb_index = 1
-    move_index, climb_index = beetlemoves(
-        board, bB1_loc, get_tile_height(bB1), moves, move_index, climbs, climb_index
-    )
+    beetlemoves(board, bB1_loc, get_tile_height(bB1))
+    moves = extract_valid_actions(board)
 
     # Check the moves
-    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.NE)) in climbs
-    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.NW)) in climbs
-    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.E)) in climbs
-    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.SE)) in climbs
-    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.W)) in climbs
-    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.SW)) in climbs
-    @test climb_index - 1 == 6
-    @test move_index - 1 == 0
+    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.NE)) in moves
+    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.NW)) in moves
+    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.E)) in moves
+    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.SE)) in moves
+    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.W)) in moves
+    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.SW)) in moves
+    @test length(moves) == 6
 end
 
 @testitem "Sliding between stacked pieces" begin
@@ -67,22 +61,16 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    climbs = Vector{Climb}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    climb_index = 1
-    move_index, climb_index = beetlemoves(
-        board, wB1_loc, get_tile_height(wB1), moves, move_index, climbs, climb_index
-    )
+    beetlemoves(board, wB1_loc, get_tile_height(wB1))
+    moves = extract_valid_actions(board)
 
     # Check the moves
     # wB1 cammot move to bB1_loc
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.NE)) in climbs
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.SE)) in climbs
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.NE)) in moves
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.SE)) in moves
     @test Move(wB1_loc, apply_direction(wB1_loc, Direction.NW)) in moves
     @test Move(wB1_loc, apply_direction(wB1_loc, Direction.SW)) in moves
-    @test move_index - 1 == 2
-    @test climb_index - 1 == 2
+    @test length(moves) == 4
 
     # If bB1 is one lvl higher, this does work, as wB1 goes up to the lvl above  bB1
     wB1 = get_tile_from_string("wB1")
@@ -105,16 +93,11 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    climbs = Vector{Climb}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    climb_index = 1
-    move_index, climb_index = beetlemoves(
-        board, wB1_loc, get_tile_height(wB1), moves, move_index, climbs, climb_index
-    )
+    beetlemoves(board, wB1_loc, get_tile_height(wB1))
+    moves = extract_valid_actions(board)
 
     # Check the moves
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.E)) in climbs
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.E)) in moves
 
     # If wB1 is one lvl higher, this does not work as the other pieces still block the sliding
     wB1 = get_tile_from_string("wB1") + 0b00000001
@@ -137,13 +120,8 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    climbs = Vector{Climb}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    climb_index = 1
-    move_index, climb_index = beetlemoves(
-        board, wB1_loc, get_tile_height(wB1), moves, move_index, climbs, climb_index
-    )
+    beetlemoves(board, wB1_loc, get_tile_height(wB1))
+    moves = extract_valid_actions(board)
 
     # Check the moves
     # wB1 still cammot move to bB1_loc as it needs to be two higher
@@ -170,17 +148,12 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    climbs = Vector{Climb}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    climb_index = 1
-    move_index, climb_index = beetlemoves(
-        board, wB1_loc, get_tile_height(wB1), moves, move_index, climbs, climb_index
-    )
+    beetlemoves(board, wB1_loc, get_tile_height(wB1))
+    moves = extract_valid_actions(board)
 
     # Check the moves
     # wB1 still cammot move to bB1_loc as it needs to be two higher
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.E)) in climbs
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.E)) in moves
 end
 
 @testitem "Mosquito cannot move when it only touches a mosquito" begin
@@ -205,17 +178,11 @@ end
     set_tile_on_board(board, bM_loc, bM)
 
     # Generate the moves
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    climbs = Vector{Climb}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    climb_index = 1
-    move_index, climb_index = mosquitomoves(
-        board, bM_loc, get_tile_height(bM), nothing, moves, move_index, climbs, climb_index
-    )
+    mosquitomoves(board, bM_loc, get_tile_height(bM), nothing)
+    moves = extract_valid_actions(board)
 
     # Check the moves
-    @test climb_index - 1 == 0
-    @test move_index - 1 == 0
+    @test length(moves) == 0
 end
 
 @testitem "Move to oneself is invalid for spider" begin
@@ -257,17 +224,16 @@ end
 
     set_tile_on_board(board, wS1_loc, wS1)
 
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    move_index = spidermoves(board, wS1_loc, moves, move_index)
+    spidermoves(board, wS1_loc)
+    moves = extract_valid_actions(board)
 
-    @test move_index - 1 == 0
+    @test length(moves) == 0
 
     # Also invalid for ant
-    move_index = 1
-    move_index = antmoves(board, wS1_loc, moves, move_index)
+    antmoves(board, wS1_loc)
+    moves = extract_valid_actions(board)
 
-    @test move_index - 1 == 2
+    @test length(moves) == 2
 end
 
 @testitem "The board wraps around." begin
@@ -298,9 +264,8 @@ end
     set_tile_on_board(board, bA1_loc, bA1)
 
     # Generate the moves
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    move_index = antmoves(board, bA1_loc, moves, move_index)
+    antmoves(board, bA1_loc)
+    moves = extract_valid_actions(board)
 
     # Check the moves
     @test Move(bA1_loc, apply_direction(bB1_loc, Direction.E)) in moves
@@ -314,7 +279,7 @@ end
     @test Move(bA1_loc, apply_direction(wG1_loc, Direction.W)) in moves
     @test Move(bA1_loc, apply_direction(wB1_loc, Direction.W)) in moves
     @test Move(bA1_loc, apply_direction(bA1_loc, Direction.W)) in moves
-    @test move_index - 1 == 11
+    @test length(moves) == 11
 end
 
 @testitem "Pillbug special moves can fill elbows" begin
@@ -348,9 +313,8 @@ end
     ispinned[bQ_loc + 1] = true
     ispinned[bP_loc + 1] = true
 
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    move_index = pillbugmoves(board, wP_loc, ispinned, moves, move_index)
+    pillbugmoves(board, wP_loc, ispinned)
+    moves = extract_valid_actions(board)
 
     @test Move(wQ_loc, apply_direction(wP_loc, Direction.SE)) in moves
     @test Move(wQ_loc, apply_direction(wP_loc, Direction.NE)) in moves
@@ -360,7 +324,7 @@ end
     @test Move(wM_loc, apply_direction(wP_loc, Direction.NE)) in moves
     @test Move(wM_loc, apply_direction(wP_loc, Direction.NW)) in moves
 
-    @test move_index - 1 == 6
+    @test length(moves) == 6
 end
 
 @testitem "Pillbug cannot special move through a beetle gate" begin
@@ -394,16 +358,15 @@ end
     ispinned[bQ_loc + 1] = true
     ispinned[bB1_loc + 1] = true
 
-    moves = Vector{Move}(undef, VALID_BUFFER_SIZE)
-    move_index = 1
-    move_index = pillbugmoves(board, wP_loc, ispinned, moves, move_index)
+    pillbugmoves(board, wP_loc, ispinned)
+    moves = extract_valid_actions(board)
 
     @test Move(wM_loc, apply_direction(wP_loc, Direction.NE)) in moves
     @test Move(wM_loc, apply_direction(wP_loc, Direction.NW)) in moves
 
-    @test move_index - 1 == 2
+    @test length(moves) == 2
 end
 
 @testitem "Pillbug special moves take into account that a piece sliding on the pill bug might add a possible down sliding move" begin
-    # This should never occur, a tile can only make something new possible when it is stacked, and stacked tiles cannot be moved by the pillbug
+    # This should never occur, a piece can only make something new possible when it is stacked, and stacked pieces cannot be moved by this pillbug
 end

@@ -29,13 +29,6 @@ for movestring in movestrings
     action = action_from_move_string(board, movestring)
     do_action(board, action)
 end
-
-show(board)
-
-actions = validactions(board)
-
-show(actions, board)
-
 undo(board)
 action = action_from_move_string(board, "wA2 wQ-")
 do_action(board, action)
@@ -43,6 +36,6 @@ do_action(board, raw"bQ \bA1")
 
 show(board)
 
-actions = validactions(board)
+actions = filter(action -> !(action isa Placement), validactions(board))
 
 show(actions, board)
