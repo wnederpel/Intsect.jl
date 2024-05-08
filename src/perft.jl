@@ -1,10 +1,6 @@
 function perft()
     # https://github.com/jonthysell/Mzinga/wiki/Perft
 
-    # TODO speed: look into bump allocations for the whole board maybe? would be cool. 
-    # we cannot make an allocator for the actions, as action is an abstract type.
-    # Maybe try to have separate buffers for each action type?
-
     for depth in 1:5
         nodes, time_taken, memory_allocated, gc_time, _ = @timed perft(
             depth, handle_newgame_command(Gametype.MLP)
