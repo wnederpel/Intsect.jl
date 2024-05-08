@@ -279,3 +279,47 @@ goal:
 7:   3,151,035,948
 8:   50,945,151,390
 9:   2,784,830,280,25
+
+
+## Avoiding allocations without bump
+
+Perft(4)         = 151.686
+KN/S             = 3.242
+memory per node  = 115 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(5)         = 5.427.108
+KN/S             = 4.861
+memory per node  = 107 bytes
+gc time          = 5.0%
+total time       = 1.1 seconds
+
+Perft(6)         = 192.353.904
+KN/S             = 6.378
+memory per node  = 107 bytes
+gc time          = 127.0%
+total time       = 30.2 seconds
+
+## Avoiding allocations with bump
+
+Perft(4)         = 151.686
+KN/S             = 3.612
+memory per node  = 121 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(5)         = 5.427.108
+KN/S             = 4.327
+memory per node  = 106 bytes
+gc time          = 5.0%
+total time       = 1.3 seconds
+
+Perft(6)         = 192.353.904
+KN/S             = 4.493
+memory per node  = 106 bytes
+gc time          = 151.0%
+total time       = 42.8 seconds
+
+## Continue without
+
