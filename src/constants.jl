@@ -40,10 +40,10 @@ const UNDERGROUND::Int = -3
 
 const VALID_BUFFER_SIZE::Int = 100
 
-const WHITE::Int = 1
-const BLACK::Int = 0
-const DRAW::Int = 2
-const NO_COLOR::Int = 3
+const WHITE::UInt8 = 1
+const BLACK::UInt8 = 0
+const DRAW::UInt8 = 2
+const NO_COLOR::UInt8 = 3
 
 # For now these are global constants, later make this configurable if that's interesting
 const BUGS_IN_PLAY::Int = 8

@@ -30,6 +30,10 @@ export MID
 export WHITE
 export BLACK
 export MAX_NUMS
+# Constants for move generation, constructed in game
+export ALL_PLACMENETS
+export ALL_MOVEMENTS
+export ALL_CLIMBS
 
 # enums
 export Bug
@@ -77,6 +81,7 @@ export undo
 export get_pinned_tiles
 export format_with_dots
 export extract_valid_actions
+export get_all_placements
 
 # Files
 include("enums.jl")

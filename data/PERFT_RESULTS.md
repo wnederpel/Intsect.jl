@@ -322,4 +322,98 @@ gc time          = 151.0%
 total time       = 42.8 seconds
 
 ## Continue without
+## Better move setting
 
+Perft(4)         = 151.686
+KN/S             = 7.880
+memory per node  = 115 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(5)         = 5.427.108
+KN/S             = 9.033
+memory per node  = 107 bytes
+gc time          = 3.0%
+total time       = 0.6 seconds
+
+Perft(6)         = 192.353.904
+KN/S             = 9.437
+memory per node  = 107 bytes
+gc time          = 90.0%
+total time       = 20.4 seconds
+
+## Do not set moves in the valid moves array, but an index representing the move
+
+Perft(1)         = 7
+KN/S             = 405
+memory per node  = 1.945 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(2)         = 294
+KN/S             = 3.467
+memory per node  = 98 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(3)         = 6.678
+KN/S             = 14.791
+memory per node  = 32 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(4)         = 151.686
+KN/S             = 13.609
+memory per node  = 29 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(5)         = 5.427.108
+KN/S             = 15.561
+memory per node  = 29 bytes
+gc time          = 1.0%
+total time       = 0.3 seconds
+
+Perft(6)         = 192.353.904
+KN/S             = 15.968
+memory per node  = 29 bytes
+gc time          = 28.0%
+total time       = 12.0 seconds
+
+## Use UInt32 for indexes to save some allocs
+
+Perft(1)         = 7
+KN/S             = 320
+memory per node  = 1.938 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(2)         = 294
+KN/S             = 5.904
+memory per node  = 91 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(3)         = 6.678
+KN/S             = 6.758
+memory per node  = 24 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(4)         = 151.686
+KN/S             = 8.267
+memory per node  = 21 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(5)         = 5.427.108
+KN/S             = 17.707
+memory per node  = 21 bytes
+gc time          = 0.0%
+total time       = 0.3 seconds
+
+Perft(6)         = 192.353.904
+KN/S             = 17.313
+memory per node  = 21 bytes
+gc time          = 28.0%
+total time       = 11.1 seconds

@@ -2,13 +2,20 @@ function add_action(board::Board, action::Action; avoid_duplicates=false)
     # Do no use show(action) here because tiles might be Temporarily deleted -> string generation does not work
     if avoid_duplicates
         if move_not_duplicate(board, action)
-            board.validactions[board.action_index] = action
-            board.action_index += 1
+            add_action!(board, action)
         end
     else
-        board.validactions[board.action_index] = action
-        board.action_index += 1
+        add_action!(board, action)
     end
+end
+
+function add_action(board::Board, placement::Placement; avoid_duplicates=false)
+    add_action!(board, placement)
+end
+
+function add_action!(board::Board, action::Action)
+    board.validactions[board.action_index] = action_index(action)
+    board.action_index += 1
 end
 
 function validactions(board)
@@ -70,32 +77,6 @@ function validactions_general(board::Board)
     return nothing
 end
 
-# function generate_placements(board, placement_locs, tile)
-#     foreach(loc -> add_action(board, Placement(loc, tile)), placement_locs)
-# end
-
-# function generate_placement_locs(board, color)
-#     locs = BitSet()
-#     for loc in board.tile_locs
-#         if loc >= 0
-#             empty_neighs = filter(n -> get_tile_on_board(board, n) == EMPTY_TILE, allneighs(loc))
-
-#             for empty_neigh in empty_neighs
-#                 neigh_locs2 = allneighs(empty_neigh)
-#                 if all(
-#                     n ->
-#                         get_tile_on_board(board, n) == EMPTY_TILE ||
-#                             get_tile_color(get_tile_on_board(board, n)) == color,
-#                     neigh_locs2,
-#                 )
-#                     push!(locs, empty_neigh)
-#                 end
-#             end
-#         end
-#     end
-#     return locs
-# end
-
 function add_placements(board)
     foreach(
         loc -> foreach(
@@ -104,6 +85,13 @@ function add_placements(board)
         ),
         board.placement_locs[board.current_color + 1],
     )
+    # for loc in board.placement_locs[board.current_color + 1]
+    #     for tile in board.placeable_tiles[board.current_color + 1]
+    #         if tile != EMPTY_TILE
+    #             add_action(board, Placement(loc, tile))
+    #         end
+    #     end
+    # end
     return nothing
 end
 

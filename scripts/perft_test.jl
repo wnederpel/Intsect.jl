@@ -3,14 +3,14 @@ using BenchmarkTools
 using PProf
 using Profile
 
-get_pinned_tiles(board)
+perft()
 
 # Profile.Allocs.clear()
-# Profile.Allocs.@profile sample_rate = 1.0 get_pinned_tiles(board)
+# Profile.Allocs.@profile sample_rate = 0.01 perft()
 
 # PProf.Allocs.pprof()
 
 Profile.clear()
-Profile.@profile get_pinned_tiles(board)
+Profile.@profile perft()
 
 PProf.pprof()

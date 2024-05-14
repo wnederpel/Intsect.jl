@@ -60,7 +60,7 @@ mutable struct Board
     tile_locs::MVector{36,Int}
     just_moved_loc::Int
     moved_by_pillbug_loc::Int
-    current_color::Integer
+    current_color::UInt8
     queen_placed::MVector{2,Bool}
     ply::Int
     turn::Int
@@ -69,7 +69,7 @@ mutable struct Board
     # TODO speed: tuple with string not strictly necessary, only practical
     history::Stack{Action}
     underworld::DefaultDict{Int,Stack{UInt8}}
-    validactions::SizedVector{VALID_BUFFER_SIZE,Action}
+    validactions::SizedVector{VALID_BUFFER_SIZE,Int}
     action_index::Int
     placeable_tiles::SVector{2,MVector{8,UInt8}}
     placement_locs::SVector{2,BitSet}
@@ -89,7 +89,7 @@ function Board(tiles, tile_locs)
         NO_COLOR,
         Stack{Action}(),
         DefaultDict{Int,Stack{UInt8}}(() -> Stack{UInt8}()),
-        SizedVector{VALID_BUFFER_SIZE,Action}(fill(Pass(), VALID_BUFFER_SIZE)),
+        SizedVector{VALID_BUFFER_SIZE,Int}(fill(0, VALID_BUFFER_SIZE)),
         1,
         SVector{2,MVector{8,UInt8}}(
             MVector{8,UInt8}(
