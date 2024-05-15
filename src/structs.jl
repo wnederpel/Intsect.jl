@@ -66,8 +66,8 @@ mutable struct Board
     turn::Int
     gameover::Bool
     victor::Int
-    # TODO speed: tuple with string not strictly necessary, only practical
-    history::Stack{Action}
+    history::SizedVector{HISTORY_BUFFER_SIZE,Int}
+    last_action_index::Int
     underworld::DefaultDict{Int,Stack{UInt8}}
     validactions::SizedVector{VALID_BUFFER_SIZE,Int}
     action_index::Int
@@ -87,7 +87,8 @@ function Board(tiles, tile_locs)
         1,
         false,
         NO_COLOR,
-        Stack{Action}(),
+        SizedVector{HISTORY_BUFFER_SIZE,Int}(fill(0, HISTORY_BUFFER_SIZE)),
+        0,
         DefaultDict{Int,Stack{UInt8}}(() -> Stack{UInt8}()),
         SizedVector{VALID_BUFFER_SIZE,Int}(fill(0, VALID_BUFFER_SIZE)),
         1,
