@@ -417,3 +417,23 @@ KN/S             = 17.313
 memory per node  = 21 bytes
 gc time          = 28.0%
 total time       = 11.1 seconds
+
+## Improved all neighs computation
+
+Perft(4)         = 151.686
+KN/S             = 19.264
+memory per node  = 21 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(5)         = 5.427.108
+KN/S             = 23.222
+memory per node  = 21 bytes
+gc time          = 1.0%
+total time       = 0.2 seconds
+
+Perft(6)         = 192.353.904
+KN/S             = 22.002
+memory per node  = 21 bytes
+gc time          = 30.0%
+total time       = 8.7 seconds

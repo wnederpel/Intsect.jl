@@ -351,8 +351,7 @@ function update_gamestring(gamestring, board)
     return nothing
 end
 
-function allneighs(loc)
-    # May be performance critical?
+function compute_all_neighs(loc)
     return (
         apply_direction(loc, Direction.NE),
         apply_direction(loc, Direction.E),
@@ -361,6 +360,14 @@ function allneighs(loc)
         apply_direction(loc, Direction.W),
         apply_direction(loc, Direction.NW),
     )
+end
+
+const ALL_ALL_NEIGHS::SVector{GRID_SIZE,Tuple{Int,Int,Int,Int,Int,Int}} = map(
+    loc -> compute_all_neighs(loc), 1:GRID_SIZE
+)
+
+function allneighs(loc)
+    return ALL_ALL_NEIGHS[loc]
 end
 
 function do_action(board, string::AbstractString)
@@ -649,6 +656,10 @@ function check_gameover(board)
     bQ = get_tile_from_string(board, "bQ")
     wQ_loc = get_loc(board, wQ)
     bQ_loc = get_loc(board, bQ)
+
+    if wQ_loc <= 0 || bQ_loc <= 0
+        return nothing
+    end
 
     if all(loc -> get_tile_on_board(board, loc) != EMPTY_TILE, allneighs(wQ_loc))
         board.gameover = true
