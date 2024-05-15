@@ -1,7 +1,11 @@
 function perft()
+    perft(5)
+end
+
+function perft(n)
     # https://github.com/jonthysell/Mzinga/wiki/Perft
     # TODO speed: look into bump allocations for the whole board maybe? would be cool. 
-    for depth in 1:6
+    for depth in 1:n
         nodes, time_taken, memory_allocated, gc_time, _ = @timed perft(
             depth, handle_newgame_command(Gametype.MLP)
         )
