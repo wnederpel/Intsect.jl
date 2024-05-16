@@ -2,22 +2,24 @@ function perft()
     perft(5)
 end
 
-function perft(n)
+function perft(n; output=true)
     # https://github.com/jonthysell/Mzinga/wiki/Perft
     # TODO speed: look into bump allocations for the whole board maybe? would be cool. 
     for depth in 1:n
         nodes, time_taken, memory_allocated, gc_time, _ = @timed perft(
             depth, handle_newgame_command(Gametype.MLP)
         )
-        println("Perft($depth) \t = $(format_with_dots(nodes))")
-        kilo_nodes = nodes / 1000
-        println("KN/S \t\t = $(format_with_dots(Int.(round(kilo_nodes / time_taken))))")
-        println(
-            "memory per node  = $(format_with_dots(Int(round(memory_allocated / nodes)))) bytes"
-        )
-        println("gc time \t = $(round(gc_time*100))%")
-        println("total time \t = $(round(time_taken, digits=1)) seconds")
-        println()
+        if output
+            println("Perft($depth) \t = $(format_with_dots(nodes))")
+            kilo_nodes = nodes / 1000
+            println("KN/S \t\t = $(format_with_dots(Int.(round(kilo_nodes / time_taken))))")
+            println(
+                "memory per node  = $(format_with_dots(Int(round(memory_allocated / nodes)))) bytes"
+            )
+            println("gc time \t = $(round(gc_time*100))%")
+            println("total time \t = $(round(time_taken, digits=1)) seconds")
+            println()
+        end
     end
 end
 
