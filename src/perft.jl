@@ -1,5 +1,5 @@
-function perft()
-    perft(5)
+function perft(; output=true)
+    perft(5; output=output)
 end
 
 function perft(n; output=true)

@@ -616,8 +616,8 @@ end
 
 function inverse_post_action_pillbug_update(board)
     if !(board.last_action_index == 0)
-        last_action = ALL_ACTIONS[board.history[board.last_action_index]]
-        post_action_pillbug_update(board, last_action)
+        # last_action = ALL_ACTIONS[board.history[board.last_action_index]]
+        post_action_pillbug_update(board, board.history[board.last_action_index])
     else
         board.just_moved_loc = INVALID_LOC
         board.moved_by_pillbug_loc = INVALID_LOC
@@ -629,7 +629,11 @@ function post_action_update(board, action::Action)
     post_action_general_update(board, action)
 end
 
-function post_action_pillbug_update(board, move)
+function post_action_pillbug_update(board, move::Int)
+    post_action_pillbug_update(board, ALL_ACTIONS[move])
+end
+
+function post_action_pillbug_update(board, move::Action)
     board.just_moved_loc = move.goal_loc
     # When the moving piece is of a different color then the current color, the pillbug has moved it
     if get_tile_color(get_tile_on_board(board, move.goal_loc)) != board.current_color
