@@ -741,7 +741,11 @@ Some functionality for pre defining all actions to reduce allocations
 """
 The total number of idices = 256 ^ 2 + 256 ^ 2 + 256 * 36 = 140288 < 2^32
 so we can use 32 bit integers as indices
+
+when we save moves with goal index and tile we can get
+256 * 36 + 256 * 36 + 256 * 36 = 27648 < 2^16 !
 """
+# TODO speed: change to 16 bit ints. 
 # TODO speed: when we separate placements, moves and climbs, we can use 16 bit integers as indices
 # TODO func: the pass action is no longer handled probably. Fix this.
 const MAX_PLACEMENT_INDEX = GRID_SIZE * 36
