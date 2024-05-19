@@ -13,11 +13,9 @@ function perft(n; output=true)
             println("Perft($depth) \t = $(format_with_dots(nodes))")
             kilo_nodes = nodes / 1000
             println("KN/S \t\t = $(format_with_dots(Int.(round(kilo_nodes / time_taken))))")
-            println(
-                "memory per node  = $(format_with_dots(Int(round(memory_allocated / nodes)))) bytes"
-            )
+            println("memory per node  = $(round(memory_allocated / nodes, digits=2)) bytes")
             println("gc time \t = $(round(gc_time*100))%")
-            println("total time \t = $(round(time_taken, digits=1)) seconds")
+            println("total time \t = $(round(time_taken, digits=2)) seconds")
             println()
         end
     end
