@@ -437,3 +437,23 @@ KN/S             = 22.002
 memory per node  = 21 bytes
 gc time          = 30.0%
 total time       = 8.7 seconds
+
+## Avoid allocataions by smarter loop in placement locs recalculation, save history as int with predefined vector, use MVector over SizedVector for valid action buffer
+
+Perft(4)         = 151.686
+KN/S             = 50.775
+memory per node  = 11 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(5)         = 5.427.108
+KN/S             = 49.040
+memory per node  = 13 bytes
+gc time          = 1.0%
+total time       = 0.1 seconds
+
+Perft(6)         = 192.353.904
+KN/S             = 63.238
+memory per node  = 14 bytes
+gc time          = 10.0%
+total time       = 3.0 seconds

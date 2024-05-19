@@ -69,7 +69,7 @@ mutable struct Board
     history::MVector{HISTORY_BUFFER_SIZE,Int}
     last_action_index::Int
     underworld::DefaultDict{Int,Stack{UInt8}}
-    validactions::SizedVector{VALID_BUFFER_SIZE,Int}
+    validactions::MVector{VALID_BUFFER_SIZE,Int}
     action_index::Int
     placeable_tiles::SVector{2,MVector{8,UInt8}}
     placement_locs::SVector{2,BitSet}
@@ -90,7 +90,7 @@ function Board(tiles, tile_locs)
         MVector{HISTORY_BUFFER_SIZE,Int}(fill(0, HISTORY_BUFFER_SIZE)),
         0,
         DefaultDict{Int,Stack{UInt8}}(() -> Stack{UInt8}()),
-        SizedVector{VALID_BUFFER_SIZE,Int}(fill(0, VALID_BUFFER_SIZE)),
+        MVector{VALID_BUFFER_SIZE,Int}(fill(0, VALID_BUFFER_SIZE)),
         1,
         SVector{2,MVector{8,UInt8}}(
             MVector{8,UInt8}(
