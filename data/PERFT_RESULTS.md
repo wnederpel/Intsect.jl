@@ -266,21 +266,6 @@ memory per node  = 220 bytes
 gc time          = 263.0%
 total time       = 36.7 seconds
 
-
-https://github.com/jonthysell/Mzinga/wiki/Perft
-
-goal:
-1:   7
-2:   294
-3:   6,678
-4:   151,686
-5:   5,427,108
-6:   192,353,904
-7:   3,151,035,948
-8:   50,945,151,390
-9:   2,784,830,280,25
-
-
 ## Avoiding allocations without bump
 
 Perft(4)         = 151.686
@@ -477,3 +462,27 @@ KN/S             = 82.476
 memory per node  = 3.93 bytes
 gc time          = 6.0%
 total time       = 2.33 seconds
+
+## After fix for perft(7), lots of gc
+
+Perft(7)         = 3.149.086.830
+KN/S             = 27.632
+memory per node  = 46.7 bytes
+gc time          = 989.0%
+total time       = 113.97 seconds
+
+
+# Known solutions
+
+https://github.com/jonthysell/Mzinga/wiki/Perft
+
+goal:
+1:   7
+2:   294
+3:   6,678
+4:   151,686
+5:   5,427,108
+6:   192,353,904
+7:   3,151,035,948
+8:   50,945,151,390
+9:   2,784,830,280,25

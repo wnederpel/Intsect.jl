@@ -525,7 +525,7 @@ function get_pinned_tiles!(board, pinned_tiles)
         parent_dict .= INVALID_LOC
 
         for loc in board.tile_locs
-            if loc != INVALID_LOC && loc != NOT_PLACED
+            if loc >= 0
                 get_pinned_tiles!(
                     board, pinned_tiles, visited_dict, depth_dict, low_dict, parent_dict, loc, 0
                 )
@@ -538,6 +538,11 @@ end
 function get_pinned_tiles!(
     board, pinned_tiles_dict, visited_dict, depth_dict, low_dict, parent_dict, loc, depth
 )
+    if loc < 0
+        show(board)
+        error("attempt to find pinned tiles from an invalid loc $loc")
+    end
+
     visited_dict[loc + 1] = true
     depth_dict[loc + 1] = depth
     low_dict[loc + 1] = depth
