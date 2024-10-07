@@ -31,8 +31,7 @@ function perft(depth::Int, board)::Int
 
     nodes = 0
 
-    for action_index in validactions(board)
-        action = ALL_ACTIONS[action_index]
+    for action in validactions(board)
         do_action(board, action)
         nodes += perft(depth - 1, board)
         undo(board)

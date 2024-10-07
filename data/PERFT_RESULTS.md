@@ -460,21 +460,20 @@ total time       = 3.0 seconds
 
 ## Avoid allocations by returning the board.last_history_index in depth 1 perft instead of the length of the actions
 
-Perft(4)         = 158.364
-KN/S             = 44.598
-memory per node  = 0.65 bytes
+Perft(4)         = 151.686
+KN/S             = 25.910
+memory per node  = 1.15 bytes
 gc time          = 0.0%
-total time       = 0.0 seconds
+total time       = 0.01 seconds
 
-Perft(5)         = 5.578.794
-KN/S             = 81.959
-memory per node  = 3.44 bytes
+Perft(5)         = 5.427.108
+KN/S             = 87.688
+memory per node  = 3.84 bytes
 gc time          = 0.0%
-total time       = 0.07 seconds
+total time       = 0.06 seconds
 
-Perft(6)         = 197.781.012
-KN/S             = 75.721
-memory per node  = 3.54 bytes
-gc time          = 5.0%
-total time       = 2.61 seconds
-
+Perft(6)         = 192.353.904
+KN/S             = 82.476
+memory per node  = 3.93 bytes
+gc time          = 6.0%
+total time       = 2.33 seconds

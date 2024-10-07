@@ -32,6 +32,7 @@ export BLACK
 export MAX_NUMS
 # Constants for move generation, constructed in game
 export ALL_ACTIONS
+export ALL_ALL_NEIGHS
 
 # enums
 export Bug
@@ -58,6 +59,7 @@ export apply_direction
 export action_from_move_string
 export do_action
 export validactions
+export validactions_indicessdfsdf
 export isvalid_shifted_tile
 export push_slidelocs!
 export antmoves

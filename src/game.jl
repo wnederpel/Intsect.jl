@@ -244,8 +244,8 @@ function action_from_move_string(board, move_string)
         moving_tile = get_tile_from_string(board, move_string)
         action = Placement(goal_loc, moving_tile)
     end
-    validactions(board)
-    if !(action in board.validactions)
+    valid_actions = validactions(board)
+    if !(action in valid_actions)
         error(
             "Invalid action: '$(move_string_from_action(board, action))' or '$action' not present in valid actions",
         )
@@ -367,11 +367,11 @@ function compute_all_neighs(loc)
 end
 
 const ALL_ALL_NEIGHS::SVector{GRID_SIZE,Tuple{Int,Int,Int,Int,Int,Int}} = map(
-    loc -> compute_all_neighs(loc), 1:GRID_SIZE
+    loc -> compute_all_neighs(loc), 0:(GRID_SIZE - 1)
 )
 
 function allneighs(loc)
-    return ALL_ALL_NEIGHS[loc]
+    return ALL_ALL_NEIGHS[loc + 1]
 end
 
 function do_action(board, string::AbstractString)
@@ -735,8 +735,8 @@ end
 """
 Check if a move is not already in the valid actions
     
-    to avoid the pillbug adding duplicate moves
-    """
+to avoid the pillbug adding duplicate moves
+"""
 function move_not_duplicate(board, move)
     move_index = action_index(move)
     validmove_indices = view(board.validactions, 1:(board.action_index - 1))
@@ -775,29 +775,20 @@ end
 
 function placement_index(loc::Int, tile::UInt8)
     shifted_tile = tile >> INDEX_SHIFT
-    shifted_loc::UInt32 = loc
-    return shifted_tile * UInt32(GRID_SIZE) + shifted_loc
+    return shifted_tile * UInt32(GRID_SIZE) + loc + 1
 end
 
 function movement_index(moving_loc::Int, goal_loc::Int)
-    shifted_moving_loc::UInt32 = moving_loc - 1
-    shifted_goal_loc::UInt32 = goal_loc
-    return UInt32(MAX_PLACEMENT_INDEX) + shifted_moving_loc * UInt32(GRID_SIZE) + shifted_goal_loc
+    return UInt32(MAX_PLACEMENT_INDEX) + moving_loc * UInt32(GRID_SIZE) + goal_loc + 1
 end
 
 function climb_index(moving_loc::Int, goal_loc::Int)
-    shifted_moving_loc = moving_loc - 1
-    shifted_goal_loc = goal_loc - 1
-    return MAX_MOVEMENT_INDEX +
-           MAX_PLACEMENT_INDEX +
-           shifted_moving_loc * GRID_SIZE +
-           shifted_goal_loc +
-           1
+    return MAX_MOVEMENT_INDEX + MAX_PLACEMENT_INDEX + moving_loc * GRID_SIZE + goal_loc + 1
 end
 
 function get_all_placements()
     all_placements = Vector{Placement}(undef, GRID_SIZE * 36)
-    for loc in 1:GRID_SIZE
+    for loc in 0:(GRID_SIZE - 1)
         for bug in 0x00:0x07
             for num in 0x00:MAX_NUMS[bug + 0x01]
                 wtile = tile_from_info(WHITE, bug, num)
@@ -812,8 +803,8 @@ end
 
 function get_all_movements()
     all_movements = Vector{Move}(undef, GRID_SIZE * GRID_SIZE)
-    for moving_loc in 1:GRID_SIZE
-        for goal_loc in 1:GRID_SIZE
+    for moving_loc in 0:(GRID_SIZE - 1)
+        for goal_loc in 0:(GRID_SIZE - 1)
             all_movements[movement_index(moving_loc, goal_loc) - MAX_PLACEMENT_INDEX] = Move(
                 moving_loc, goal_loc
             )
@@ -824,8 +815,8 @@ end
 
 function get_all_climbs()
     all_climbs = Vector{Climb}(undef, GRID_SIZE * GRID_SIZE)
-    for moving_loc in 1:GRID_SIZE
-        for goal_loc in 1:GRID_SIZE
+    for moving_loc in 0:(GRID_SIZE - 1)
+        for goal_loc in 0:(GRID_SIZE - 1)
             all_climbs[climb_index(moving_loc, goal_loc) - MAX_MOVEMENT_INDEX - MAX_PLACEMENT_INDEX] = Climb(
                 moving_loc, goal_loc
             )

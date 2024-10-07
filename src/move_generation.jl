@@ -18,15 +18,25 @@ function add_action!(board::Board, action::Action)
     board.action_index += 1
 end
 
-function validactions(board)
+function validactions_indices(board)
     validactions!(board)
-    return extract_valid_actions(board)
+    return extract_valid_actions_index(board)
+end
+
+function validactions(board)
+    return ALL_ACTIONS[validactions_indices(board)]
+end
+
+function extract_valid_actions_index(board)
+    tmp = board.action_index
+    board.action_index = 1
+    return board.validactions[1:(tmp - 1)]
 end
 
 function extract_valid_actions(board)
     tmp = board.action_index
     board.action_index = 1
-    return board.validactions[1:(tmp - 1)]
+    return ALL_ACTIONS[board.validactions[1:(tmp - 1)]]
 end
 
 function validactions!(board::Board)
@@ -379,8 +389,8 @@ end
 
 function antmoves(board, startloc; avoid_duplicates=false)
     tmp_tile = get_tile_on_board(board, startloc)
-    set_tile_on_board(board, startloc, EMPTY_TILE)
     # Temporarily remove the tile to find where it can move to
+    set_tile_on_board(board, startloc, EMPTY_TILE)
     discovered_dict = DefaultDict(false)
     stack = Stack{Int}()
 
@@ -439,6 +449,9 @@ From the current position, one can travel in a direcion when:
 """
 function push_slidelocs!(board::Board, stack::Stack, loc, discovered_dict)
     neighlocs = allneighs(loc)
+    if 64 in neighlocs
+        print("error!")
+    end
     foreach(
         slideloc -> begin
             if !discovered_dict[slideloc]
@@ -452,6 +465,9 @@ end
 
 function push_slidelocs!(board::Board, stack::Stack, depth, discovered_dict, loc)
     neighlocs = allneighs(loc)
+    if 64 in neighlocs
+        print("error!")
+    end
     foreach(
         slideloc -> begin
             if !discovered_dict[slideloc]
@@ -459,10 +475,7 @@ function push_slidelocs!(board::Board, stack::Stack, depth, discovered_dict, loc
                 depth[slideloc] = depth[loc] + 1
             end
         end,
-        map(
-            i -> neighlocs[i],
-            filter(i -> canslide(i, board, neighlocs) && !discovered_dict[neighlocs[i]], 1:6),
-        ),
+        map(i -> neighlocs[i], filter(i -> canslide(i, board, neighlocs), 1:6)),
     )
 end
 

@@ -15,7 +15,7 @@ board = handle_newgame_command(Gametype.MLP)
 
 show(board)
 
-action_to_do = ALL_ACTIONS[validactions(board)[1]]
+action_to_do = validactions(board)[1]
 do_action(board, action_to_do)
 
 show(board)
