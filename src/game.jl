@@ -335,15 +335,20 @@ function update_gamestring(gamestring, board)
 
     gamestring.movestrings = ""
     # Build movestrings from most recent move back to start move
-    last_action_index_save = board.last_action_index
-    for action in board.history
+    history_index_save = board.last_history_index
+    for history_index in reverse(1:(board.last_history_index))
+        action = ALL_ACTIONS[board.history[history_index]]
         undo(board)
         movestring = move_string_from_action(board, action)
         gamestring.movestrings = ";" * movestring * gamestring.movestrings
     end
 
     # Then redo all undone moves
-    board.last_action_index = last_action_index_save
+    board.last_history_index = history_index_save
+    for history_index in 1:(board.last_history_index)
+        action = ALL_ACTIONS[board.history[history_index]]
+        do_action(board, action)
+    end
 
     gamestring.player =
         board.current_color == WHITE ? "White[$(board.turn)]" : "Black[$(board.turn)]"
@@ -523,11 +528,11 @@ function inverse_update_placement_locs_goal(board, goal_loc)
 end
 
 function undo(board)
-    if board.last_action_index == 0
+    if board.last_history_index == 0
         error("no moves to undo")
     end
-    last_action = ALL_ACTIONS[board.history[board.last_action_index]]
-    board.last_action_index -= 1
+    last_action = ALL_ACTIONS[board.history[board.last_history_index]]
+    board.last_history_index -= 1
     undo_action(board, last_action)
 end
 
@@ -615,9 +620,9 @@ function inverse_post_action_general_update(board)
 end
 
 function inverse_post_action_pillbug_update(board)
-    if !(board.last_action_index == 0)
-        # last_action = ALL_ACTIONS[board.history[board.last_action_index]]
-        post_action_pillbug_update(board, board.history[board.last_action_index])
+    if !(board.last_history_index == 0)
+        # last_action = ALL_ACTIONS[board.history[board.last_history_index]]
+        post_action_pillbug_update(board, board.history[board.last_history_index])
     else
         board.just_moved_loc = INVALID_LOC
         board.moved_by_pillbug_loc = INVALID_LOC
@@ -644,8 +649,8 @@ function post_action_pillbug_update(board, move::Action)
 end
 
 function pre_action_update(board, action)
-    board.last_action_index += 1
-    board.history[board.last_action_index] = action_index(action)
+    board.last_history_index += 1
+    board.history[board.last_history_index] = action_index(action)
 end
 
 function post_action_general_update(board, action)

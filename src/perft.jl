@@ -26,7 +26,7 @@ function perft(depth::Int, board)::Int
         # Not needed to allocate here, use a global valid move buffer,
         # Here you can just read the action_index.
         validactions!(board)
-        return board.action_index
+        return board.action_index - 1
     end
 
     nodes = 0

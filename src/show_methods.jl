@@ -26,6 +26,11 @@ function get_tile_name(tile)
     return name
 end
 
+function show_valid_actions(board)
+    valid_actions::Vector{Action} = map(index -> ALL_ACTIONS[index], validactions(board))
+    show(valid_actions, board)
+end
+
 function Base.show(board::Board, show_locs::Bool=true)
     println("-----------------")
     show(GameString(board))

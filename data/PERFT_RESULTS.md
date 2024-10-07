@@ -458,7 +458,7 @@ memory per node  = 14 bytes
 gc time          = 10.0%
 total time       = 3.0 seconds
 
-## Avoid allocations by returning the board.last_action_index in depth 1 perft instead of the length of the actions
+## Avoid allocations by returning the board.last_history_index in depth 1 perft instead of the length of the actions
 
 Perft(4)         = 158.364
 KN/S             = 44.598

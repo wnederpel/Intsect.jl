@@ -67,7 +67,7 @@ mutable struct Board
     gameover::Bool
     victor::Int
     history::MVector{HISTORY_BUFFER_SIZE,Int}
-    last_action_index::Int
+    last_history_index::Int
     underworld::DefaultDict{Int,Stack{UInt8}}
     validactions::MVector{VALID_BUFFER_SIZE,Int}
     action_index::Int

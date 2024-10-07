@@ -3,7 +3,7 @@ using BenchmarkTools
 using PProf
 using Profile
 
-perft(6; output=true)
+perft(7; output=true)
 (@benchmark perft(5; output=false)) |> display
 
 Profile.Allocs.clear()
