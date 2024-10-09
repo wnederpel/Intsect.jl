@@ -1,8 +1,31 @@
-function fib(n::Int64)::Int64
-    n <= 2 && return 1
-    n == 3 && return 2
-    fib(n - 1) + fib(n - 2)
+using BenchmarkTools
+using Bumper
+
+moves = rand(1000)
+
+struct Test
+    x::Vector
 end
 
-@time fib(10);
-@time fib(50);
+test = Test(ones(1000))
+
+function get_moves(depth)
+    val = 0
+    @no_escape begin
+        x = @alloc(Int64, 1000)
+
+        for i in Int64(1):Int64(1000)
+            if depth == 1
+                x[i] = i::Int64
+            else
+                x[i] = get_moves(depth - 1)
+            end
+        end
+
+        val = sum(x)
+    end
+
+    return val
+end
+
+@btime get_moves($2)

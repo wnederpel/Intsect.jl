@@ -25,16 +25,24 @@ function perft(depth::Int, board)::Int
     if depth == 1
         # Not needed to allocate here, use a global valid move buffer,
         # Here you can just read the action_index.
-        validactions!(board)
+        @no_escape begin
+            move_buffer = @alloc(eltype(Int), VALID_BUFFER_SIZE)
+            validactions!(board, move_buffer)
+        end
         return board.action_index - 1
     end
 
     nodes = 0
 
-    for action in validactions(board)
-        do_action(board, action)
-        nodes += perft(depth - 1, board)
-        undo(board)
+    @no_escape begin
+        move_buffer = @alloc(eltype(Int), VALID_BUFFER_SIZE)
+        validactions!(board, move_buffer)
+        for action_i in 1:(board.action_index - 1)
+            action = ALL_ACTIONS[move_buffer[action_i]]
+            do_action(board, action)
+            nodes += perft(depth - 1, board)
+            undo(board)
+        end
     end
 
     return nodes

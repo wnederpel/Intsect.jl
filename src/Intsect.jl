@@ -55,6 +55,7 @@ export get_tile_bug_num
 export get_tile_color
 export get_pinned_tiles
 export allneighs
+export allneighs_view
 export apply_direction
 export action_from_move_string
 export do_action

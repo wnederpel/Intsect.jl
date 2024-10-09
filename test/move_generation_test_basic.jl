@@ -32,7 +32,7 @@
     set_tile_on_board(board, bG1_loc, bG1)
 
     # Generate the moves
-    queenmoves(board, bQ_loc)
+    queenmoves(board, bQ_loc, board.validactions)
     moves = extract_valid_actions(board)
 
     # Check the moves
@@ -89,7 +89,7 @@ end
     set_tile_on_board(board, wB1_loc, wB1)
 
     # Generate the moves
-    grasshoppermoves(board, wG1_loc)
+    grasshoppermoves(board, wG1_loc, board.validactions)
     moves = extract_valid_actions(board)
 
     # Check the moves
@@ -139,7 +139,7 @@ end
     set_tile_on_board(board, wB1_loc, wB1)
 
     # Generate the moves
-    spidermoves(board, bS1_loc)
+    spidermoves(board, bS1_loc, board.validactions)
     moves = extract_valid_actions(board)
 
     # Check the moves
@@ -178,7 +178,7 @@ end
     set_tile_on_board(board, bA1_loc, bA1)
 
     # Generate the moves
-    antmoves(board, bA1_loc)
+    antmoves(board, bA1_loc, board.validactions)
     moves = extract_valid_actions(board)
 
     # Check the moves
@@ -224,7 +224,7 @@ end
     set_tile_on_board(board, wS1_loc, wS1)
 
     # Generate the moves
-    beetlemoves(board, wB1_loc, 1)
+    beetlemoves(board, wB1_loc, 1, board.validactions)
     moves = extract_valid_actions(board)
 
     # Check the moves
@@ -237,7 +237,7 @@ end
     do_action(board, Move(wB1_loc, apply_direction(wB1_loc, Direction.NW)))
     wB1_loc = apply_direction(wB1_loc, Direction.NW)
 
-    beetlemoves(board, wB1_loc, 2)
+    beetlemoves(board, wB1_loc, 2, board.validactions)
     moves = extract_valid_actions(board)
 
     @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.NW)) in moves
@@ -277,7 +277,7 @@ end
     set_tile_on_board(board, bB1_loc, bB1)
 
     # Generate the moves
-    ladybugmoves(board, wL1_loc)
+    ladybugmoves(board, wL1_loc, board.validactions)
     moves = extract_valid_actions(board)
 
     # Check the moves
@@ -320,7 +320,7 @@ end
     set_tile_on_board(board, wM_loc, wM)
 
     # Generate the moves
-    mosquitomoves(board, wM_loc, 1, DefaultDict(false))
+    mosquitomoves(board, wM_loc, 1, DefaultDict(false), board.validactions)
     moves = extract_valid_actions(board)
 
     # Check the moves
@@ -367,7 +367,7 @@ end
     ispinned[wS1_loc + 1] = true
 
     # Generate the moves
-    pillbugmoves(board, wP_loc, ispinned)
+    pillbugmoves(board, wP_loc, ispinned, board.validactions)
     moves = extract_valid_actions(board)
 
     # Check the moves

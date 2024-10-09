@@ -370,8 +370,9 @@ const ALL_ALL_NEIGHS::SVector{GRID_SIZE,Tuple{Int,Int,Int,Int,Int,Int}} = map(
     loc -> compute_all_neighs(loc), 0:(GRID_SIZE - 1)
 )
 
+@inline
 function allneighs(loc)
-    return ALL_ALL_NEIGHS[loc + 1]
+    return view(ALL_ALL_NEIGHS, loc + 1)[1]
 end
 
 function do_action(board, string::AbstractString)
@@ -737,9 +738,9 @@ Check if a move is not already in the valid actions
     
 to avoid the pillbug adding duplicate moves
 """
-function move_not_duplicate(board, move)
+function move_not_duplicate(board, move, move_buffer)
     move_index = action_index(move)
-    validmove_indices = view(board.validactions, 1:(board.action_index - 1))
+    validmove_indices = view(move_buffer, 1:(board.action_index - 1))
     return !any(index -> index == move_index, validmove_indices)
 end
 
@@ -760,6 +761,7 @@ when we save moves with goal index and tile we can get
 const MAX_PLACEMENT_INDEX = GRID_SIZE * 36
 const MAX_MOVEMENT_INDEX = GRID_SIZE * GRID_SIZE
 const MAX_CLIMB_INDEX = GRID_SIZE * GRID_SIZE
+const MAX_PASS_INDEX = 1
 
 function action_index(placement::Placement)
     return placement_index(placement.goal_loc, placement.tile)
@@ -773,6 +775,10 @@ function action_index(climb::Climb)
     return climb_index(climb.moving_loc, climb.goal_loc)
 end
 
+function action_index(pass::Pass)
+    return pass_index()
+end
+
 function placement_index(loc::Int, tile::UInt8)
     shifted_tile = tile >> INDEX_SHIFT
     return shifted_tile * UInt32(GRID_SIZE) + loc + 1
@@ -784,6 +790,10 @@ end
 
 function climb_index(moving_loc::Int, goal_loc::Int)
     return MAX_MOVEMENT_INDEX + MAX_PLACEMENT_INDEX + moving_loc * GRID_SIZE + goal_loc + 1
+end
+
+function pass_index()
+    return MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX + 1
 end
 
 function get_all_placements()
@@ -826,14 +836,17 @@ function get_all_climbs()
 end
 
 function get_all_actions()
-    all_actions = Vector{Action}(undef, MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX)
+    all_actions = Vector{Action}(
+        undef, MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX + MAX_PASS_INDEX
+    )
     all_placements = get_all_placements()
     all_movements = get_all_movements()
     all_climbs = get_all_climbs()
     all_actions[begin:MAX_PLACEMENT_INDEX] = all_placements
     all_actions[(MAX_PLACEMENT_INDEX + 1):(MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX)] =
         all_movements
-    all_actions[(MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + 1):end] = all_climbs
+    all_actions[(MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + 1):(end - 1)] = all_climbs
+    all_actions[end] = Pass()
     return all_actions
 end
 

@@ -471,6 +471,46 @@ memory per node  = 46.7 bytes
 gc time          = 989.0%
 total time       = 113.97 seconds
 
+## lots of bumper noescape buffers 
+
+Perft(4)         = 151.686
+KN/S             = 30.510
+memory per node  = 0.19 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(5)         = 5.427.108
+KN/S             = 93.038
+memory per node  = 1.49 bytes
+gc time          = 0.0%
+total time       = 0.06 seconds
+
+Perft(6)         = 192.353.904
+KN/S             = 89.983
+memory per node  = 1.55 bytes
+gc time          = 4.0%
+total time       = 2.14 seconds
+
+## Remove a number of allocating filters and maps
+
+Perft(4)         = 151.686
+KN/S             = 23.818
+memory per node  = 0.19 bytes
+gc time          = 0.0%
+total time       = 0.01 seconds
+
+Perft(5)         = 5.427.108
+KN/S             = 101.149
+memory per node  = 0.14 bytes
+gc time          = 0.0%
+total time       = 0.05 seconds
+
+Perft(6)         = 192.353.904
+KN/S             = 96.571
+memory per node  = 0.14 bytes
+gc time          = 0.0%
+total time       = 1.99 seconds
+
 
 # Known solutions
 

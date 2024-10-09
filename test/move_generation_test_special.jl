@@ -26,7 +26,7 @@
     push!(board.underworld[bB1_loc], bS1)
 
     # Generate the moves
-    beetlemoves(board, bB1_loc, get_tile_height(bB1))
+    beetlemoves(board, bB1_loc, get_tile_height(bB1), board.validactions)
     moves = extract_valid_actions(board)
 
     # Check the moves
@@ -61,7 +61,7 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    beetlemoves(board, wB1_loc, get_tile_height(wB1))
+    beetlemoves(board, wB1_loc, get_tile_height(wB1), board.validactions)
     moves = extract_valid_actions(board)
 
     # Check the moves
@@ -93,7 +93,7 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    beetlemoves(board, wB1_loc, get_tile_height(wB1))
+    beetlemoves(board, wB1_loc, get_tile_height(wB1), board.validactions)
     moves = extract_valid_actions(board)
 
     # Check the moves
@@ -120,7 +120,7 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    beetlemoves(board, wB1_loc, get_tile_height(wB1))
+    beetlemoves(board, wB1_loc, get_tile_height(wB1), board.validactions)
     moves = extract_valid_actions(board)
 
     # Check the moves
@@ -148,7 +148,7 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    beetlemoves(board, wB1_loc, get_tile_height(wB1))
+    beetlemoves(board, wB1_loc, get_tile_height(wB1), board.validactions)
     moves = extract_valid_actions(board)
 
     # Check the moves
@@ -178,7 +178,7 @@ end
     set_tile_on_board(board, bM_loc, bM)
 
     # Generate the moves
-    mosquitomoves(board, bM_loc, get_tile_height(bM), nothing)
+    mosquitomoves(board, bM_loc, get_tile_height(bM), nothing, board.validactions)
     moves = extract_valid_actions(board)
 
     # Check the moves
@@ -224,13 +224,13 @@ end
 
     set_tile_on_board(board, wS1_loc, wS1)
 
-    spidermoves(board, wS1_loc)
+    spidermoves(board, wS1_loc, board.validactions)
     moves = extract_valid_actions(board)
 
     @test length(moves) == 0
 
     # Also invalid for ant
-    antmoves(board, wS1_loc)
+    antmoves(board, wS1_loc, board.validactions)
     moves = extract_valid_actions(board)
 
     @test length(moves) == 2
@@ -264,7 +264,7 @@ end
     set_tile_on_board(board, bA1_loc, bA1)
 
     # Generate the moves
-    antmoves(board, bA1_loc)
+    antmoves(board, bA1_loc, board.validactions)
     moves = extract_valid_actions(board)
 
     # Check the moves
@@ -313,7 +313,7 @@ end
     ispinned[bQ_loc + 1] = true
     ispinned[bP_loc + 1] = true
 
-    pillbugmoves(board, wP_loc, ispinned)
+    pillbugmoves(board, wP_loc, ispinned, board.validactions)
     moves = extract_valid_actions(board)
 
     @test Move(wQ_loc, apply_direction(wP_loc, Direction.SE)) in moves
@@ -358,7 +358,7 @@ end
     ispinned[bQ_loc + 1] = true
     ispinned[bB1_loc + 1] = true
 
-    pillbugmoves(board, wP_loc, ispinned)
+    pillbugmoves(board, wP_loc, ispinned, board.validactions)
     moves = extract_valid_actions(board)
 
     @test Move(wM_loc, apply_direction(wP_loc, Direction.NE)) in moves
