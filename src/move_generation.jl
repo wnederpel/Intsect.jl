@@ -187,7 +187,7 @@ function bugmoves(board, loc, bug, height, ispinned, move_buffer; avoid_duplicat
         elseif bug == Integer(Bug.GRASSHOPPER)
             grasshoppermoves(board, loc, move_buffer; avoid_duplicates)
         elseif bug == Integer(Bug.LADYBUG)
-            ladybugmoves(board, loc, move_buffer; avoid_duplicates)
+            ladybugmoves(board, loc, move_buffer)
         end
     end
     return nothing
@@ -257,53 +257,45 @@ function pillbugmoves(board, startloc, ispinned, move_buffer; avoid_duplicates=f
     return nothing
 end
 
-function ladybugmoves(board, startloc, move_buffer; avoid_duplicates=false)
+function ladybugmoves(board, startloc, move_buffer)
     maxdepth = 3
     tmp_tile = get_tile_on_board(board, startloc)
     set_tile_on_board(board, startloc, EMPTY_TILE)
 
-    moves = Set()
-    moves_to_depth_ladybug!(board, startloc, maxdepth, moves, move_buffer)
-    for move in moves
-        add_action(board, move, move_buffer; avoid_duplicates)
-    end
+    moves_to_depth_ladybug!(board, startloc, maxdepth, move_buffer)
 
     set_tile_on_board(board, startloc, tmp_tile)
 
     return nothing
 end
 
-function moves_to_depth_ladybug!(board, startloc, depth, moves, move_buffer; cur_loc=startloc)
+function moves_to_depth_ladybug!(board, startloc, depth, move_buffer; cur_loc=startloc)
     if depth == 0
         if cur_loc != startloc
-            push!(moves, Move(startloc, cur_loc))
+            add_action(board, Move(startloc, cur_loc), move_buffer; avoid_duplicates=true)
         end
         return nothing
     end
     neighlocs = allneighs(cur_loc)
-    foreach(
-        slideloc -> moves_to_depth_ladybug!(
-            board, startloc, depth - 1, moves, move_buffer; cur_loc=slideloc
-        ),
-        map(
-            i -> neighlocs[i],
-            filter(
-                i -> begin
-                    height = get_tile_height(get_tile_on_board(board, cur_loc))
-                    depth == 3 &&
-                        return get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
-                               canslidehigh(i, board, neighlocs, 0)
-                    depth == 2 &&
-                        return get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
-                               canslidehigh(i, board, neighlocs, height)
-                    depth == 1 &&
-                        return get_tile_on_board(board, neighlocs[i]) == EMPTY_TILE &&
-                               canslidehigh(i, board, neighlocs, height)
-                end,
-                1:6,
-            ),
-        ),
-    )
+    for i in 1:6
+        height = get_tile_height(get_tile_on_board(board, cur_loc))
+        if depth == 3 && (
+                get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
+                canslidehigh(i, board, neighlocs, 0)
+            ) ||
+            depth == 2 && (
+                get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
+                canslidehigh(i, board, neighlocs, height)
+            ) ||
+            depth == 1 && (
+                get_tile_on_board(board, neighlocs[i]) == EMPTY_TILE &&
+                canslidehigh(i, board, neighlocs, height)
+            )
+            moves_to_depth_ladybug!(board, startloc, depth - 1, move_buffer; cur_loc=neighlocs[i])
+        end
+    end
+
+    return nothing
 end
 
 function grasshoppermoves(board, startloc, move_buffer; avoid_duplicates=true)
@@ -327,37 +319,32 @@ function beetlemoves(board, startloc, height, move_buffer; avoid_duplicates=fals
     neighlocs = allneighs(startloc)
     if height != 1
         # Can go anywhere, so long as it can slide with height
-        map(
-            neigh -> begin
-                add_action(board, Climb(startloc, neighlocs[neigh]), move_buffer; avoid_duplicates)
-            end,
-            filter(i -> canslidehigh(i, board, neighlocs, height), 1:6),
-        )
-        return nothing
-    else
-        # can go anywhere on top, or where it can slide
-        tmp_tile = get_tile_on_board(board, startloc)
-        set_tile_on_board(board, startloc, EMPTY_TILE)
-        map(
-            neigh -> begin
-                if get_tile_on_board(board, neighlocs[neigh]) != EMPTY_TILE
-                    add_action(board, Climb(startloc, neighlocs[neigh]), move_buffer; avoid_duplicates)
-                else
-                    add_action(board, Move(startloc, neighlocs[neigh]), move_buffer; avoid_duplicates)
-                end
-            end,
-            filter(
-                i ->
-                    (
-                        get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
-                        canslidehigh(i, board, neighlocs, 1)
-                    ) || canslide(i, board, neighlocs),
-                1:6,
-            ),
-        )
-        set_tile_on_board(board, startloc, tmp_tile)
+        for i in 1:6
+            if canslidehigh(i, board, neighlocs, height)
+                add_action(board, Climb(startloc, neighlocs[i]), move_buffer; avoid_duplicates)
+            end
+        end
         return nothing
     end
+    # can go anywhere on top, or where it can slide
+    tmp_tile = get_tile_on_board(board, startloc)
+    set_tile_on_board(board, startloc, EMPTY_TILE)
+
+    for i in 1:6
+        if (
+            get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
+            canslidehigh(i, board, neighlocs, 1)
+        ) || canslide(i, board, neighlocs)
+            if get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE
+                add_action(board, Climb(startloc, neighlocs[i]), move_buffer; avoid_duplicates)
+            else
+                add_action(board, Move(startloc, neighlocs[i]), move_buffer; avoid_duplicates)
+            end
+        end
+    end
+
+    set_tile_on_board(board, startloc, tmp_tile)
+    return nothing
 end
 
 @inline
@@ -394,23 +381,53 @@ function antmoves(board, startloc, move_buffer; avoid_duplicates=false)
     tmp_tile = get_tile_on_board(board, startloc)
     # Temporarily remove the tile to find where it can move to
     set_tile_on_board(board, startloc, EMPTY_TILE)
-    discovered_dict = DefaultDict(false)
-    stack = Stack{Int}()
+    @no_escape begin
+        discovered_dict = @alloc(eltype(false), GRID_SIZE)
+        discovered_dict .= false
 
-    push!(stack, startloc)
+        stack_arr = @alloc(Int, GRID_SIZE)
+        stack_ptr = 1
 
-    while !isempty(stack)
-        loc = pop!(stack)
-        push_slidelocs!(board, stack, loc, discovered_dict)
-    end
-    set_tile_on_board(board, startloc, tmp_tile)
+        # push
+        stack_arr[stack_ptr] = startloc
+        stack_ptr += 1
 
-    for (goalloc, discovered) in discovered_dict
-        if discovered && goalloc != startloc
-            add_action(board, Move(startloc, goalloc), move_buffer; avoid_duplicates)
+        while stack_ptr != 1
+            # pop 
+            loc = stack_arr[stack_ptr - 1]
+            stack_ptr -= 1
+
+            stack_ptr = push_slidelocs!(board, stack_arr, stack_ptr, loc, discovered_dict)
+        end
+        set_tile_on_board(board, startloc, tmp_tile)
+
+        for entry in eachindex(discovered_dict)
+            goalloc = entry - 1
+            if discovered_dict[entry] && goalloc != startloc
+                add_action(board, Move(startloc, goalloc), move_buffer; avoid_duplicates)
+            end
         end
     end
     return nothing
+end
+
+function push_slidelocs!(board::Board, stack_arr, stack_ptr, loc, discovered_dict)
+    neighlocs = allneighs(loc)
+    if 64 in neighlocs
+        print("error!")
+    end
+    for i in 1:6
+        if canslide(i, board, neighlocs)
+            if !discovered_dict[neighlocs[i] + 1]
+                # push
+                stack_arr[stack_ptr] = neighlocs[i]
+                stack_ptr += 1
+
+                discovered_dict[neighlocs[i] + 1] = true
+            end
+        end
+    end
+    return stack_ptr
 end
 
 function moves_to_depth(board, startloc, maxdepth, move_buffer; avoid_duplicates=false)
@@ -438,44 +455,13 @@ function moves_to_depth!(board, startloc, depth, move_buffer, cur_loc=startloc, 
     end
 end
 
+@inline
 """
 From the current position, one can travel in a direcion when:
 
  1. the direction itself is not filled
  2. one of the two neighbouring directions is filled
 """
-function push_slidelocs!(board::Board, stack::Stack, loc, discovered_dict)
-    neighlocs = allneighs(loc)
-    if 64 in neighlocs
-        print("error!")
-    end
-    for i in 1:6
-        if canslide(i, board, neighlocs)
-            if !discovered_dict[neighlocs[i]]
-                push!(stack, neighlocs[i])
-                discovered_dict[neighlocs[i]] = true
-            end
-        end
-    end
-end
-
-function push_slidelocs!(board::Board, stack::Stack, depth, discovered_dict, loc)
-    neighlocs = allneighs(loc)
-    if 64 in neighlocs
-        print("error!")
-    end
-    foreach(
-        slideloc -> begin
-            if !discovered_dict[slideloc]
-                push!(stack, slideloc)
-                depth[slideloc] = depth[loc] + 1
-            end
-        end,
-        map(i -> neighlocs[i], filter(i -> canslide(i, board, neighlocs), 1:6)),
-    )
-end
-
-@inline
 function canslide(i, board, neighlocs)
     return get_tile_on_board(board, neighlocs[i]) == EMPTY_TILE && (
         (get_tile_on_board(board, neighlocs[i == 1 ? 6 : i - 1]) == EMPTY_TILE) ⊻

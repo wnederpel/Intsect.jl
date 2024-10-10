@@ -668,8 +668,8 @@ function post_action_general_update(board, action)
 end
 
 function check_gameover(board)
-    wQ = get_tile_from_string(board, "wQ")
-    bQ = get_tile_from_string(board, "bQ")
+    wQ = 0x24 # get_tile_from_string(board, "wQ")
+    bQ = 0x20 # get_tile_from_string(board, "bQ")
     wQ_loc = get_loc(board, wQ)
     bQ_loc = get_loc(board, bQ)
 

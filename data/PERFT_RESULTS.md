@@ -511,6 +511,24 @@ memory per node  = 0.14 bytes
 gc time          = 0.0%
 total time       = 1.99 seconds
 
+## Remove more filter and maps to reach no allocations in perft steps (move generation)
+Perft(4)         = 151.686
+KN/S             = 37.939
+memory per node  = 0.08 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(5)         = 5.427.108
+KN/S             = 98.246
+memory per node  = 0.0 bytes
+gc time          = 0.0%
+total time       = 0.06 seconds
+
+Perft(6)         = 192.353.904
+KN/S             = 101.357
+memory per node  = 0.0 bytes
+gc time          = 0.0%
+total time       = 1.9 seconds
 
 # Known solutions
 
