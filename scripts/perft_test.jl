@@ -3,11 +3,12 @@ using BenchmarkTools
 using PProf
 using Profile
 
-perft(6; output=true)
+depth = 4
+perft(depth; output=true)
 # (@benchmark perft(5; output=false)) |> display
 
 Profile.Allocs.clear()
-Profile.Allocs.@profile sample_rate = 0.01 perft(6; output=false)
+Profile.Allocs.@profile sample_rate = 0.4 perft(depth; output=false)
 
 PProf.Allocs.pprof()
 

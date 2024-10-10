@@ -145,13 +145,11 @@ end
 valid actions for when the first move is made
 """
 function firstplacements(board, move_buffer)
-    foreach(
-        tile -> tile != EMPTY_TILE && add_action(board, Placement(MID, tile), move_buffer),
-        filter(
-            tile -> get_tile_bug(tile) != Integer(Bug.QUEEN),
-            board.placeable_tiles[board.current_color + 1],
-        ),
-    )
+    for tile in board.placeable_tiles[board.current_color + 1]
+        if tile != EMPTY_TILE && get_tile_bug(tile) != Integer(Bug.QUEEN)
+            add_action(board, Placement(MID, tile), move_buffer)
+        end
+    end
     return nothing
 end
 
@@ -159,16 +157,13 @@ end
 valid actions for second placement (first placement by black)
 """
 function secondplacements(board, move_buffer)
-    foreach(
-        loc -> foreach(
-            tile -> tile != EMPTY_TILE && add_action(board, Placement(loc, tile), move_buffer),
-            filter(
-                tile -> get_tile_bug(tile) != Integer(Bug.QUEEN),
-                board.placeable_tiles[board.current_color + 1],
-            ),
-        ),
-        allneighs(MID),
-    )
+    for loc in allneighs(MID)
+        for tile in board.placeable_tiles[board.current_color + 1]
+            if tile != EMPTY_TILE && get_tile_bug(tile) != Integer(Bug.QUEEN)
+                add_action(board, Placement(loc, tile), move_buffer)
+            end
+        end
+    end
     return nothing
 end
 
@@ -203,21 +198,18 @@ function mosquitomoves(board, loc, height, ispinned, move_buffer)
         beetlemoves(board, loc, height, move_buffer)
     end
     neighlocs = allneighs(loc)
-    neighbugs = []
-    foreach(i -> begin
-        neigh = neighlocs[i]
+
+    for neigh in allneighs(loc)
         tile = get_tile_on_board(board, neigh)
         bug = get_tile_bug(tile)
         if tile != EMPTY_TILE && bug != Integer(Bug.MOSQUITO)
-            push!(neighbugs, bug)
+            # TODO:
+            # This avoid duplicates can probably be false, duplicate moves are only added by pretending to be the pillbug
+            # In fact it is probably unnecessary to pass this avoid dupicates around all the time, only set to true for pillbug special moves!
+            bugmoves(board, loc, bug, height, ispinned, move_buffer; avoid_duplicates=true)
         end
-    end, 1:6)
-    for bug in neighbugs
-        # TODO:
-        # This avoid duplicates can probably be false, duplicate moves are only added by pretending to be the pillbug
-        # In fact it is probably unnecessary to pass this avoid dupicates around all the time, only set to true for pillbug special moves!
-        bugmoves(board, loc, bug, height, ispinned, move_buffer; avoid_duplicates=true)
     end
+
     return nothing
 end
 
