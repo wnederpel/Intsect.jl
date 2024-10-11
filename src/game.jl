@@ -511,6 +511,8 @@ function update_placement_locs_goal(board, goal_loc)
 end
 
 function update_placement_locs_start(board, moving_loc)
+    # TODO eff: split this in removing a tile after placement and not doing that, keep placement locs under still placeable locs?
+
     # This is an important case, remove a tile is hard to predict, just recompute.
     update_placement_locs_recompute(board, moving_loc)
 end
