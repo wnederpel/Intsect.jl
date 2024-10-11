@@ -497,7 +497,7 @@ GetArticulationPoints(i, d)
         Output i as articulation point
 """
 function get_pinned_tiles!(board, pinned_tiles)
-    @no_escape begin
+    @no_escape PINNED_BUFFER begin
         # Allocate a `PtrArray` (see StrideArraysCore.jl) using memory from the default buffer.
         visited_dict = @alloc(eltype(true), GRID_SIZE)
         depth_dict = @alloc(eltype(board.tile_locs), GRID_SIZE)
@@ -518,7 +518,7 @@ function get_pinned_tiles!(board, pinned_tiles)
     end
 end
 
-function get_pinned_tiles!(
+@inbounds function get_pinned_tiles!(
     board, pinned_tiles_dict, visited_dict, depth_dict, low_dict, parent_dict, loc, depth
 )
     if loc < 0

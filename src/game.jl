@@ -89,31 +89,28 @@ function tile_from_info(color, bug::UInt8, bug_num::UInt8; height::UInt8=0x00)
     )
 end
 
-function get_tile_unplaced(semi_tile::Int)
+@inline function get_tile_unplaced(semi_tile::Int)
     tile_as_index = UInt8(semi_tile - 1)
     return tile_as_index << INDEX_SHIFT
 end
 
-function get_tile_on_board(board::Board, loc::Int)
+@inline function get_tile_on_board(board::Board, loc::Int)
     # Loc is zero indexed
-    if loc == INVALID_LOC
-        return EMPTY_TILE
-    end
     return board.tiles[loc + 1]
 end
 
-function set_tile_on_board(board::Board, loc::Int, tile::UInt8)
+@inline function set_tile_on_board(board::Board, loc::Int, tile::UInt8)
     # Loc is zero indexed
     board.tiles[loc + 1] = tile
     return nothing
 end
 
-function get_loc(board, tile::UInt8)
+@inline function get_loc(board, tile::UInt8)
     # Indexed by UInt8 >> 2 (so a normal tile, withouth height info), zero indexed
     return board.tile_locs[(tile >> INDEX_SHIFT) + 1]
 end
 
-function set_loc(board, tile::UInt8, loc::Int)
+@inline function set_loc(board, tile::UInt8, loc::Int)
     # Indexed by UInt8 >> 2 (so a normal tile, withouth height info), zero indexed
     board.tile_locs[(tile >> INDEX_SHIFT) + 1] = loc
     return nothing
@@ -621,9 +618,10 @@ function inverse_post_action_general_update(board)
 end
 
 function inverse_post_action_pillbug_update(board)
+    # Find the last move again (so one step deeper then undo)
     if !(board.last_history_index == 0)
-        # last_action = ALL_ACTIONS[board.history[board.last_history_index]]
-        post_action_pillbug_update(board, board.history[board.last_history_index])
+        action_as_index = board.history[board.last_history_index]
+        post_action_pillbug_update(board, ALL_ACTIONS[action_as_index])
     else
         board.just_moved_loc = INVALID_LOC
         board.moved_by_pillbug_loc = INVALID_LOC
@@ -635,11 +633,7 @@ function post_action_update(board, action::Action)
     post_action_general_update(board, action)
 end
 
-function post_action_pillbug_update(board, move::Int)
-    post_action_pillbug_update(board, ALL_ACTIONS[move])
-end
-
-function post_action_pillbug_update(board, move::Action)
+function post_action_pillbug_update(board, move::Move)
     board.just_moved_loc = move.goal_loc
     # When the moving piece is of a different color then the current color, the pillbug has moved it
     if get_tile_color(get_tile_on_board(board, move.goal_loc)) != board.current_color
@@ -647,6 +641,11 @@ function post_action_pillbug_update(board, move::Action)
     else
         board.moved_by_pillbug_loc = INVALID_LOC
     end
+end
+
+function post_action_pillbug_update(board, move::Action)
+    board.just_moved_loc = move.goal_loc
+    board.moved_by_pillbug_loc = INVALID_LOC
 end
 
 function pre_action_update(board, action)
