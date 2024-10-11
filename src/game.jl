@@ -451,57 +451,65 @@ function do_action(board, climb::Climb)
 end
 
 function update_placement_locs_recompute(board, changed_loc)
+    changed_tile = get_tile_on_board(board, changed_loc)
+    changed_color = get_tile_color(changed_tile)
+    changed_tile_is_empty = (changed_tile == EMPTY_TILE)
     for i in 1:7
         if i == 7
             loc = changed_loc
         else
             loc = allneighs(changed_loc)[i]
         end
+
         for color in 0:1
             delete!(board.placement_locs[color + 1], loc)
 
             if get_tile_on_board(board, loc) == EMPTY_TILE
-                if all(
-                    neigh -> begin
-                        neigh_tile = get_tile_on_board(board, neigh)
-                        return neigh_tile == EMPTY_TILE || get_tile_color(neigh_tile) == color
-                    end,
-                    allneighs(loc),
-                ) && any(neigh -> get_tile_on_board(board, neigh) != EMPTY_TILE, allneighs(loc))
-                    push!(board.placement_locs[color + 1], loc)
+                any_attached = !changed_tile_is_empty
+                all_same_color = changed_tile_is_empty || changed_color == color
+                for neigh in allneighs(loc)
+                    neigh_tile = get_tile_on_board(board, neigh)
+                    all_same_color &= (
+                        neigh_tile == EMPTY_TILE || get_tile_color(neigh_tile) == color
+                    )
+                    if !all_same_color
+                        break
+                    end
+                    any_attached |= (neigh_tile != EMPTY_TILE)
                 end
+                all_same_color && any_attached && push!(board.placement_locs[color + 1], loc)
             end
         end
     end
 end
 
 function update_placement_locs_goal(board, goal_loc)
+    # TODO eff: do not use the struct's placement_locs (the bitset), but use a vector.
+
     # We know that we moved to the changed_loc, so that must become unavailable for us
     delete!(board.placement_locs[board.current_color + 1], goal_loc)
 
     # Everything touching the goal loc is now unavailable for the opponent
-    foreach(
-        loc -> delete!(
-            board.placement_locs[board.current_color == WHITE ? BLACK + 1 : WHITE + 1], loc
-        ),
-        allneighs(goal_loc),
-    )
+    for loc in allneighs(goal_loc)
+        delete!(board.placement_locs[board.current_color == WHITE ? BLACK + 1 : WHITE + 1], loc)
+    end
     delete!(board.placement_locs[board.current_color == WHITE ? BLACK + 1 : WHITE + 1], goal_loc)
 
     # Everything we now touch & is free might have become available if it was not before
     for loc in allneighs(goal_loc)
         tile = get_tile_on_board(board, loc)
         if tile == EMPTY_TILE && !(tile in board.placement_locs[board.current_color + 1])
-            if all(
-                neigh -> begin
-                    neigh_tile = get_tile_on_board(board, neigh)
-                    return neigh_tile == EMPTY_TILE ||
-                           get_tile_color(neigh_tile) == board.current_color
-                end,
-                allneighs(loc),
-            )
-                push!(board.placement_locs[board.current_color + 1], loc)
+            all_same_color = true
+            for neigh in allneighs(loc)
+                neigh_tile = get_tile_on_board(board, neigh)
+                all_same_color &= (
+                    neigh_tile == EMPTY_TILE || get_tile_color(neigh_tile) == board.current_color
+                )
+                if !all_same_color
+                    break
+                end
             end
+            all_same_color && push!(board.placement_locs[board.current_color + 1], loc)
         end
     end
 

@@ -14,7 +14,8 @@ function add_action(board::Board, placement::Placement, move_buffer; avoid_dupli
 end
 
 function add_action!(board::Board, action::Action, move_buffer)
-    move_buffer[board.action_index] = action_index(action)
+    # TODO eff: do not use struct action index, but pass it around
+    @inbounds move_buffer[board.action_index] = action_index(action)
     board.action_index += 1
 end
 
@@ -95,13 +96,11 @@ function validactions_general(board::Board, move_buffer)
 end
 
 function add_placements(board, move_buffer)
-    foreach(
-        loc -> foreach(
-            tile -> tile != EMPTY_TILE && add_action(board, Placement(loc, tile), move_buffer),
-            board.placeable_tiles[board.current_color + 1],
-        ),
-        board.placement_locs[board.current_color + 1],
-    )
+    for loc in board.placement_locs[board.current_color + 1]
+        for tile in board.placeable_tiles[board.current_color + 1]
+            tile != EMPTY_TILE && add_action(board, Placement(loc, tile), move_buffer)
+        end
+    end
     return nothing
 end
 
