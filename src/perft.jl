@@ -1,5 +1,6 @@
 function perft(; output=true)
     perft(5; output=output)
+    return nothing
 end
 
 function perft(n; output=true)

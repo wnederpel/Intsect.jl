@@ -1,6 +1,7 @@
 function handle_info_command()
     println("id Intsect v0.1")
     println("Mosquito;Ladybug;Pillbug")
+    return nothing
 end
 
 function start()
@@ -10,6 +11,7 @@ function start()
     board = nothing
     gamestring = nothing
     start(board, gamestring)
+    return nothing
 end
 
 function start(board, gamestring)
@@ -135,6 +137,7 @@ function start(board, gamestring)
             println("ok")
         end
     end
+    return nothing
 end
 
 function example()
@@ -151,4 +154,5 @@ function example()
     println("ok")
 
     start(board, gamestring)
+    return nothing
 end

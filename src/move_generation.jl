@@ -11,11 +11,13 @@ end
 
 function add_action(board::Board, placement::Placement, move_buffer; avoid_duplicates=false)
     add_action!(board, placement, move_buffer)
+    return nothing
 end
 
 function add_action!(board::Board, action::Action, move_buffer)
     move_buffer[board.action_index] = action_index(action)
     board.action_index += 1
+    return nothing
 end
 
 function validactions_indices(board)

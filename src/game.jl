@@ -110,7 +110,7 @@ end
     return board.tile_locs[(tile >> INDEX_SHIFT) + 1]
 end
 
-@inline function set_loc(board, tile::UInt8, loc::Int)
+function set_loc(board, tile::UInt8, loc::Int)
     # Indexed by UInt8 >> 2 (so a normal tile, withouth height info), zero indexed
     board.tile_locs[(tile >> INDEX_SHIFT) + 1] = loc
     return nothing
@@ -375,11 +375,13 @@ end
 function do_action(board, string::AbstractString)
     action = action_from_move_string(board, string)
     do_action(board, action)
+    return nothing
 end
 
 function do_action(board, pass::Pass)
     pre_action_update(board, pass)
     post_action_update(board, pass)
+    return nothing
 end
 
 function do_action(board, placement::Placement)
@@ -396,6 +398,7 @@ function do_action(board, placement::Placement)
     update_placement_locs_goal(board, placement.goal_loc)
 
     post_action_update(board, placement)
+    return nothing
 end
 
 function do_action(board, move::Move)
@@ -414,6 +417,7 @@ function do_action(board, move::Move)
     update_placement_locs_goal(board, move.goal_loc)
 
     post_action_update(board, move)
+    return nothing
 end
 
 function do_action(board, climb::Climb)
@@ -445,6 +449,7 @@ function do_action(board, climb::Climb)
     update_placement_locs_recompute(board, climb.goal_loc)
 
     post_action_update(board, climb)
+    return nothing
 end
 
 function update_placement_locs_recompute(board, changed_loc)
@@ -515,16 +520,19 @@ function update_placement_locs_start(board, moving_loc)
 
     # This is an important case, remove a tile is hard to predict, just recompute.
     update_placement_locs_recompute(board, moving_loc)
+    return nothing
 end
 
 function inverse_update_placement_locs_start(board, moving_loc)
     # This is like placing it at the moving loc
     update_placement_locs_goal(board, moving_loc)
+    return nothing
 end
 
 function inverse_update_placement_locs_goal(board, goal_loc)
     # This is like removing the tile from the goal loc
     update_placement_locs_start(board, goal_loc)
+    return nothing
 end
 
 function undo(board)
@@ -534,6 +542,7 @@ function undo(board)
     last_action = ALL_ACTIONS[board.history[board.last_history_index]]
     board.last_history_index -= 1
     undo_action(board, last_action)
+    return nothing
 end
 
 function undo_action(board, action::Placement)
@@ -550,6 +559,7 @@ function undo_action(board, action::Placement)
     board.placeable_tiles[board.current_color + 1][bug + 0x01] = action.tile
 
     inverse_update_placement_locs_goal(board, action.goal_loc)
+    return nothing
 end
 
 function undo_action(board, action::Move)
@@ -562,6 +572,7 @@ function undo_action(board, action::Move)
 
     inverse_update_placement_locs_goal(board, action.goal_loc)
     inverse_update_placement_locs_start(board, action.moving_loc)
+    return nothing
 end
 
 function undo_action(board, climb::Climb)
@@ -594,15 +605,18 @@ function undo_action(board, climb::Climb)
 
     update_placement_locs_recompute(board, climb.moving_loc)
     update_placement_locs_recompute(board, climb.goal_loc)
+    return nothing
 end
 
 function undo_action(board, pass::Pass)
     inverse_post_action_update(board)
+    return nothing
 end
 
 function inverse_post_action_update(board)
     inverse_post_action_pillbug_update(board)
     inverse_post_action_general_update(board)
+    return nothing
 end
 
 function inverse_post_action_general_update(board)
@@ -617,6 +631,7 @@ function inverse_post_action_general_update(board)
         board.gameover = false
         board.victor = NO_COLOR
     end
+    return nothing
 end
 
 function inverse_post_action_pillbug_update(board)
@@ -628,11 +643,13 @@ function inverse_post_action_pillbug_update(board)
         board.just_moved_loc = INVALID_LOC
         board.moved_by_pillbug_loc = INVALID_LOC
     end
+    return nothing
 end
 
 function post_action_update(board, action::Action)
     post_action_pillbug_update(board, action)
     post_action_general_update(board, action)
+    return nothing
 end
 
 function post_action_pillbug_update(board, move::Move)
@@ -643,16 +660,19 @@ function post_action_pillbug_update(board, move::Move)
     else
         board.moved_by_pillbug_loc = INVALID_LOC
     end
+    return nothing
 end
 
 function post_action_pillbug_update(board, move::Action)
     board.just_moved_loc = move.goal_loc
     board.moved_by_pillbug_loc = INVALID_LOC
+    return nothing
 end
 
 function pre_action_update(board, action)
     board.last_history_index += 1
     board.history[board.last_history_index] = action_index(action)
+    return nothing
 end
 
 function post_action_general_update(board, action)
@@ -666,6 +686,7 @@ function post_action_general_update(board, action)
             board.current_color = WHITE
         end
     end
+    return nothing
 end
 
 function check_gameover(board)
@@ -690,6 +711,7 @@ function check_gameover(board)
             board.victor = WHITE
         end
     end
+    return nothing
 end
 
 """
@@ -710,6 +732,7 @@ function validate_move_string(move_string)
     if !valid
         error("Invalid move string $move_string")
     end
+    return nothing
 end
 
 function validate_tile_string(tile::AbstractString)
@@ -728,10 +751,11 @@ end
 
 function gametype_from_string(gametype_string)
     if gametype_string == "Base+MLP"
-        return Gametype.MLP
+        Gametype.MLP
     else
-        return error("game type '$gametype_string' not yet supported")
+        error("game type '$gametype_string' not yet supported")
     end
+    return nothing
 end
 
 """
