@@ -1,31 +1,20 @@
 using BenchmarkTools
-using Bumper
+using PProf
+using Profile
 
-moves = rand(1000)
+@noinline pos(x) = x < 0 ? 0 : x;
 
-struct Test
-    x::Vector
+function f(x)
+    y = pos.(x)
+    return @. sin(y * x + 1)
+end;
+
+x = rand(100) .- 0.5
+(@benchmark f(x)) |> display
+
+Profile.clear()
+Profile.@profile for _ in 1:1000
+    f(x)
 end
 
-test = Test(ones(1000))
-
-function get_moves(depth)
-    val = 0
-    @no_escape begin
-        x = @alloc(Int64, 1000)
-
-        for i in Int64(1):Int64(1000)
-            if depth == 1
-                x[i] = i::Int64
-            else
-                x[i] = get_moves(depth - 1)
-            end
-        end
-
-        val = sum(x)
-    end
-
-    return val
-end
-
-@btime get_moves($2)
+PProf.pprof()

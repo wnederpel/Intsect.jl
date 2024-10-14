@@ -36,6 +36,8 @@ function perft(depth::Int, board)::Int
     nodes = 0
 
     @no_escape begin
+        # TODO eff: have a buffer for each movement type to have more concrete types in code
+
         move_buffer = @alloc(eltype(Int), VALID_BUFFER_SIZE)
         validactions!(board, move_buffer)
         for action_i in 1:(board.action_index - 1)

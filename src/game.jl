@@ -646,7 +646,7 @@ function inverse_post_action_pillbug_update(board)
     # Find the last move again (so one step deeper then undo)
     if !(board.last_history_index == 0)
         action_as_index = board.history[board.last_history_index]
-        post_action_pillbug_update(board, ALL_ACTIONS[action_as_index])
+        post_action_pillbug_update(board, get_action(action_as_index))
     else
         board.just_moved_loc = INVALID_LOC
         board.moved_by_pillbug_loc = INVALID_LOC
@@ -872,9 +872,9 @@ function get_all_actions()
     all_actions = Vector{Action}(
         undef, MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX + MAX_PASS_INDEX
     )
-    all_placements = get_all_placements()
-    all_movements = get_all_movements()
-    all_climbs = get_all_climbs()
+    all_placements = ALL_PLACEMENTS
+    all_movements = ALL_MOVEMENTS
+    all_climbs = ALL_CLIMBS
     all_actions[begin:MAX_PLACEMENT_INDEX] = all_placements
     all_actions[(MAX_PLACEMENT_INDEX + 1):(MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX)] =
         all_movements
@@ -883,4 +883,22 @@ function get_all_actions()
     return all_actions
 end
 
-const ALL_ACTIONS::Vector{Action} = get_all_actions()
+"""
+This returns a union of types and as such is not the best, moves should be linked to
+"""
+function get_action(index)
+    if index < MAX_PLACEMENT_INDEX
+        return ALL_PLACEMENTS[index]
+    elseif index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX
+        return ALL_MOVEMENTS[index -MAX_PLACEMENT_INDEX]
+    elseif index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX
+        return ALL_CLIMBS[index - (MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX)]
+    else
+        return Pass()
+    end
+end
+
+const ALL_PLACEMENTS::Vector{Placement} = get_all_placements()
+const ALL_MOVEMENTS::Vector{Move} = get_all_movements()
+const ALL_CLIMBS::Vector{Climb} = get_all_climbs()
+const ALL_ACTIONS::Vector{Union{Placement,Move,Climb,Pass}} = get_all_actions()

@@ -7,6 +7,7 @@ using DataStructures
 using Memoize
 using Base.Threads
 using Bumper
+using InteractiveUtils
 
 # structs
 export Board
