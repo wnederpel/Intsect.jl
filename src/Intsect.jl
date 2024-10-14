@@ -30,6 +30,7 @@ export MID
 export WHITE
 export BLACK
 export MAX_NUMS
+export PERFT_BUFFER
 # Constants for move generation, constructed in game
 export ALL_ACTIONS
 export ALL_ALL_NEIGHS

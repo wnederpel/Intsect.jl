@@ -149,11 +149,11 @@ end
 
     # Test that it all works out
     @test length(board.placement_locs[board.current_color + 1]) == 5
-    @test 20 in board.placement_locs[board.current_color + 1]
+    @test board.placement_locs[board.current_color + 1] == BitSet([86, 87, 102, 104, 118])
 
     # This somehow changed the outcome in the tests
     GameString(board)
 
     @test length(board.placement_locs[board.current_color + 1]) == 5
-    @test 20 in board.placement_locs[board.current_color + 1]
+    @test board.placement_locs[board.current_color + 1] == BitSet([86, 87, 102, 104, 118])
 end

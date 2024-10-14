@@ -28,6 +28,7 @@ end
 
 function show_valid_actions(board)
     show(validactions(board), board)
+    return nothing
 end
 
 function Base.show(board::Board, show_locs::Bool=true)
@@ -97,26 +98,32 @@ function Base.show(actions::Vector{Action}, board)
         show(action, board)
     end
     println("End")
+    return nothing
 end
 
 function Base.show(move::Move, board::Board)
     println("Move: " * move_string_from_action(board, move))
+    return nothing
 end
 
 function Base.show(placement::Placement, board::Board)
     println("Placement: " * move_string_from_action(board, placement))
+    return nothing
 end
 
 function Base.show(climb::Climb, board::Board)
     println("Climb: " * move_string_from_action(board, climb))
+    return nothing
 end
 
 function Base.show(pass::Pass, board::Board)
     println("Pass")
+    return nothing
 end
 
 function Base.show(tile::UInt8)
     println(get_tile_name(tile))
+    return nothing
 end
 
 function Base.show(gamestring::GameString)
@@ -128,4 +135,5 @@ function Base.show(gamestring::GameString)
         gamestring.player *
         gamestring.movestrings,
     )
+    return nothing
 end
