@@ -347,16 +347,14 @@ function beetlemoves(board, startloc, height, move_buffer; avoid_duplicates=fals
     return nothing
 end
 
-@inline
-function canslidepillbug(i, board, neighlocs)
+@inline function canslidepillbug(i, board, neighlocs)
     neighleft = get_tile_on_board(board, neighlocs[i == 1 ? 6 : i - 1])
     neighright = get_tile_on_board(board, neighlocs[i == 6 ? 1 : i + 1])
 
     return get_tile_height(neighleft) < 2 || get_tile_height(neighright) < 2
 end
 
-@inline
-function canslidehigh(i, board, neighlocs, height)
+@inline function canslidehigh(i, board, neighlocs, height)
     neighleft = get_tile_on_board(board, neighlocs[i == 1 ? 6 : i - 1])
     neighright = get_tile_on_board(board, neighlocs[i == 6 ? 1 : i + 1])
     goalheight = get_tile_height(get_tile_on_board(board, neighlocs[i]))
@@ -457,14 +455,13 @@ end
     end
 end
 
-@inline
 """
 From the current position, one can travel in a direcion when:
 
  1. the direction itself is not filled
  2. one of the two neighbouring directions is filled
 """
-function canslide(i, board, neighlocs)
+@inline function canslide(i, board, neighlocs)
     return get_tile_on_board(board, neighlocs[i]) == EMPTY_TILE && (
         (get_tile_on_board(board, neighlocs[i == 1 ? 6 : i - 1]) == EMPTY_TILE) ⊻
         (get_tile_on_board(board, neighlocs[i == 6 ? 1 : i + 1]) == EMPTY_TILE)
