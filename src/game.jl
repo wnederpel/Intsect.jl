@@ -105,12 +105,12 @@ end
     return nothing
 end
 
-@inline function get_loc(board, tile::UInt8)
+@inline function get_loc(board::Board, tile::UInt8)
     # Indexed by UInt8 >> 2 (so a normal tile, withouth height info), zero indexed
     return board.tile_locs[(tile >> INDEX_SHIFT) + 1]
 end
 
-function set_loc(board, tile::UInt8, loc::Int)
+function set_loc(board::Board, tile::UInt8, loc::Int)
     # Indexed by UInt8 >> 2 (so a normal tile, withouth height info), zero indexed
     board.tile_locs[(tile >> INDEX_SHIFT) + 1] = loc
     return nothing
@@ -157,7 +157,7 @@ end
 """
 Given a tile string such as bB2, wL, return the tile as a UInt8
 """
-function get_tile_from_string(board, tile_string)
+function get_tile_from_string(board::Board, tile_string)
     tile_without_height = get_tile_from_string(tile_string)
     height = UInt8(length(board.underworld[get_loc(board, tile_without_height)]))
     return tile_without_height + height
@@ -196,7 +196,7 @@ function get_tile_from_string(tile_string)
     return tile_from_info(white, bug, num)
 end
 
-function action_from_move_string(board, move_string)
+function action_from_move_string(board::Board, move_string)
     if move_string == "pass"
         return Pass()
     end
@@ -251,7 +251,7 @@ function action_from_move_string(board, move_string)
     return action
 end
 
-function move_string_from_action(board, action::Climb)
+function move_string_from_action(board::Board, action::Climb)
     moving_tile = get_tile_on_board(board, action.moving_loc)
     if moving_tile == EMPTY_TILE
         error("no tile to move at loc $(action.moving_loc)")
@@ -267,7 +267,7 @@ function move_string_from_action(board, action::Climb)
     end
 end
 
-function move_string_from_action(board, action::Move)
+function move_string_from_action(board::Board, action::Move)
     moving_tile = get_tile_on_board(board, action.moving_loc)
     if moving_tile == EMPTY_TILE
         error("no tile to move at loc $(action.moving_loc)")
@@ -278,17 +278,17 @@ function move_string_from_action(board, action::Move)
     return move_string
 end
 
-function move_string_from_action(board, action::Placement)
+function move_string_from_action(board::Board, action::Placement)
     move_string = get_tile_name(action.tile)
     move_string *= move_string_goal(board, action.goal_loc)
     return move_string
 end
 
-function move_string_from_action(board, action::Pass)
+function move_string_from_action(board::Board, action::Pass)
     return "pass"
 end
 
-function move_string_goal(board, goal_loc; moving_loc=INVALID_LOC)
+function move_string_goal(board::Board, goal_loc; moving_loc=INVALID_LOC)
     # Find an occupied neighbor of the goal_loc
     move_string = ""
     for dir in instances(Direction.T)
@@ -315,7 +315,7 @@ function move_string_goal(board, goal_loc; moving_loc=INVALID_LOC)
     return move_string
 end
 
-function update_gamestring(gamestring, board)
+function update_gamestring(gamestring, board::Board)
     if board.gameover
         if board.victor == DRAW
             gamestring.gamestate = "Draw"
@@ -372,19 +372,34 @@ function allneighs(loc)
     return view(ALL_ALL_NEIGHS, loc + 1)[1]
 end
 
-function do_action(board, string::AbstractString)
+function do_action(board::Board, string::AbstractString)
     action = action_from_move_string(board, string)
     do_action(board, action)
     return nothing
 end
 
-function do_action(board, pass::Pass)
+function do_action(board::Board, action_as_index::Int)
+    if action_as_index < MAX_PLACEMENT_INDEX
+        action = ALL_PLACEMENTS[action_as_index]
+        do_action(board, action)
+    elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX
+        action = ALL_MOVEMENTS[action_as_index - MAX_PLACEMENT_INDEX]
+        do_action(board, action)
+    elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX
+        action = ALL_CLIMBS[action_as_index - (MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX)]
+        do_action(board, action)
+    else
+        do_action(board, Pass())
+    end
+end
+
+function do_action(board::Board, pass::Pass)
     pre_action_update(board, pass)
     post_action_update(board, pass)
     return nothing
 end
 
-function do_action(board, placement::Placement)
+function do_action(board::Board, placement::Placement)
     pre_action_update(board, placement)
     set_tile_on_board(board, placement.goal_loc, placement.tile)
     set_loc(board, placement.tile, placement.goal_loc)
@@ -401,7 +416,7 @@ function do_action(board, placement::Placement)
     return nothing
 end
 
-function do_action(board, move::Move)
+function do_action(board::Board, move::Move)
     pre_action_update(board, move)
     moving_tile = get_tile_on_board(board, move.moving_loc)
     if moving_tile == EMPTY_TILE
@@ -420,7 +435,7 @@ function do_action(board, move::Move)
     return nothing
 end
 
-function do_action(board, climb::Climb)
+function do_action(board::Board, climb::Climb)
     pre_action_update(board, climb)
     burrowed_tile = get_tile_on_board(board, climb.goal_loc)
     moving_tile = get_tile_on_board(board, climb.moving_loc)
@@ -452,7 +467,7 @@ function do_action(board, climb::Climb)
     return nothing
 end
 
-function update_placement_locs_recompute(board, changed_loc)
+function update_placement_locs_recompute(board::Board, changed_loc)
     changed_tile = get_tile_on_board(board, changed_loc)
     changed_color = get_tile_color(changed_tile)
     changed_tile_is_empty = (changed_tile == EMPTY_TILE)
@@ -485,7 +500,7 @@ function update_placement_locs_recompute(board, changed_loc)
     end
 end
 
-function update_placement_locs_goal(board, goal_loc)
+function update_placement_locs_goal(board::Board, goal_loc)
     # TODO eff: do not use the struct's placement_locs (the bitset), but use a vector.
 
     # We know that we moved to the changed_loc, so that must become unavailable for us
@@ -523,7 +538,7 @@ function update_placement_locs_goal(board, goal_loc)
     end
 end
 
-function update_placement_locs_start(board, moving_loc)
+function update_placement_locs_start(board::Board, moving_loc)
     # TODO eff: split this in removing a tile after placement and not doing that, keep placement locs under still placeable locs?
 
     # This is an important case, remove a tile is hard to predict, just recompute.
@@ -531,29 +546,45 @@ function update_placement_locs_start(board, moving_loc)
     return nothing
 end
 
-function inverse_update_placement_locs_start(board, moving_loc)
+function inverse_update_placement_locs_start(board::Board, moving_loc)
     # This is like placing it at the moving loc
     update_placement_locs_goal(board, moving_loc)
     return nothing
 end
 
-function inverse_update_placement_locs_goal(board, goal_loc)
+function inverse_update_placement_locs_goal(board::Board, goal_loc)
     # This is like removing the tile from the goal loc
     update_placement_locs_start(board, goal_loc)
     return nothing
 end
 
-function undo(board)
+function undo(board::Board)
     if board.last_history_index == 0
         error("no moves to undo")
     end
-    last_action = ALL_ACTIONS[board.history[board.last_history_index]]
+    last_action_index = board.history[board.last_history_index]
     board.last_history_index -= 1
-    undo_action(board, last_action)
+    undo_action(board, last_action_index)
     return nothing
 end
 
-function undo_action(board, action::Placement)
+function undo_action(board::Board, action_as_index::Integer)
+    if action_as_index < MAX_PLACEMENT_INDEX
+        action = ALL_PLACEMENTS[action_as_index]
+        undo_action(board, action)
+    elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX
+        action = ALL_MOVEMENTS[action_as_index - MAX_PLACEMENT_INDEX]
+        undo_action(board, action)
+    elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX
+        action = ALL_CLIMBS[action_as_index - (MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX)]
+        undo_action(board, action)
+    else
+        undo_action(board, Pass())
+    end
+    return nothing
+end
+
+function undo_action(board::Board, action::Placement)
     set_tile_on_board(board, action.goal_loc, EMPTY_TILE)
     @assert get_loc(board, action.tile) == action.goal_loc
     set_loc(board, action.tile, NOT_PLACED)
@@ -570,7 +601,7 @@ function undo_action(board, action::Placement)
     return nothing
 end
 
-function undo_action(board, action::Move)
+function undo_action(board::Board, action::Move)
     moving_tile = get_tile_on_board(board, action.goal_loc)
     set_tile_on_board(board, action.goal_loc, EMPTY_TILE)
     set_tile_on_board(board, action.moving_loc, moving_tile)
@@ -583,7 +614,7 @@ function undo_action(board, action::Move)
     return nothing
 end
 
-function undo_action(board, climb::Climb)
+function undo_action(board::Board, climb::Climb)
     burrowed_tile = get_tile_on_board(board, climb.moving_loc)
     moving_tile = get_tile_on_board(board, climb.goal_loc)
 
@@ -591,7 +622,7 @@ function undo_action(board, climb::Climb)
         board,
         climb.moving_loc,
         moving_tile - get_tile_height(moving_tile) +
-        UInt8(length(board.underworld[climb.goal_loc])),
+        length(board.underworld[climb.goal_loc])::UInt8,
     )
     set_loc(board, moving_tile, climb.moving_loc)
 
@@ -616,18 +647,18 @@ function undo_action(board, climb::Climb)
     return nothing
 end
 
-function undo_action(board, pass::Pass)
+function undo_action(board::Board, pass::Pass)
     inverse_post_action_update(board)
     return nothing
 end
 
-function inverse_post_action_update(board)
+function inverse_post_action_update(board::Board)
     inverse_post_action_pillbug_update(board)
     inverse_post_action_general_update(board)
     return nothing
 end
 
-function inverse_post_action_general_update(board)
+function inverse_post_action_general_update(board::Board)
     board.ply -= 1
     if board.current_color == WHITE
         board.current_color = BLACK
@@ -642,7 +673,7 @@ function inverse_post_action_general_update(board)
     return nothing
 end
 
-function inverse_post_action_pillbug_update(board)
+function inverse_post_action_pillbug_update(board::Board)
     # Find the last move again (so one step deeper then undo)
     if !(board.last_history_index == 0)
         action_as_index = board.history[board.last_history_index]
@@ -664,13 +695,13 @@ function inverse_post_action_pillbug_update(board)
     return nothing
 end
 
-function post_action_update(board, action::Action)
+function post_action_update(board::Board, action::Action)
     post_action_pillbug_update(board, action)
     post_action_general_update(board, action)
     return nothing
 end
 
-function post_action_pillbug_update(board, move::Move)
+function post_action_pillbug_update(board::Board, move::Move)
     board.just_moved_loc = move.goal_loc
     # When the moving piece is of a different color then the current color, the pillbug has moved it
     if get_tile_color(get_tile_on_board(board, move.goal_loc)) != board.current_color
@@ -681,19 +712,19 @@ function post_action_pillbug_update(board, move::Move)
     return nothing
 end
 
-function post_action_pillbug_update(board, move::Action)
+function post_action_pillbug_update(board::Board, move::Action)
     board.just_moved_loc = move.goal_loc
     board.moved_by_pillbug_loc = INVALID_LOC
     return nothing
 end
 
-function pre_action_update(board, action)
+function pre_action_update(board::Board, action)
     board.last_history_index += 1
     board.history[board.last_history_index] = action_index(action)
     return nothing
 end
 
-function post_action_general_update(board, action)
+function post_action_general_update(board::Board, action)
     check_gameover(board)
     if !board.gameover
         board.ply += 1
@@ -707,7 +738,7 @@ function post_action_general_update(board, action)
     return nothing
 end
 
-function check_gameover(board)
+function check_gameover(board::Board)
     wQ = 0x24 # get_tile_from_string(board, "wQ")
     bQ = 0x20 # get_tile_from_string(board, "bQ")
     wQ_loc = get_loc(board, wQ)
@@ -781,7 +812,7 @@ Check if a move is not already in the valid actions
     
 to avoid the pillbug adding duplicate moves
 """
-function move_not_duplicate(board, move, move_buffer)
+function move_not_duplicate(board::Board, move, move_buffer)
     move_index = action_index(move)
     validmove_indices = view(move_buffer, 1:(board.action_index - 1))
     return !any(index -> index == move_index, validmove_indices)

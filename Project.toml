@@ -6,6 +6,7 @@ version = "0.1.0"
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Bumper = "8ce10254-0962-460f-a3d8-1f77fea1446e"
+Cthulhu = "f68482b8-f384-11e8-15f7-abe071a5a75f"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 EnumX = "4e289a0a-7415-4d19-859d-a7e5c4648b56"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
@@ -15,6 +16,7 @@ Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
+Cthulhu = "2.15.2"
 InteractiveUtils = "1.11.0"
 
 [extras]
