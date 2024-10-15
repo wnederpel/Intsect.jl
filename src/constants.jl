@@ -60,4 +60,4 @@ const MAX_NUMS::SVector{8,UInt8} = [2, 2, 1, 1, 0, 0, 0, 0]
 
 const PERFT_BUFFER::Vector = repeat([default_buffer(AllocBuffer)], 20)
 
-const PINNED_BUFFER::AllocBuffer = default_buffer(AllocBuffer)
+const PINNED_BUFFER::Vector = repeat([default_buffer(AllocBuffer)], 2)

@@ -96,23 +96,23 @@ end
 
 @inline function get_tile_on_board(board::Board, loc::Int)
     # Loc is zero indexed
-    return board.tiles[loc + 1]
+    return @inbounds board.tiles[loc + 1]
 end
 
 @inline function set_tile_on_board(board::Board, loc::Int, tile::UInt8)
     # Loc is zero indexed
-    board.tiles[loc + 1] = tile
+    @inbounds board.tiles[loc + 1] = tile
     return nothing
 end
 
 @inline function get_loc(board::Board, tile::UInt8)
     # Indexed by UInt8 >> 2 (so a normal tile, withouth height info), zero indexed
-    return board.tile_locs[(tile >> INDEX_SHIFT) + 1]
+    return @inbounds board.tile_locs[(tile >> INDEX_SHIFT) + 1]
 end
 
 function set_loc(board::Board, tile::UInt8, loc::Int)
     # Indexed by UInt8 >> 2 (so a normal tile, withouth height info), zero indexed
-    board.tile_locs[(tile >> INDEX_SHIFT) + 1] = loc
+    @inbounds board.tile_locs[(tile >> INDEX_SHIFT) + 1] = loc
     return nothing
 end
 
@@ -367,9 +367,8 @@ const ALL_ALL_NEIGHS::SVector{GRID_SIZE,Tuple{Int,Int,Int,Int,Int,Int}} = map(
     loc -> compute_all_neighs(loc), 0:(GRID_SIZE - 1)
 )
 
-@inline
-function allneighs(loc)
-    return view(ALL_ALL_NEIGHS, loc + 1)[1]
+@inline function allneighs(loc)
+    return @inbounds view(ALL_ALL_NEIGHS, loc + 1)[1]
 end
 
 function do_action(board::Board, string::AbstractString)
@@ -622,7 +621,7 @@ function undo_action(board::Board, climb::Climb)
         board,
         climb.moving_loc,
         moving_tile - get_tile_height(moving_tile) +
-        length(board.underworld[climb.goal_loc])::UInt8,
+        UInt8(length(board.underworld[climb.goal_loc])),
     )
     set_loc(board, moving_tile, climb.moving_loc)
 
@@ -680,7 +679,7 @@ function inverse_post_action_pillbug_update(board::Board)
         if action_as_index < MAX_PLACEMENT_INDEX
             post_action_pillbug_update(board, ALL_PLACEMENTS[action_as_index])
         elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX
-            post_action_pillbug_update(board, ALL_MOVEMENTS[action_as_index -MAX_PLACEMENT_INDEX])
+            post_action_pillbug_update(board, ALL_MOVEMENTS[action_as_index - MAX_PLACEMENT_INDEX])
         elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX
             post_action_pillbug_update(
                 board, ALL_CLIMBS[action_as_index - (MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX)]
@@ -837,37 +836,39 @@ const MAX_MOVEMENT_INDEX = GRID_SIZE * GRID_SIZE
 const MAX_CLIMB_INDEX = GRID_SIZE * GRID_SIZE
 const MAX_PASS_INDEX = 1
 
-function action_index(placement::Placement)
+@inline function action_index(placement::Placement)
     return placement_index(placement.goal_loc, placement.tile)
 end
 
-function action_index(move::Move)
+@inline function action_index(move::Move)
     return movement_index(move.moving_loc, move.goal_loc)
 end
 
-function action_index(climb::Climb)
+@inline function action_index(climb::Climb)
     return climb_index(climb.moving_loc, climb.goal_loc)
 end
 
-function action_index(pass::Pass)
+@inline function action_index(pass::Pass)
     return pass_index()
 end
 
-function placement_index(loc::Int, tile::UInt8)
-    shifted_tile = tile >> INDEX_SHIFT
-    return shifted_tile * UInt32(GRID_SIZE) + loc + 1
+@inline function placement_index(loc::Int, tile::UInt8)
+    return @fastmath (tile >> INDEX_SHIFT) * GRID_SIZE + loc + 1
 end
 
-function movement_index(moving_loc::Int, goal_loc::Int)
-    return UInt32(MAX_PLACEMENT_INDEX) + moving_loc * UInt32(GRID_SIZE) + goal_loc + 1
+const MOVEMENT_INDEX_OFFSET = MAX_PLACEMENT_INDEX + 1
+@inline function movement_index(moving_loc::Int, goal_loc::Int)
+    return @fastmath MOVEMENT_INDEX_OFFSET + moving_loc * GRID_SIZE + goal_loc
 end
 
-function climb_index(moving_loc::Int, goal_loc::Int)
-    return MAX_MOVEMENT_INDEX + MAX_PLACEMENT_INDEX + moving_loc * GRID_SIZE + goal_loc + 1
+const CLIMB_INDEX_OFFSET = MAX_MOVEMENT_INDEX + MAX_PLACEMENT_INDEX + 1
+@inline function climb_index(moving_loc::Int, goal_loc::Int)
+    return @fastmath CLIMB_INDEX_OFFSET + moving_loc * GRID_SIZE + goal_loc
 end
 
-function pass_index()
-    return MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX + 1
+const PASS_INDEX_OFFSET = MAX_MOVEMENT_INDEX + MAX_PLACEMENT_INDEX + MAX_PLACEMENT_INDEX + 1
+@inline function pass_index()
+    return PASS_INDEX_OFFSET
 end
 
 function get_all_placements()

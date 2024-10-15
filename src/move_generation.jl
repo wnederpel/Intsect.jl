@@ -79,7 +79,7 @@ function validactions_general(board::Board, move_buffer)
         return nothing
     end
 
-    @no_escape begin
+    @no_escape PINNED_BUFFER[1] begin
         ispinned = @alloc(eltype(true), GRID_SIZE)
         ispinned .= false
         get_pinned_tiles!(board, ispinned)
@@ -498,7 +498,7 @@ GetArticulationPoints(i, d)
         Output i as articulation point
 """
 function get_pinned_tiles!(board, pinned_tiles)
-    @no_escape PINNED_BUFFER begin
+    @no_escape PINNED_BUFFER[2] begin
         # Allocate a `PtrArray` (see StrideArraysCore.jl) using memory from the default buffer.
         visited_dict = @alloc(eltype(true), GRID_SIZE)
         depth_dict = @alloc(eltype(board.tile_locs), GRID_SIZE)
@@ -519,7 +519,7 @@ function get_pinned_tiles!(board, pinned_tiles)
     end
 end
 
-@inbounds function get_pinned_tiles!(
+function get_pinned_tiles!(
     board, pinned_tiles_dict, visited_dict, depth_dict, low_dict, parent_dict, loc, depth
 )
     if loc < 0
@@ -527,9 +527,9 @@ end
         error("attempt to find pinned tiles from an invalid loc $loc")
     end
 
-    visited_dict[loc + 1] = true
-    depth_dict[loc + 1] = depth
-    low_dict[loc + 1] = depth
+    @inbounds visited_dict[loc + 1] = true
+    @inbounds depth_dict[loc + 1] = depth
+    @inbounds low_dict[loc + 1] = depth
     child_count = 0
     is_articulation = false
 
@@ -537,8 +537,8 @@ end
         if get_tile_on_board(board, nloc) == EMPTY_TILE
             continue
         end
-        if !visited_dict[nloc + 1]
-            parent_dict[nloc + 1] = loc
+        if @inbounds !visited_dict[nloc + 1]
+            @inbounds parent_dict[nloc + 1] = loc
             get_pinned_tiles!(
                 board,
                 pinned_tiles_dict,
@@ -550,17 +550,17 @@ end
                 depth + 1,
             )
             child_count += 1
-            if low_dict[nloc + 1] >= depth_dict[loc + 1]
+            if @inbounds low_dict[nloc + 1] >= depth_dict[loc + 1]
                 is_articulation = true
             end
-            low_dict[loc + 1] = min(low_dict[loc + 1], low_dict[nloc + 1])
-        elseif nloc != parent_dict[loc + 1]
-            low_dict[loc + 1] = min(low_dict[loc + 1], depth_dict[nloc + 1])
+            @inbounds low_dict[loc + 1] = min(low_dict[loc + 1], low_dict[nloc + 1])
+        elseif @inbounds nloc != parent_dict[loc + 1]
+            @inbounds low_dict[loc + 1] = min(low_dict[loc + 1], depth_dict[nloc + 1])
         end
     end
-    if (parent_dict[loc + 1] != INVALID_LOC && is_articulation) ||
+    if @inbounds (parent_dict[loc + 1] != INVALID_LOC && is_articulation) ||
         (parent_dict[loc + 1] == INVALID_LOC && child_count > 1)
-        pinned_tiles_dict[loc + 1] = true
+        @inbounds pinned_tiles_dict[loc + 1] = true
     end
 end
 
