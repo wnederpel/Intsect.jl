@@ -811,9 +811,9 @@ Check if a move is not already in the valid actions
     
 to avoid the pillbug adding duplicate moves
 """
-function move_not_duplicate(board::Board, move, move_buffer)
+function move_not_duplicate(move, move_buffer, buffer_index)
     move_index = action_index(move)
-    validmove_indices = view(move_buffer, 1:(board.action_index - 1))
+    validmove_indices = view(move_buffer, 1:(buffer_index[] - 1))
     return !any(index -> index == move_index, validmove_indices)
 end
 

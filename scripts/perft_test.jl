@@ -5,10 +5,11 @@ using Profile
 
 depth = 6
 perft(depth; output=true)
+# @btime perft(depth; output=false) 
 # (@benchmark perft(5; output=false)) |> display
 
 # Profile.Allocs.clear()
-# Profile.Allocs.@profile sample_rate = 1 perft(depth; output=false)
+# Profile.Allocs.@profile sample_rate = 0.01 perft(depth; output=false)
 
 # PProf.Allocs.pprof()
 

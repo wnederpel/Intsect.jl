@@ -1,31 +1,35 @@
-function add_action(board::Board, action::Action, move_buffer; avoid_duplicates=false)
+function add_action(board::Board, action::Action, move_buffer, buffer_index; avoid_duplicates=false)
     # Do no use show(action) here because tiles might be Temporarily deleted -> string generation does not work
     if avoid_duplicates
-        if move_not_duplicate(board, action, move_buffer)
-            add_action!(board, action, move_buffer)
+        if move_not_duplicate(action, move_buffer, buffer_index)
+            add_action!(action, move_buffer, buffer_index)
+            return nothing
         end
     else
-        add_action!(board, action, move_buffer)
+        add_action!(action, move_buffer, buffer_index)
+        return nothing
     end
 end
 
-function add_action(board::Board, placement::Placement, move_buffer; avoid_duplicates=false)
-    add_action!(board, placement, move_buffer)
+function add_action(placement::Placement, move_buffer, buffer_index; avoid_duplicates=false)
+    add_action!(placement, move_buffer, buffer_index)
     return nothing
 end
 
-function add_action!(board::Board, action::Action, move_buffer)
+function add_action!(action::Action, move_buffer, buffer_index)
     # TODO eff: do not use struct action index, but pass it around
-    @inbounds move_buffer[board.action_index] = action_index(action)
-    board.action_index += 1
+    @inbounds move_buffer[buffer_index[1]] = action_index(action)
+    buffer_index[1] += 1
     return nothing
 end
 
 function validactions_indices(board)
     @no_escape begin
         move_buffer = @alloc(Int, VALID_BUFFER_SIZE)
-        validactions!(board, move_buffer)
-        valid_actions = extract_valid_actions_index(board, move_buffer)
+        buffer_index = @alloc(Ref{Int}, 1)
+        buffer_index = Ref(1)
+        validactions!(board, move_buffer, buffer_index)
+        valid_actions = extract_valid_actions_index(move_buffer, buffer_index)
     end
     return valid_actions
 end
@@ -34,36 +38,30 @@ function validactions(board)
     return ALL_ACTIONS[validactions_indices(board)]
 end
 
-function extract_valid_actions_index(board, move_buffer)
-    tmp = board.action_index
-    board.action_index = 1
-    return copy(move_buffer[1:(tmp - 1)])
+function extract_valid_actions_index(move_buffer, buffer_index)
+    return copy(move_buffer[1:(buffer_index - 1)])
 end
 
 function extract_valid_actions(board, move_buffer=nothing)
     if move_buffer === nothing
         move_buffer = board.validactions
     end
-    tmp = board.action_index
-    board.action_index = 1
-    return ALL_ACTIONS[move_buffer[1:(tmp - 1)]]
+    return ALL_ACTIONS[move_buffer[1:(buffer_index - 1)]]
 end
 
-function validactions!(board::Board, move_buffer)
-    board.action_index = 1
-
+function validactions!(board::Board, move_buffer, buffer_index)
     need_to_place_queen = !board.queen_placed[board.current_color + 1] && board.turn == 4
     first_placement = board.ply == 1
     second_placement = board.ply == 2
 
     if need_to_place_queen
-        queenplacements(board, move_buffer)
+        queenplacements(board, move_buffer, buffer_index)a
     elseif first_placement
-        firstplacements(board, move_buffer)
+        firstplacements(board, move_buffer, buffer_index)
     elseif second_placement
-        secondplacements(board, move_buffer)
+        secondplacements(board, move_buffer, buffer_index)
     else
-        validactions_general(board, move_buffer)
+        validactions_general(board, move_buffer, buffer_index)
     end
 
     return nothing
@@ -72,11 +70,9 @@ end
 """
 Valid actions for the default case
 """
-function validactions_general(board::Board, move_buffer)
-    # TODO speed: ispinned does not need to be recomputed after every move
-    # when an elbow is filled, or when a tile is simply pinnned, the dict only changes locally.
+function validactions_general(board::Board, move_buffer, buffer_index)
     if board.gameover
-        return nothing
+        return 1
     end
 
     @no_escape PINNED_BUFFER[1] begin
@@ -84,29 +80,31 @@ function validactions_general(board::Board, move_buffer)
         ispinned .= false
         get_pinned_tiles!(board, ispinned)
 
-        add_placements(board, move_buffer)
+        add_placements(board, move_buffer, buffer_index)
 
         if board.queen_placed[board.current_color + 1]
-            add_moves(board, ispinned, move_buffer)
+            add_moves(board, ispinned, move_buffer, buffer_index)
         end
 
-        if board.action_index == 1
-            add_action(board, Pass(), move_buffer; avoid_duplicates=false)
+        if buffer_index == 1
+            add_action(board, Pass(), move_buffer, buffer_index; avoid_duplicates=false)
         end
     end
     return nothing
 end
 
-function add_placements(board, move_buffer)
+function add_placements(board, move_buffer, buffer_index)
     for loc in board.placement_locs[board.current_color + 1]
         for tile in board.placeable_tiles[board.current_color + 1]
-            tile != EMPTY_TILE && add_action(board, Placement(loc, tile), move_buffer)
+            if tile != EMPTY_TILE
+                add_action(board, Placement(loc, tile), move_buffer, buffer_index)
+            end
         end
     end
     return nothing
 end
 
-function add_moves(board, ispinned, move_buffer)
+function add_moves(board, ispinned, move_buffer, buffer_index)
     for bug in 0x00:0x07
         for num in 0x00:MAX_NUMS[bug + 0x01]
             semi_tile = (tile_from_info(board.current_color, bug, num) >> INDEX_SHIFT) + 1
@@ -117,7 +115,15 @@ function add_moves(board, ispinned, move_buffer)
                     if loc != board.moved_by_pillbug_loc
                         # Generate moves for placed tiles
                         tile = get_tile_on_board(board, loc)
-                        bugmoves(board, loc, bug, get_tile_height(tile), ispinned, move_buffer)
+                        bugmoves(
+                            board,
+                            loc,
+                            bug,
+                            get_tile_height(tile),
+                            ispinned,
+                            move_buffer,
+                            buffer_index,
+                        )
                     end
                 else
                     break
@@ -125,30 +131,27 @@ function add_moves(board, ispinned, move_buffer)
             end
         end
     end
+    return nothing
 end
 
 """
 valid actions for when the queen must be placed
 """
-function queenplacements(board, move_buffer)
-    queen_tile =
-        board.current_color == WHITE ? get_tile_from_string(board, "wQ") :
-        get_tile_from_string(board, "bQ")
-    foreach(
-        loc -> add_action(board, Placement(loc, queen_tile), move_buffer),
-        board.placement_locs[board.current_color + 1],
-    )
-
+function queenplacements(board, move_buffer, buffer_index)
+    queen_tile = board.current_color == WHITE ? 0x24 : 0x20
+    for loc in board.placement_locs[board.current_color + 1]
+        add_action(board, Placement(loc, queen_tile), move_buffer, buffer_index)
+    end
     return nothing
 end
 
 """
 valid actions for when the first move is made
 """
-function firstplacements(board, move_buffer)
+function firstplacements(board, move_buffer, buffer_index)
     for tile in board.placeable_tiles[board.current_color + 1]
         if tile != EMPTY_TILE && get_tile_bug(tile) != Integer(Bug.QUEEN)
-            add_action(board, Placement(MID, tile), move_buffer)
+            add_action(board, Placement(MID, tile), move_buffer, buffer_index)
         end
     end
     return nothing
@@ -157,46 +160,48 @@ end
 """
 valid actions for second placement (first placement by black)
 """
-function secondplacements(board, move_buffer)
+function secondplacements(board, move_buffer, buffer_index)
     for loc in allneighs(MID)
         for tile in board.placeable_tiles[board.current_color + 1]
             if tile != EMPTY_TILE && get_tile_bug(tile) != Integer(Bug.QUEEN)
-                add_action(board, Placement(loc, tile), move_buffer)
+                add_action(board, Placement(loc, tile), move_buffer, buffer_index)
             end
         end
     end
     return nothing
 end
 
-function bugmoves(board, loc, bug, height, ispinned, move_buffer; avoid_duplicates=false)
+function bugmoves(
+    board, loc, bug, height, ispinned, move_buffer, buffer_index; avoid_duplicates=false
+)
     # Pill bug can yield special moves, even when pinned
     # Moquito can yield pill bug moves, even when pinned
     if bug == Integer(Bug.PILLBUG)
-        pillbugmoves(board, loc, ispinned, move_buffer; avoid_duplicates)
+        pillbugmoves(board, loc, ispinned, move_buffer, buffer_index; avoid_duplicates)
     elseif bug == Integer(Bug.MOSQUITO)
-        mosquitomoves(board, loc, height, ispinned, move_buffer)
+        mosquitomoves(board, loc, height, ispinned, move_buffer, buffer_index)
     end
     if !ispinned[loc + 1]
         if bug == Integer(Bug.ANT)
-            antmoves(board, loc, move_buffer; avoid_duplicates)
+            antmoves(board, loc, move_buffer, buffer_index; avoid_duplicates)
         elseif bug == Integer(Bug.SPIDER)
-            spidermoves(board, loc, move_buffer; avoid_duplicates)
+            spidermoves(board, loc, move_buffer, buffer_index; avoid_duplicates)
         elseif bug == Integer(Bug.QUEEN)
-            queenmoves(board, loc, move_buffer; avoid_duplicates)
+            queenmoves(board, loc, move_buffer, buffer_index; avoid_duplicates)
         elseif bug == Integer(Bug.BEETLE)
-            beetlemoves(board, loc, height, move_buffer; avoid_duplicates)
+            beetlemoves(board, loc, height, move_buffer, buffer_index; avoid_duplicates)
         elseif bug == Integer(Bug.GRASSHOPPER)
-            grasshoppermoves(board, loc, move_buffer; avoid_duplicates)
+            grasshoppermoves(board, loc, move_buffer, buffer_index; avoid_duplicates)
         elseif bug == Integer(Bug.LADYBUG)
-            ladybugmoves(board, loc, move_buffer)
+            ladybugmoves(board, loc, move_buffer, buffer_index)
         end
     end
     return nothing
 end
 
-function mosquitomoves(board, loc, height, ispinned, move_buffer)
+function mosquitomoves(board, loc, height, ispinned, move_buffer, buffer_index)
     if height != 1
-        beetlemoves(board, loc, height, move_buffer)
+        beetlemoves(board, loc, height, move_buffer, buffer_index)
     end
 
     for neigh in allneighs(loc)
@@ -206,17 +211,19 @@ function mosquitomoves(board, loc, height, ispinned, move_buffer)
             # TODO:
             # This avoid duplicates can probably be false, duplicate moves are only added by pretending to be the pillbug
             # In fact it is probably unnecessary to pass this avoid dupicates around all the time, only set to true for pillbug special moves!
-            bugmoves(board, loc, bug, height, ispinned, move_buffer; avoid_duplicates=true)
+            bugmoves(
+                board, loc, bug, height, ispinned, move_buffer, buffer_index; avoid_duplicates=true
+            )
         end
     end
 
     return nothing
 end
 
-function pillbugmoves(board, startloc, ispinned, move_buffer; avoid_duplicates=false)
+function pillbugmoves(board, startloc, ispinned, move_buffer, buffer_index; avoid_duplicates=false)
     maxdepth = 1
     if !ispinned[startloc + 1]
-        moves_to_depth(board, startloc, maxdepth, move_buffer; avoid_duplicates)
+        moves_to_depth(board, startloc, maxdepth, move_buffer, buffer_index; avoid_duplicates)
     end
     # pillbug also has special moves
     # For all surrounding tiles, if they are not pinned, and did not just move,
@@ -247,7 +254,7 @@ function pillbugmoves(board, startloc, ispinned, move_buffer; avoid_duplicates=f
                     slideloc = slidelocs[k]
                     if get_tile_on_board(board, slideloc) == EMPTY_TILE
                         move = Move(loc, slideloc)
-                        add_action(board, move, move_buffer; avoid_duplicates=true)
+                        add_action(board, move, move_buffer, buffer_index; avoid_duplicates=true)
                     end
                 end
             end
@@ -257,22 +264,26 @@ function pillbugmoves(board, startloc, ispinned, move_buffer; avoid_duplicates=f
     return nothing
 end
 
-function ladybugmoves(board, startloc, move_buffer)
+function ladybugmoves(board, startloc, move_buffer, buffer_index)
     maxdepth = 3
     tmp_tile = get_tile_on_board(board, startloc)
     set_tile_on_board(board, startloc, EMPTY_TILE)
 
-    moves_to_depth_ladybug!(board, startloc, maxdepth, move_buffer)
+    moves_to_depth_ladybug!(board, startloc, maxdepth, move_buffer, buffer_index)
 
     set_tile_on_board(board, startloc, tmp_tile)
 
     return nothing
 end
 
-function moves_to_depth_ladybug!(board, startloc, depth, move_buffer; cur_loc=startloc)
+function moves_to_depth_ladybug!(
+    board, startloc, depth, move_buffer, buffer_index; cur_loc=startloc
+)
     if depth == 0
         if cur_loc != startloc
-            add_action(board, Move(startloc, cur_loc), move_buffer; avoid_duplicates=true)
+            add_action(
+                board, Move(startloc, cur_loc), move_buffer, buffer_index; avoid_duplicates=true
+            )
         end
         return nothing
     end
@@ -291,14 +302,16 @@ function moves_to_depth_ladybug!(board, startloc, depth, move_buffer; cur_loc=st
                 get_tile_on_board(board, neighlocs[i]) == EMPTY_TILE &&
                 canslidehigh(i, board, neighlocs, height)
             )
-            moves_to_depth_ladybug!(board, startloc, depth - 1, move_buffer; cur_loc=neighlocs[i])
+            moves_to_depth_ladybug!(
+                board, startloc, depth - 1, move_buffer, buffer_index; cur_loc=neighlocs[i]
+            )
         end
     end
 
     return nothing
 end
 
-function grasshoppermoves(board, startloc, move_buffer; avoid_duplicates=true)
+function grasshoppermoves(board, startloc, move_buffer, buffer_index; avoid_duplicates=true)
     for dir in instances(Direction.T)
         if get_tile_on_board(board, apply_direction(startloc, dir)) != EMPTY_TILE
             loc = startloc
@@ -309,19 +322,25 @@ function grasshoppermoves(board, startloc, move_buffer; avoid_duplicates=true)
                     break
                 end
             end
-            add_action(board, Move(startloc, loc), move_buffer; avoid_duplicates)
+            add_action(board, Move(startloc, loc), move_buffer, buffer_index; avoid_duplicates)
         end
     end
     return nothing
 end
 
-function beetlemoves(board, startloc, height, move_buffer; avoid_duplicates=false)
+function beetlemoves(board, startloc, height, move_buffer, buffer_index; avoid_duplicates=false)
     neighlocs = allneighs(startloc)
     if height != 1
         # Can go anywhere, so long as it can slide with height
         for i in 1:6
             if canslidehigh(i, board, neighlocs, height)
-                add_action(board, Climb(startloc, neighlocs[i]), move_buffer; avoid_duplicates)
+                add_action(
+                    board,
+                    Climb(startloc, neighlocs[i]),
+                    move_buffer,
+                    buffer_index;
+                    avoid_duplicates,
+                )
             end
         end
         return nothing
@@ -336,9 +355,17 @@ function beetlemoves(board, startloc, height, move_buffer; avoid_duplicates=fals
             canslidehigh(i, board, neighlocs, 1)
         ) || canslide(i, board, neighlocs)
             if get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE
-                add_action(board, Climb(startloc, neighlocs[i]), move_buffer; avoid_duplicates)
+                add_action(
+                    board,
+                    Climb(startloc, neighlocs[i]),
+                    move_buffer,
+                    buffer_index;
+                    avoid_duplicates,
+                )
             else
-                add_action(board, Move(startloc, neighlocs[i]), move_buffer; avoid_duplicates)
+                add_action(
+                    board, Move(startloc, neighlocs[i]), move_buffer, buffer_index; avoid_duplicates
+                )
             end
         end
     end
@@ -347,16 +374,14 @@ function beetlemoves(board, startloc, height, move_buffer; avoid_duplicates=fals
     return nothing
 end
 
-@inline
-function canslidepillbug(i, board, neighlocs)
+@inline function canslidepillbug(i, board, neighlocs)
     neighleft = get_tile_on_board(board, neighlocs[i == 1 ? 6 : i - 1])
     neighright = get_tile_on_board(board, neighlocs[i == 6 ? 1 : i + 1])
 
     return get_tile_height(neighleft) < 2 || get_tile_height(neighright) < 2
 end
 
-@inline
-function canslidehigh(i, board, neighlocs, height)
+@inline function canslidehigh(i, board, neighlocs, height)
     neighleft = get_tile_on_board(board, neighlocs[i == 1 ? 6 : i - 1])
     neighright = get_tile_on_board(board, neighlocs[i == 6 ? 1 : i + 1])
     goalheight = get_tile_height(get_tile_on_board(board, neighlocs[i]))
@@ -365,19 +390,19 @@ function canslidehigh(i, board, neighlocs, height)
            get_tile_height(neighright) < max(goalheight + 1, height)
 end
 
-function queenmoves(board, startloc, move_buffer; avoid_duplicates=false)
+function queenmoves(board, startloc, move_buffer, buffer_index; avoid_duplicates=false)
     maxdepth = 1
-    moves_to_depth(board, startloc, maxdepth, move_buffer; avoid_duplicates)
+    moves_to_depth(board, startloc, maxdepth, move_buffer, buffer_index; avoid_duplicates)
     return nothing
 end
 
-function spidermoves(board, startloc, move_buffer; avoid_duplicates=false)
+function spidermoves(board, startloc, move_buffer, buffer_index; avoid_duplicates=false)
     maxdepth = 3
-    moves_to_depth(board, startloc, maxdepth, move_buffer; avoid_duplicates)
+    moves_to_depth(board, startloc, maxdepth, move_buffer, buffer_index; avoid_duplicates)
     return nothing
 end
 
-function antmoves(board, startloc, move_buffer; avoid_duplicates=false)
+function antmoves(board, startloc, move_buffer, buffer_index; avoid_duplicates=false)
     tmp_tile = get_tile_on_board(board, startloc)
     # Temporarily remove the tile to find where it can move to
     set_tile_on_board(board, startloc, EMPTY_TILE)
@@ -397,6 +422,8 @@ function antmoves(board, startloc, move_buffer; avoid_duplicates=false)
             loc = stack_arr[stack_ptr - 1]
             stack_ptr -= 1
 
+            # TODO eff: directly add the action in the iterations below
+            # TODO eff: at some point do
             stack_ptr = push_slidelocs!(board, stack_arr, stack_ptr, loc, discovered_dict)
         end
         set_tile_on_board(board, startloc, tmp_tile)
@@ -404,14 +431,16 @@ function antmoves(board, startloc, move_buffer; avoid_duplicates=false)
         for entry in eachindex(discovered_dict)
             goalloc = entry - 1
             if discovered_dict[entry] && goalloc != startloc
-                add_action(board, Move(startloc, goalloc), move_buffer; avoid_duplicates)
+                add_action(
+                    board, Move(startloc, goalloc), move_buffer, buffer_index; avoid_duplicates
+                )
             end
         end
     end
     return nothing
 end
 
-function push_slidelocs!(board::Board, stack_arr, stack_ptr, loc, discovered_dict)
+@inline function push_slidelocs!(board::Board, stack_arr, stack_ptr, loc, discovered_dict)
     neighlocs = allneighs(loc)
     if 64 in neighlocs
         print("error!")
@@ -430,41 +459,47 @@ function push_slidelocs!(board::Board, stack_arr, stack_ptr, loc, discovered_dic
     return stack_ptr
 end
 
-function moves_to_depth(board, startloc, maxdepth, move_buffer; avoid_duplicates=false)
+function moves_to_depth(
+    board, startloc, maxdepth, move_buffer, buffer_index; avoid_duplicates=false
+)
     tmp_tile = get_tile_on_board(board, startloc)
     set_tile_on_board(board, startloc, EMPTY_TILE)
 
-    moves_to_depth!(board, startloc, maxdepth, move_buffer)
+    moves_to_depth!(board, startloc, maxdepth, move_buffer, buffer_index)
 
     set_tile_on_board(board, startloc, tmp_tile)
     return nothing
 end
 
 @inline function moves_to_depth!(
-    board, startloc, depth, move_buffer, cur_loc=startloc, prev_loc=nothing
+    board, startloc, depth, move_buffer, buffer_index, cur_loc=startloc, prev_loc=nothing
 )
     if depth == 0
         if cur_loc != startloc
-            add_action(board, Move(startloc, cur_loc), move_buffer; avoid_duplicates=true)
+            add_action(
+                board, Move(startloc, cur_loc), move_buffer, buffer_index; avoid_duplicates=true
+            )
         end
         return nothing
     end
     neighlocs = allneighs(cur_loc)
     for i in 1:6
         if canslide(i, board, neighlocs) && neighlocs[i] != prev_loc
-            moves_to_depth!(board, startloc, depth - 1, move_buffer, neighlocs[i], cur_loc)
+            moves_to_depth!(
+                board, startloc, depth - 1, move_buffer, buffer_index, neighlocs[i], cur_loc
+            )
         end
     end
+    return nothing
 end
 
-@inline
 """
 From the current position, one can travel in a direcion when:
 
  1. the direction itself is not filled
  2. one of the two neighbouring directions is filled
 """
-function canslide(i, board, neighlocs)
+@inline function canslide(i, board, neighlocs)
     return get_tile_on_board(board, neighlocs[i]) == EMPTY_TILE && (
         (get_tile_on_board(board, neighlocs[i == 1 ? 6 : i - 1]) == EMPTY_TILE) ⊻
         (get_tile_on_board(board, neighlocs[i == 6 ? 1 : i + 1]) == EMPTY_TILE)
@@ -472,6 +507,9 @@ function canslide(i, board, neighlocs)
 end
 
 """
+TODO speed: ispinned does not need to be recomputed after every move when an elbow is filled, or when a tile is simply pinnned, the dict only changes locally.
+    
+
 For enforcing the one hive rule. Alogirthm is as follows:
 articulation point = cut vertex = tile cannot be moved
 
@@ -518,6 +556,7 @@ GetArticulationPoints(i, d)
             end
         end
     end
+    return nothing
 end
 
 @inline function get_pinned_tiles!(
@@ -563,6 +602,7 @@ end
         (parent_dict[loc + 1] == INVALID_LOC && child_count > 1)
         @inbounds pinned_tiles_dict[loc + 1] = true
     end
+    return nothing
 end
 
 function get_pinned_tiles(board)
