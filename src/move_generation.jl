@@ -16,10 +16,10 @@ function add_action(placement::Placement, move_buffer, buffer_index; avoid_dupli
     return nothing
 end
 
-function add_action!(action::Action, move_buffer, buffer_index)
+@inline function add_action!(action::Action, move_buffer, buffer_index)
     # TODO eff: do not use struct action index, but pass it around
     @inbounds move_buffer[buffer_index[1]] = action_index(action)
-    buffer_index[1] += 1
+    @inbounds buffer_index[1] += 1
     return nothing
 end
 
