@@ -530,6 +530,28 @@ memory per node  = 0.0 bytes
 gc time          = 0.0%
 total time       = 1.9 seconds
 
+## A bunch of optimization (type stability, avoidance of map, for each)
+### Executed on less performant laptop
+
+Perft(4)         = 151.686
+KN/S             = 58.820
+memory per node  = 0.08 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(5)         = 5.427.108
+KN/S             = 180.346
+memory per node  = 0.0 bytes
+gc time          = 0.0%
+total time       = 0.03 seconds
+
+Perft(6)         = 192.353.904
+KN/S             = 195.967
+memory per node  = 0.0 bytes
+gc time          = 0.0%
+total time       = 0.98 seconds
+
+
 # Known solutions
 
 https://github.com/jonthysell/Mzinga/wiki/Perft

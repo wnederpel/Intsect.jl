@@ -198,7 +198,6 @@ function mosquitomoves(board, loc, height, ispinned, move_buffer)
     if height != 1
         beetlemoves(board, loc, height, move_buffer)
     end
-    neighlocs = allneighs(loc)
 
     for neigh in allneighs(loc)
         tile = get_tile_on_board(board, neigh)
@@ -441,7 +440,9 @@ function moves_to_depth(board, startloc, maxdepth, move_buffer; avoid_duplicates
     return nothing
 end
 
-function moves_to_depth!(board, startloc, depth, move_buffer, cur_loc=startloc, prev_loc=nothing)
+@inline function moves_to_depth!(
+    board, startloc, depth, move_buffer, cur_loc=startloc, prev_loc=nothing
+)
     if depth == 0
         if cur_loc != startloc
             add_action(board, Move(startloc, cur_loc), move_buffer; avoid_duplicates=true)
@@ -497,7 +498,7 @@ GetArticulationPoints(i, d)
     if (parent[i] ≠ null and isArticulation) or (parent[i] = null and childCount > 1) then
         Output i as articulation point
 """
-function get_pinned_tiles!(board, pinned_tiles)
+@inline function get_pinned_tiles!(board, pinned_tiles)
     @no_escape PINNED_BUFFER[2] begin
         # Allocate a `PtrArray` (see StrideArraysCore.jl) using memory from the default buffer.
         visited_dict = @alloc(eltype(true), GRID_SIZE)
@@ -519,7 +520,7 @@ function get_pinned_tiles!(board, pinned_tiles)
     end
 end
 
-function get_pinned_tiles!(
+@inline function get_pinned_tiles!(
     board, pinned_tiles_dict, visited_dict, depth_dict, low_dict, parent_dict, loc, depth
 )
     if loc < 0
