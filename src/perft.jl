@@ -41,8 +41,20 @@ function perft(depth::Int, board)::Int
         move_buffer = @alloc(eltype(Int), VALID_BUFFER_SIZE)
         validactions!(board, move_buffer)
         for action_i in 1:(board.action_index - 1)
-            action = ALL_ACTIONS[move_buffer[action_i]]
-            do_action(board, action)
+            action_as_index = move_buffer[action_i]
+            if action_as_index < MAX_PLACEMENT_INDEX
+                action = ALL_PLACEMENTS[action_as_index]
+                do_action(board, action)
+            elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX
+                action = ALL_MOVEMENTS[action_as_index - MAX_PLACEMENT_INDEX]
+                do_action(board, action)
+            elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX
+                action = ALL_CLIMBS[action_as_index - (MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX)]
+                do_action(board, action)
+            else
+                do_action(board, Pass())
+            end
+
             nodes += perft(depth - 1, board)
             undo(board)
         end

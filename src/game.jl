@@ -646,7 +646,17 @@ function inverse_post_action_pillbug_update(board)
     # Find the last move again (so one step deeper then undo)
     if !(board.last_history_index == 0)
         action_as_index = board.history[board.last_history_index]
-        post_action_pillbug_update(board, get_action(action_as_index))
+        if action_as_index < MAX_PLACEMENT_INDEX
+            post_action_pillbug_update(board, ALL_PLACEMENTS[action_as_index])
+        elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX
+            post_action_pillbug_update(board, ALL_MOVEMENTS[action_as_index -MAX_PLACEMENT_INDEX])
+        elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX
+            post_action_pillbug_update(
+                board, ALL_CLIMBS[action_as_index - (MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX)]
+            )
+        else
+            post_action_pillbug_update(board, Pass())
+        end
     else
         board.just_moved_loc = INVALID_LOC
         board.moved_by_pillbug_loc = INVALID_LOC
