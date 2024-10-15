@@ -98,8 +98,11 @@ function validactions_general(board::Board, move_buffer)
 end
 
 function add_placements(board, move_buffer)
-    for loc in board.placement_locs[board.current_color + 1]
-        for tile in board.placeable_tiles[board.current_color + 1]
+    color = board.current_color
+    placement_locs = @inbounds board.placement_locs[color + 1]
+    placeable_tiles = @inbounds board.placeable_tiles[color + 1]
+    for loc in placement_locs
+        for tile in placeable_tiles
             tile != EMPTY_TILE && add_action(board, Placement(loc, tile), move_buffer)
         end
     end
