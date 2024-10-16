@@ -1,5 +1,5 @@
-function add_action(board::Board, action::Action, move_buffer, buffer_index; avoid_duplicates=false)
-    # Do no use show(action) here because tiles might be Temporarily deleted -> string generation does not work
+function add_action(action::Action, move_buffer, buffer_index; avoid_duplicates=false)
+    # TODO SPEED: this version might be slow. avoid calling with avoid_duplicates = false.
     if avoid_duplicates
         if move_not_duplicate(action, move_buffer, buffer_index)
             add_action!(action, move_buffer, buffer_index)
@@ -17,19 +17,19 @@ function add_action(placement::Placement, move_buffer, buffer_index; avoid_dupli
 end
 
 @inline function add_action!(action::Action, move_buffer, buffer_index)
-    # TODO eff: do not use struct action index, but pass it around
-    @inbounds move_buffer[buffer_index[1]] = action_index(action)
-    @inbounds buffer_index[1] += 1
+    # TODO speed: change to a single read + update
+    @inbounds move_buffer[buffer_index[begin]] = action_index(action)
+    @inbounds buffer_index[begin] += 1
     return nothing
 end
 
 function validactions_indices(board)
     @no_escape begin
         move_buffer = @alloc(Int, VALID_BUFFER_SIZE)
-        buffer_index = @alloc(Ref{Int}, 1)
-        buffer_index = Ref(1)
+        buffer_index = @alloc(Int, 1)
+        buffer_index[1] = 1
         validactions!(board, move_buffer, buffer_index)
-        valid_actions = extract_valid_actions_index(move_buffer, buffer_index)
+        valid_actions = extract_valid_actions_index(move_buffer, buffer_index[1])
     end
     return valid_actions
 end
@@ -87,7 +87,7 @@ function validactions_general(board::Board, move_buffer, buffer_index)
         end
 
         if buffer_index == 1
-            add_action(board, Pass(), move_buffer, buffer_index; avoid_duplicates=false)
+            add_action(Pass(), move_buffer, buffer_index; avoid_duplicates=false)
         end
     end
     return nothing
@@ -97,7 +97,7 @@ function add_placements(board, move_buffer, buffer_index)
     for loc in board.placement_locs[board.current_color + 1]
         for tile in board.placeable_tiles[board.current_color + 1]
             if tile != EMPTY_TILE
-                add_action(board, Placement(loc, tile), move_buffer, buffer_index)
+                add_action(Placement(loc, tile), move_buffer, buffer_index)
             end
         end
     end
@@ -140,7 +140,7 @@ valid actions for when the queen must be placed
 function queenplacements(board, move_buffer, buffer_index)
     queen_tile = board.current_color == WHITE ? 0x24 : 0x20
     for loc in board.placement_locs[board.current_color + 1]
-        add_action(board, Placement(loc, queen_tile), move_buffer, buffer_index)
+        add_action(Placement(loc, queen_tile), move_buffer, buffer_index)
     end
     return nothing
 end
@@ -151,7 +151,7 @@ valid actions for when the first move is made
 function firstplacements(board, move_buffer, buffer_index)
     for tile in board.placeable_tiles[board.current_color + 1]
         if tile != EMPTY_TILE && get_tile_bug(tile) != Integer(Bug.QUEEN)
-            add_action(board, Placement(MID, tile), move_buffer, buffer_index)
+            add_action(Placement(MID, tile), move_buffer, buffer_index)
         end
     end
     return nothing
@@ -164,7 +164,7 @@ function secondplacements(board, move_buffer, buffer_index)
     for loc in allneighs(MID)
         for tile in board.placeable_tiles[board.current_color + 1]
             if tile != EMPTY_TILE && get_tile_bug(tile) != Integer(Bug.QUEEN)
-                add_action(board, Placement(loc, tile), move_buffer, buffer_index)
+                add_action(Placement(loc, tile), move_buffer, buffer_index)
             end
         end
     end
@@ -254,7 +254,7 @@ function pillbugmoves(board, startloc, ispinned, move_buffer, buffer_index; avoi
                     slideloc = slidelocs[k]
                     if get_tile_on_board(board, slideloc) == EMPTY_TILE
                         move = Move(loc, slideloc)
-                        add_action(board, move, move_buffer, buffer_index; avoid_duplicates=true)
+                        add_action(move, move_buffer, buffer_index; avoid_duplicates=true)
                     end
                 end
             end
@@ -281,9 +281,7 @@ function moves_to_depth_ladybug!(
 )
     if depth == 0
         if cur_loc != startloc
-            add_action(
-                board, Move(startloc, cur_loc), move_buffer, buffer_index; avoid_duplicates=true
-            )
+            add_action(Move(startloc, cur_loc), move_buffer, buffer_index; avoid_duplicates=true)
         end
         return nothing
     end
@@ -322,7 +320,7 @@ function grasshoppermoves(board, startloc, move_buffer, buffer_index; avoid_dupl
                     break
                 end
             end
-            add_action(board, Move(startloc, loc), move_buffer, buffer_index; avoid_duplicates)
+            add_action(Move(startloc, loc), move_buffer, buffer_index; avoid_duplicates)
         end
     end
     return nothing
@@ -335,11 +333,7 @@ function beetlemoves(board, startloc, height, move_buffer, buffer_index; avoid_d
         for i in 1:6
             if canslidehigh(i, board, neighlocs, height)
                 add_action(
-                    board,
-                    Climb(startloc, neighlocs[i]),
-                    move_buffer,
-                    buffer_index;
-                    avoid_duplicates,
+                    Climb(startloc, neighlocs[i]), move_buffer, buffer_index; avoid_duplicates
                 )
             end
         end
@@ -356,15 +350,11 @@ function beetlemoves(board, startloc, height, move_buffer, buffer_index; avoid_d
         ) || canslide(i, board, neighlocs)
             if get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE
                 add_action(
-                    board,
-                    Climb(startloc, neighlocs[i]),
-                    move_buffer,
-                    buffer_index;
-                    avoid_duplicates,
+                    Climb(startloc, neighlocs[i]), move_buffer, buffer_index; avoid_duplicates
                 )
             else
                 add_action(
-                    board, Move(startloc, neighlocs[i]), move_buffer, buffer_index; avoid_duplicates
+                    Move(startloc, neighlocs[i]), move_buffer, buffer_index; avoid_duplicates
                 )
             end
         end
@@ -431,9 +421,7 @@ function antmoves(board, startloc, move_buffer, buffer_index; avoid_duplicates=f
         for entry in eachindex(discovered_dict)
             goalloc = entry - 1
             if discovered_dict[entry] && goalloc != startloc
-                add_action(
-                    board, Move(startloc, goalloc), move_buffer, buffer_index; avoid_duplicates
-                )
+                add_action(Move(startloc, goalloc), move_buffer, buffer_index; avoid_duplicates)
             end
         end
     end
@@ -476,9 +464,7 @@ end
 )
     if depth == 0
         if cur_loc != startloc
-            add_action(
-                board, Move(startloc, cur_loc), move_buffer, buffer_index; avoid_duplicates=true
-            )
+            add_action(Move(startloc, cur_loc), move_buffer, buffer_index; avoid_duplicates=true)
         end
         return nothing
     end
