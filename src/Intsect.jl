@@ -62,6 +62,7 @@ export apply_direction
 export action_from_move_string
 export do_action
 export validactions
+export validactions!
 export validactions_indices
 export add_placements
 export isvalid_shifted_tile

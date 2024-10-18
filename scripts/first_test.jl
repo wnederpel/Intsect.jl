@@ -2,6 +2,8 @@ using Revise
 using Intsect
 using BenchmarkTools
 using Bumper
+using PProf
+using Profile
 
 # ANT = 0         # 3
 # GRASSHOPPER = 1 # 3
@@ -32,11 +34,22 @@ for movestring in movestrings
 end
 
 function f(board)
-    board.action_index = 1
-    @no_escape begin
+    @no_escape PERFT_BUFFER[1] begin
         move_buffer = @alloc(eltype(Int), 100)
-        add_placements(board, move_buffer)
+        validactions!(board, move_buffer)
+    end
+    return board.action_index - 1
+end
+
+function g(board)
+    for _ in 1:10000000
+        f(board)
     end
 end
 
-@benchmark f($board)
+@btime f($board)
+
+Profile.clear()
+Profile.@profile g(board)
+
+PProf.pprof()
