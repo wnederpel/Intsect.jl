@@ -1,6 +1,7 @@
 using Revise
 using Intsect
 using BenchmarkTools
+using Bumper
 
 # ANT = 0         # 3
 # GRASSHOPPER = 1 # 3
@@ -29,13 +30,13 @@ for movestring in movestrings
     action = action_from_move_string(board, movestring)
     do_action(board, action)
 end
-undo(board)
-action = action_from_move_string(board, "wA2 wQ-")
-do_action(board, action)
-do_action(board, raw"bQ \bA1")
 
-show(board)
+function f(board)
+    board.action_index = 1
+    @no_escape begin
+        move_buffer = @alloc(eltype(Int), 100)
+        add_placements(board, move_buffer)
+    end
+end
 
-actions = filter(action -> !(action isa Placement), validactions(board))
-
-show(actions, board)
+@benchmark f($board)
