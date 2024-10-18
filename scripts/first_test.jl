@@ -42,7 +42,7 @@ function f(board)
 end
 
 function g(board)
-    for _ in 1:10000000
+    for _ in 1:100000000
         f(board)
     end
 end

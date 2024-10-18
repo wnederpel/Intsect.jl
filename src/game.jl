@@ -45,7 +45,7 @@ function get_tile_color(tile)
 end
 
 function get_tile_bug(tile)
-    return (tile & BUG_MASK) >> BUG_SHIFT
+    return (tile & BUG_MASK) >> BUG_SHIFT + 0x01
 end
 
 function get_tile_bug_num(tile)
@@ -59,9 +59,13 @@ function get_tile_height(tile)
     return (tile & HEIGHT_MASK) >> HEIGHT_SHIFT + 0x01
 end
 
+@inline function get_tile_height_unsafe(tile)
+    return (tile & HEIGHT_MASK) >> HEIGHT_SHIFT + 0x01
+end
+
 function next_bug_num(tile)
     color, bug, bug_num, height = get_tile_info(tile)
-    max_num = MAX_NUMS[bug + 0x01]
+    max_num = MAX_NUMS[bug]
     if bug_num == max_num
         return EMPTY_TILE
     end
@@ -80,12 +84,20 @@ function get_tile_info(tile)
     return color, bug, bug_num, height
 end
 
-function tile_from_info(color, bug::UInt8, bug_num::UInt8; height::UInt8=0x00)
+@inline function tile_from_info(color, bug::UInt8, bug_num::UInt8; height::UInt8=0x00)
     return (
-        (0b00000001 << COLOR_SHIFT) * color +
-        (0b00000001 << BUG_SHIFT) * bug +
-        (0b00000001 << BUG_NUM_SHIFT) * bug_num +
-        (0b00000001 << HEIGHT_SHIFT) * height
+        color * (0b00000001 << COLOR_SHIFT) +
+        (bug - 0x01) * (0b00000001 << BUG_SHIFT) +
+        bug_num * (0b00000001 << BUG_NUM_SHIFT) +
+        height * (0b00000001 << HEIGHT_SHIFT)
+    )
+end
+
+@inline function tile_from_info_as_index(color, bug::UInt8, bug_num::UInt8)
+    return (
+        color * (0b00000001 << (COLOR_SHIFT - 0x02)) +
+        (bug - 0x01) * (0b00000001 << (COLOR_SHIFT - 0x02)) +
+        bug_num * (0b00000001 << (COLOR_SHIFT - 0x02))
     )
 end
 
@@ -96,7 +108,7 @@ end
 
 @inline function get_tile_on_board(board::Board, loc::Int)
     # Loc is zero indexed
-    return @inbounds board.tiles[loc + 1]
+    return @fastmath @inbounds board.tiles[loc + 1]
 end
 
 @inline function set_tile_on_board(board::Board, loc::Int, tile::UInt8)
@@ -312,6 +324,9 @@ function move_string_goal(board::Board, goal_loc; moving_loc=INVALID_LOC)
             end
         end
     end
+    if move_string == ""
+        move_string = " adj moving loc"
+    end
     return move_string
 end
 
@@ -407,7 +422,7 @@ function do_action(board::Board, placement::Placement)
     end
 
     bug = get_tile_bug(placement.tile)
-    board.placeable_tiles[board.current_color + 1][bug + 0x01] = next_bug_num(placement.tile)
+    board.placeable_tiles[board.current_color + 1][bug] = next_bug_num(placement.tile)
 
     update_placement_locs_goal(board, placement.goal_loc)
 
@@ -594,7 +609,7 @@ function undo_action(board::Board, action::Placement)
     inverse_post_action_update(board)
 
     bug = get_tile_bug(action.tile)
-    board.placeable_tiles[board.current_color + 1][bug + 0x01] = action.tile
+    board.placeable_tiles[board.current_color + 1][bug] = action.tile
 
     inverse_update_placement_locs_goal(board, action.goal_loc)
     return nothing
@@ -879,8 +894,8 @@ end
 function get_all_placements()
     all_placements = Vector{Placement}(undef, GRID_SIZE * 36)
     for loc in 0:(GRID_SIZE - 1)
-        for bug in 0x00:0x07
-            for num in 0x00:MAX_NUMS[bug + 0x01]
+        for bug in 0x01:0x08
+            for num in 0x00:MAX_NUMS[bug]
                 wtile = tile_from_info(WHITE, bug, num)
                 btile = tile_from_info(BLACK, bug, num)
                 all_placements[placement_index(loc, wtile)] = Placement(loc, wtile)
@@ -948,4 +963,4 @@ end
 const ALL_PLACEMENTS::Vector{Placement} = get_all_placements()
 const ALL_MOVEMENTS::Vector{Move} = get_all_movements()
 const ALL_CLIMBS::Vector{Climb} = get_all_climbs()
-const ALL_ACTIONS::Vector{Union{Placement,Move,Climb,Pass}} = get_all_actions()
+const ALL_ACTIONS::Vector{Action} = get_all_actions()

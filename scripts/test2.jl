@@ -1,22 +1,18 @@
-using Revise
+using DataStructures
 using Intsect
-using BenchmarkTools
 
-# ANT = 0         # 3
-# GRASSHOPPER = 1 # 3
-# BEETLE = 2      # 2
-# SPIDER = 3      # 2
-# QUEEN = 4       # 1
-# LADYBUG = 5     # 1
-# MOSQUITO = 6    # 1
-# PILLBUG = 7     # 1
+game = raw"wA1;bA1 wA1-;wQ -wA1;bQ bA1-;wB1 -wQ;bB1 bQ-;wB1 wB1-;bB1 -bB1"
+movestrings = split(game, ';')
 
 board = handle_newgame_command(Gametype.MLP)
 
-show(board)
+for movestring in movestrings
+    action = action_from_move_string(board, movestring)
+    do_action(board, action)
+    println("after move $movestring")
+    show(board)
+end
 
-action_to_do = validactions(board)[1]
-do_action(board, action_to_do)
-
 show(board)
+actions = validactions(board)
 show_valid_actions(board)

@@ -19,7 +19,7 @@ function get_tile_name(tile)
     else
         name *= "b"
     end
-    name *= BUG_NAMES[bug + 1]
+    name *= BUG_NAMES[bug]
     if bug < 4
         name *= string(bug_num + 1)
     end
