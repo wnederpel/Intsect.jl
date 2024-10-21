@@ -45,7 +45,7 @@ function get_tile_color(tile)
 end
 
 function get_tile_bug(tile)
-    return (tile & BUG_MASK) >> BUG_SHIFT + 0x01
+    return ((tile & BUG_MASK) >> BUG_SHIFT) + 0x01
 end
 
 function get_tile_bug_num(tile)
@@ -56,11 +56,11 @@ function get_tile_height(tile)
     if tile == EMPTY_TILE
         return 0x00
     end
-    return (tile & HEIGHT_MASK) >> HEIGHT_SHIFT + 0x01
+    return ((tile & HEIGHT_MASK) >> HEIGHT_SHIFT) + 0x01
 end
 
 @inline function get_tile_height_unsafe(tile)
-    return (tile & HEIGHT_MASK) >> HEIGHT_SHIFT + 0x01
+    return ((tile & HEIGHT_MASK) >> HEIGHT_SHIFT) + 0x01
 end
 
 function next_bug_num(tile)
@@ -95,10 +95,10 @@ end
 
 @inline function tile_from_info_as_index(color, bug::UInt8, bug_num::UInt8)
     return (
-        color * (0b00000001 << (COLOR_SHIFT - 0x02)) +
-        (bug - 0x01) * (0b00000001 << (COLOR_SHIFT - 0x02)) +
-        bug_num * (0b00000001 << (COLOR_SHIFT - 0x02))
-    )
+        color * (0b00000001 << COLOR_SHIFT) +
+        (bug - 0x01) * (0b00000001 << BUG_SHIFT) +
+        bug_num * (0b00000001 << BUG_NUM_SHIFT)
+    ) >> INDEX_SHIFT + 1
 end
 
 @inline function get_tile_unplaced(semi_tile::Int)

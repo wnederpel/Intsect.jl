@@ -132,42 +132,6 @@ end
     @test isempty(bA1_moves)
 end
 
-@testitem "Units on top still generate valid actions" begin
-    using DataStructures
-
-    wP = get_tile_from_string("wP")
-    wB1 = get_tile_from_string("wB1") + 0b00000001
-    bQ = get_tile_from_string("bQ")
-    wM = get_tile_from_string("wM")
-    bM = get_tile_from_string("bM")
-    bB1 = get_tile_from_string("bB1") + 0b00000001
-
-    wP_loc = MID - 1
-    wB1_loc = apply_direction(wP_loc, Direction.SW)
-    wM_loc = apply_direction(wB1_loc, Direction.NW)
-
-    bB1_loc = apply_direction(wP_loc, Direction.E)
-    bQ_loc = apply_direction(bB1_loc, Direction.NE)
-    bM_loc = apply_direction(bQ_loc, Direction.NE)
-
-    board = handle_newgame_command(Gametype.MLP)
-    set_tile_on_board(board, wP_loc, wP)
-    set_tile_on_board(board, wB1_loc, wB1)
-    set_tile_on_board(board, wM_loc, wM)
-    set_tile_on_board(board, bB1_loc, bB1)
-    set_tile_on_board(board, bQ_loc, bQ)
-    set_tile_on_board(board, bM_loc, bM)
-
-    ispinned = DefaultDict{Int,Bool}(false)
-    ispinned[wP_loc + 1] = true
-    ispinned[bQ_loc + 1] = true
-    ispinned[bB1_loc + 1] = true
-
-    actions = validactions(board)
-    # TODO
-    @test false
-end
-
 @testitem "The tile that just moved cannot be moved by the pillbug" begin
     using DataStructures
 

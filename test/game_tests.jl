@@ -372,13 +372,19 @@ end
     do_action(board, action_from_move_string(board, "wB1 wS1-"))
     do_action(board, action_from_move_string(board, "bG3 bG2-"))
 
-    show(board)
+    @test length(filter(action -> action isa Climb, validactions(board))) == 2
+
     do_action(board, action_from_move_string(board, "wB1 \\wA1"))
+
     @test first(board.underworld[get_loc(board, wB1)]) == wS1
     @test isempty(board.underworld[get_loc(board, bS1)])
+
     do_action(board, action_from_move_string(board, "bS1 bG3-"))
 
+    @test length(filter(action -> action isa Climb, validactions(board))) == 6
+
     do_action(board, action_from_move_string(board, "wB1 \\wQ"))
+
     @test isempty(board.underworld[get_loc(board, wB1)])
 end
 

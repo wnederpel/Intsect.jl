@@ -112,7 +112,7 @@ end
 function add_moves(board, ispinned, move_buffer)
     for bug in 0x01:0x08
         for num in @inbounds 0x00:MAX_NUMS[bug]
-            semi_tile = tile_from_info_as_index(board.current_color, bug, num) + 0x01
+            semi_tile = tile_from_info_as_index(board.current_color, bug, num)
             @inbounds loc = board.tile_locs[semi_tile]
 
             if loc != NOT_PLACED
