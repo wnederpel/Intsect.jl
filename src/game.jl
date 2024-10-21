@@ -356,11 +356,12 @@ function update_gamestring(gamestring, board::Board)
     end
 
     # Then redo all undone moves
-    board.last_history_index = history_index_save
-    for history_index in 1:(board.last_history_index)
+    for history_index in 1:(history_index_save)
         action = ALL_ACTIONS[board.history[history_index]]
         do_action(board, action)
     end
+    @assert board.last_history_index == history_index_save
+    board.last_history_index = history_index_save
 
     gamestring.player =
         board.current_color == WHITE ? "White[$(board.turn)]" : "Black[$(board.turn)]"
@@ -600,7 +601,9 @@ end
 
 function undo_action(board::Board, action::Placement)
     set_tile_on_board(board, action.goal_loc, EMPTY_TILE)
+
     @assert get_loc(board, action.tile) == action.goal_loc
+
     set_loc(board, action.tile, NOT_PLACED)
     if get_tile_bug(action.tile) == Integer(Bug.QUEEN)
         board.queen_placed[board.current_color == WHITE ? (BLACK + 1) : (WHITE + 1)] = false

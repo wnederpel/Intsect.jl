@@ -9,10 +9,8 @@ board = handle_newgame_command(Gametype.MLP)
 for movestring in movestrings
     action = action_from_move_string(board, movestring)
     do_action(board, action)
-    println("after move $movestring")
-    show(board)
 end
 
-show(board)
+# show(board)
 actions = validactions(board)
-show_valid_actions(board)
+# show_valid_actions(board)
