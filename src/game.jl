@@ -95,10 +95,18 @@ end
 
 @inline function tile_from_info_as_index(color, bug::UInt8, bug_num::UInt8)
     return (
-        color * (0b00000001 << COLOR_SHIFT) +
-        (bug - 0x01) * (0b00000001 << BUG_SHIFT) +
-        bug_num * (0b00000001 << BUG_NUM_SHIFT)
-    ) >> INDEX_SHIFT + 1
+        color * (0b00000001 << (COLOR_SHIFT - INDEX_SHIFT)) +
+        (bug - 0x01) * (0b00000001 << (BUG_SHIFT - INDEX_SHIFT)) +
+        bug_num * (0b00000001 << (BUG_NUM_SHIFT - INDEX_SHIFT))
+    ) + 0x01
+end
+
+@inline function tile_from_info_as_index_odd(color, bug::UInt8, bug_num::UInt8)
+    return (
+        color +
+        (bug - 0x01) * (0b00000001 << (BUG_SHIFT - INDEX_SHIFT)) +
+        bug_num * (0b00000001 << (BUG_NUM_SHIFT - INDEX_SHIFT))
+    )
 end
 
 @inline function get_tile_unplaced(semi_tile::Int)
