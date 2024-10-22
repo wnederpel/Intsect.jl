@@ -176,7 +176,7 @@ function secondplacements(board, move_buffer)
     return nothing
 end
 
-function bugmoves(board, loc, bug, height, ispinned, move_buffer; avoid_duplicates=false)
+@inline function bugmoves(board, loc, bug, height, ispinned, move_buffer; avoid_duplicates=false)
     # Pill bug can yield special moves, even when pinned
     # Moquito can yield pill bug moves, even when pinned
     if bug == Integer(Bug.PILLBUG)
@@ -370,7 +370,7 @@ end
            get_tile_height(neighright) < max(goalheight + 1, height)
 end
 
-function queenmoves(board, startloc, move_buffer; avoid_duplicates=false)
+@inline function queenmoves(board, startloc, move_buffer; avoid_duplicates=false)
     maxdepth = 1
     moves_to_depth(board, startloc, maxdepth, move_buffer; avoid_duplicates)
     return nothing
@@ -435,7 +435,7 @@ function push_slidelocs!(board::Board, stack_arr, stack_ptr, loc, discovered_dic
     return stack_ptr
 end
 
-function moves_to_depth(board, startloc, maxdepth, move_buffer; avoid_duplicates=false)
+@inline function moves_to_depth(board, startloc, maxdepth, move_buffer; avoid_duplicates=false)
     tmp_tile = get_tile_on_board(board, startloc)
     set_tile_on_board(board, startloc, EMPTY_TILE)
 
