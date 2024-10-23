@@ -884,7 +884,7 @@ end
 end
 
 @inline function placement_index(loc::Int, tile::UInt8)
-    return @fastmath (tile >> INDEX_SHIFT) * GRID_SIZE + loc + 1
+    return (tile >> INDEX_SHIFT) * GRID_SIZE + loc + 1
 end
 
 const MOVEMENT_INDEX_OFFSET = MAX_PLACEMENT_INDEX + 1

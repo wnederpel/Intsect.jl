@@ -533,10 +533,11 @@ end
         show(board)
         error("attempt to find pinned tiles from an invalid loc $loc")
     end
+    loc_p1 = loc + 1
 
-    @inbounds visited_dict[loc + 1] = true
-    @inbounds depth_dict[loc + 1] = depth
-    @inbounds low_dict[loc + 1] = depth
+    @inbounds visited_dict[loc_p1] = true
+    @inbounds depth_dict[loc_p1] = depth
+    @inbounds low_dict[loc_p1] = depth
     child_count = 0
     is_articulation = false
 
@@ -544,8 +545,9 @@ end
         if get_tile_on_board(board, nloc) == EMPTY_TILE
             continue
         end
-        if @inbounds !visited_dict[nloc + 1]
-            @inbounds parent_dict[nloc + 1] = loc
+        nloc_p1 = nloc + 1
+        if @inbounds !visited_dict[nloc_p1]
+            @inbounds parent_dict[nloc_p1] = loc
             get_pinned_tiles!(
                 board,
                 pinned_tiles_dict,
@@ -557,17 +559,17 @@ end
                 depth + 1,
             )
             child_count += 1
-            if @inbounds low_dict[nloc + 1] >= depth_dict[loc + 1]
+            if @inbounds low_dict[nloc_p1] >= depth_dict[loc_p1]
                 is_articulation = true
             end
-            @inbounds low_dict[loc + 1] = min(low_dict[loc + 1], low_dict[nloc + 1])
-        elseif @inbounds nloc != parent_dict[loc + 1]
-            @inbounds low_dict[loc + 1] = min(low_dict[loc + 1], depth_dict[nloc + 1])
+            @inbounds low_dict[loc_p1] = min(low_dict[loc_p1], low_dict[nloc_p1])
+        elseif @inbounds nloc != parent_dict[loc_p1]
+            @inbounds low_dict[loc_p1] = min(low_dict[loc_p1], depth_dict[nloc_p1])
         end
     end
-    if @inbounds (parent_dict[loc + 1] != INVALID_LOC && is_articulation) ||
-        (parent_dict[loc + 1] == INVALID_LOC && child_count > 1)
-        @inbounds pinned_tiles_dict[loc + 1] = true
+    if @inbounds (parent_dict[loc_p1] != INVALID_LOC && is_articulation) ||
+        (parent_dict[loc_p1] == INVALID_LOC && child_count > 1)
+        @inbounds pinned_tiles_dict[loc_p1] = true
     end
 end
 
