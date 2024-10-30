@@ -73,6 +73,7 @@ mutable struct Board
     action_index::Int
     placeable_tiles::SVector{2,MVector{8,UInt8}}
     placement_locs::SVector{2,BitSet}
+    ispinned::MVector{GRID_SIZE,Bool}
 end
 
 function Board(tiles, tile_locs)
@@ -101,6 +102,7 @@ function Board(tiles, tile_locs)
             ),
         ),
         SVector{2,Set}(BitSet(), BitSet()),
+        MVector{GRID_SIZE,Bool}(fill(false, GRID_SIZE)),
     )
 end
 

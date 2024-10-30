@@ -23,7 +23,8 @@ b2 = "bB2"
 b3 = "bA1"
 
 # Add a test case for this!
-game = raw"wA1;bA1 \wA1;wQ wA1-;bQ bA1/;wP wQ/"
+game = raw"wA1;bA1 \wA1;wQ wA1-;bQ bA1/;wP wQ/;bP bQ/"
+game = raw"wA1;bA1 \wA1;wQ wA1-;bQ bA1/"
 movestrings = split(game, ';')
 
 board = handle_newgame_command(Gametype.MLP)
@@ -47,9 +48,10 @@ function g(board)
     end
 end
 
-@btime f($board)
+function h(x, y)
+    return x + y
+end
 
-Profile.clear()
-Profile.@profile g(board)
-
-PProf.pprof()
+show(board)
+f(board)
+# eachindex(board.ispinned) |> locs -> filter(loc -> board.ispinned[loc] == true, locs) |> display

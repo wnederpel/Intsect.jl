@@ -1,14 +1,11 @@
-using BenchmarkTools
-using PProf
-using Profile
-
-function f(n::Integer)
-    res = 0
-    for i in 1:n
-        res += i * i * i * i * i * i
-    end
-    return res
+function add_one(a)
+    return a += 1
 end
 
-n = 1_000_000
-@benchmark f($n)
+a = 1
+add_one(a)
+println(a)
+
+a = true ? 3 : 4
+
+println(a)

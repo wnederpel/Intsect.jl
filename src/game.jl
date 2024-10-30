@@ -523,6 +523,7 @@ function update_placement_locs_recompute(board::Board, changed_loc)
     end
 end
 
+## TODO: DO THIS WITH BITBOARDS
 function update_placement_locs_goal(board::Board, goal_loc)
     # TODO eff: do not use the struct's placement_locs (the bitset), but use a vector.
 

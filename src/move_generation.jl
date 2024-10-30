@@ -79,21 +79,18 @@ function validactions_general(board::Board, move_buffer)
         return nothing
     end
 
-    @no_escape PINNED_BUFFER[1] begin
-        ispinned = @alloc(eltype(true), GRID_SIZE)
-        ispinned .= false
-        get_pinned_tiles!(board, ispinned)
+    get_pinned_tiles!(board)
 
-        add_placements(board, move_buffer)
+    add_placements(board, move_buffer)
 
-        if board.queen_placed[board.current_color + 1]
-            add_moves(board, ispinned, move_buffer)
-        end
-
-        if board.action_index == 1
-            add_action(board, Pass(), move_buffer; avoid_duplicates=false)
-        end
+    if board.queen_placed[board.current_color + 1]
+        add_moves(board, board.ispinned, move_buffer)
     end
+
+    if board.action_index == 1
+        add_action(board, Pass(), move_buffer; avoid_duplicates=false)
+    end
+
     return nothing
 end
 
@@ -504,7 +501,68 @@ GetArticulationPoints(i, d)
     if (parent[i] ≠ null and isArticulation) or (parent[i] = null and childCount > 1) then
         Output i as articulation point
 """
-@inline function get_pinned_tiles!(board, pinned_tiles)
+@inline function get_pinned_tiles!(board)
+    # return update_ispinned_general!(board)
+
+    goal_loc, moving_loc = get_last_changed_locs(board)
+    is_simple_goal, goal_neigh = is_simple_loc(board, goal_loc)
+    is_simple_moving, moving_neigh = is_simple_loc(board, moving_loc)
+    if is_simple_goal && is_simple_moving
+        update_ispinned_simple!(board, goal_loc, goal_neigh, moving_loc, moving_neigh)
+        # TODO speed: implement the commented code
+        # elseif is_last_change_elbow(board)
+        #     update_ispinned_elbow!(board)
+        #     return nothing
+    else
+        update_ispinned_general!(board)
+    end
+end
+
+@inline function is_simple_loc(board, loc::Int)
+    if loc < 0
+        return true, INVALID_LOC
+    end
+    ## TODO: DO WITH BIT BOARD
+    neighs = allneighs(loc)
+    num_neighs = 0
+    only_neigh = INVALID_LOC
+    for neigh in neighs
+        if get_tile_on_board(board, neigh) != EMPTY_TILE
+            only_neigh = neigh
+            num_neighs += 1
+            if num_neighs > 1
+                return false, INVALID_LOC
+            end
+        end
+    end
+    return num_neighs == 1, only_neigh
+end
+
+@inline function update_ispinned_simple!(board, goal_loc, goal_neigh, moving_loc, moving_neigh)
+    # At the goal loc, the neigh becomes stuck and you are unstuck
+    board.ispinned[goal_loc + 1] = false
+    board.ispinned[goal_neigh + 1] = true
+
+    # At the moving loc, the neigh is freed, if it exists.
+    if moving_loc >= 0
+        board.ispinned[moving_neigh + 1] = false
+    end
+    return nothing
+end
+
+@inline function get_last_changed_locs(board)
+    @inbounds last_action = ALL_ACTIONS[board.history[board.last_history_index]]
+    goal_loc = last_action.goal_loc
+    moving_loc = INVALID_LOC
+    if !(last_action isa Placement)
+        moving_loc = last_action.moving_loc
+    end
+    return goal_loc, moving_loc
+end
+
+@inline function update_ispinned_general!(board)
+    fill!(board.ispinned, false)
+
     @no_escape PINNED_BUFFER[2] begin
         # Allocate a `PtrArray` (see StrideArraysCore.jl) using memory from the default buffer.
         visited_dict = @alloc(eltype(true), GRID_SIZE)
@@ -517,9 +575,7 @@ GetArticulationPoints(i, d)
 
         for loc in board.tile_locs
             if loc >= 0
-                get_pinned_tiles!(
-                    board, pinned_tiles, visited_dict, depth_dict, low_dict, parent_dict, loc, 0
-                )
+                get_pinned_tiles!(board, visited_dict, depth_dict, low_dict, parent_dict, loc, 0)
                 break
             end
         end
@@ -527,7 +583,7 @@ GetArticulationPoints(i, d)
 end
 
 @inline function get_pinned_tiles!(
-    board, pinned_tiles_dict, visited_dict, depth_dict, low_dict, parent_dict, loc, depth
+    board, visited_dict, depth_dict, low_dict, parent_dict, loc, depth
 )
     if loc < 0
         show(board)
@@ -549,14 +605,7 @@ end
         if @inbounds !visited_dict[nloc_p1]
             @inbounds parent_dict[nloc_p1] = loc
             get_pinned_tiles!(
-                board,
-                pinned_tiles_dict,
-                visited_dict,
-                depth_dict,
-                low_dict,
-                parent_dict,
-                nloc,
-                depth + 1,
+                board, visited_dict, depth_dict, low_dict, parent_dict, nloc, depth + 1
             )
             child_count += 1
             if @inbounds low_dict[nloc_p1] >= depth_dict[loc_p1]
@@ -569,12 +618,11 @@ end
     end
     if @inbounds (parent_dict[loc_p1] != INVALID_LOC && is_articulation) ||
         (parent_dict[loc_p1] == INVALID_LOC && child_count > 1)
-        @inbounds pinned_tiles_dict[loc_p1] = true
+        @inbounds board.ispinned[loc_p1] = true
     end
 end
 
 function get_pinned_tiles(board)
-    pinned_tiles = fill(false, GRID_SIZE)
-    get_pinned_tiles!(board, pinned_tiles)
-    return pinned_tiles
+    get_pinned_tiles!(board)
+    return copy(board.ispinned)
 end
