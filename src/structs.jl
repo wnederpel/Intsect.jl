@@ -24,8 +24,13 @@ function Pass()
     return Pass(INVALID_LOC)
 end
 
-function Base.sizeof(::Type{Action})
-    return 2 * sizeof(Int)
+mutable struct BitBoard
+    first::UInt128
+    second::UInt128
+end
+
+function BitBoard()
+    return BitBoard(0, 0)
 end
 
 """
@@ -74,6 +79,10 @@ mutable struct Board
     placeable_tiles::SVector{2,MVector{8,UInt8}}
     placement_locs::SVector{2,BitSet}
     ispinned::MVector{GRID_SIZE,Bool}
+    white_pieces::BitBoard
+    white_adjacent::BitBoard
+    black_pieces::BitBoard
+    black_adjacent::BitBoard
 end
 
 function Board(tiles, tile_locs)
@@ -103,6 +112,10 @@ function Board(tiles, tile_locs)
         ),
         SVector{2,Set}(BitSet(), BitSet()),
         MVector{GRID_SIZE,Bool}(fill(false, GRID_SIZE)),
+        BitBoard(),
+        BitBoard(),
+        BitBoard(),
+        BitBoard(),
     )
 end
 

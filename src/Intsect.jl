@@ -18,6 +18,7 @@ export Pass
 export GameString
 export Action
 export End
+export BitBoard
 
 # constants
 export GRID_SIZE
@@ -88,11 +89,13 @@ export format_with_dots
 export extract_valid_actions
 export get_all_placements
 export show_valid_actions
+export place!
 
 # Files
 include("enums.jl")
 include("constants.jl")
 include("structs.jl")
+include("bit_boards.jl")
 include("game.jl")
 include("main.jl")
 include("show_methods.jl")

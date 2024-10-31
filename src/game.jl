@@ -1,4 +1,3 @@
-
 function direction_from_string(tile_string::AbstractString)
     direction = filter(char -> !isletter(char) && !isdigit(char), tile_string)
     as_prefix = startswith(tile_string, direction)
@@ -747,7 +746,13 @@ end
 function pre_action_update(board::Board, action)
     board.last_history_index += 1
     board.history[board.last_history_index] = action_index(action)
+    # pre_specific_action_update(board, action)
     return nothing
+end
+
+function pre_specific_action_update(board, placement::Placement)
+    goal_loc = placement.goal_loc
+    place!(board, goal_loc)
 end
 
 function post_action_general_update(board::Board, action)
