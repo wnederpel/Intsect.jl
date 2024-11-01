@@ -17,8 +17,8 @@ function Base.:⊻(bb1::BitBoard, bb2::BitBoard)
     return BitBoard(xor(bb1.first, bb2.first), xor(bb1.second, bb2.second))
 end
 
-function isempty(bb::BitBoard)
-    return bb.first == UInt128(0) && bb.second == UInt128(0)
+@inline function isempty(bb::BitBoard)
+    return bb.first | bb.second == UInt128(0)
 end
 
 function Base.:getindex(bb::BitBoard, loc)::Bool

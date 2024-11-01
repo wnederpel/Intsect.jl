@@ -475,8 +475,6 @@ From the current position, one can travel in a direcion when:
 end
 
 @inline function get_pinned_tiles!(board)
-    return update_ispinned_general!(board)
-
     goal_loc, moving_loc = get_last_changed_locs(board)
     is_simple_goal, goal_neigh = is_simple_loc(board, goal_loc)
     is_simple_moving, moving_neigh = is_simple_loc(board, moving_loc)
