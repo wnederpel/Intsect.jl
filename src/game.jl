@@ -40,26 +40,26 @@ function apply_direction(loc::Int, direction)::Int
 end
 
 function get_tile_color(tile)
-    return (tile & COLOR_MASK) >> COLOR_SHIFT
+    return (tile & COLOR_MASK) >>> COLOR_SHIFT
 end
 
 function get_tile_bug(tile)
-    return ((tile & BUG_MASK) >> BUG_SHIFT) + 0x01
+    return ((tile & BUG_MASK) >>> BUG_SHIFT) + 0x01
 end
 
 function get_tile_bug_num(tile)
-    return (tile & BUG_NUM_MASK) >> BUG_NUM_SHIFT
+    return (tile & BUG_NUM_MASK) >>> BUG_NUM_SHIFT
 end
 
 function get_tile_height(tile)
     if tile == EMPTY_TILE
         return 0x00
     end
-    return ((tile & HEIGHT_MASK) >> HEIGHT_SHIFT) + 0x01
+    return ((tile & HEIGHT_MASK) >>> HEIGHT_SHIFT) + 0x01
 end
 
 @inline function get_tile_height_unsafe(tile)
-    return ((tile & HEIGHT_MASK) >> HEIGHT_SHIFT) + 0x01
+    return ((tile & HEIGHT_MASK) >>> HEIGHT_SHIFT) + 0x01
 end
 
 function next_bug_num(tile)
@@ -125,13 +125,13 @@ end
 end
 
 @inline function get_loc(board::Board, tile::UInt8)
-    # Indexed by UInt8 >> 2 (so a normal tile, withouth height info), zero indexed
-    return @inbounds board.tile_locs[(tile >> INDEX_SHIFT) + 1]
+    # Indexed by UInt8 >>> 2 (so a normal tile, withouth height info), zero indexed
+    return @inbounds board.tile_locs[(tile >>> INDEX_SHIFT) + 1]
 end
 
 function set_loc(board::Board, tile::UInt8, loc::Int)
-    # Indexed by UInt8 >> 2 (so a normal tile, withouth height info), zero indexed
-    @inbounds board.tile_locs[(tile >> INDEX_SHIFT) + 1] = loc
+    # Indexed by UInt8 >>> 2 (so a normal tile, withouth height info), zero indexed
+    @inbounds board.tile_locs[(tile >>> INDEX_SHIFT) + 1] = loc
     return nothing
 end
 
@@ -139,7 +139,7 @@ function handle_newgame_command(game_type)
     if game_type == Gametype.MLP
         tiles = ones(UInt8, GRID_SIZE) .* EMPTY_TILE
         # initialize tile_locs at index NOT_PLACED, indication they are not placed
-        # indexed by tiles without height INVALID_LOC(UInt8 >> 2) so size is 64, not all indices might be used.
+        # indexed by tiles without height INVALID_LOC(UInt8 >>> 2) so size is 64, not all indices might be used.
         tile_locs = ones(Int, 36) .* NOT_PLACED
         for index_from_tile in 1:36
             shifted_tile = index_from_tile - 1
@@ -723,6 +723,7 @@ end
 function post_action_update(board::Board, action::Action)
     post_action_pillbug_update(board, action)
     post_action_general_update(board, action)
+    post_action_bb_update(board, action)
     return nothing
 end
 
@@ -746,14 +747,37 @@ end
 function pre_action_update(board::Board, action)
     board.last_history_index += 1
     board.history[board.last_history_index] = action_index(action)
-    # pre_specific_action_update(board, action)
+    pre_action_bb_update(board, action)
     return nothing
 end
 
-function pre_specific_action_update(board, placement::Placement)
+function pre_action_bb_update(board, placement::Placement)
     goal_loc = placement.goal_loc
     place!(board, goal_loc)
 end
+
+function pre_action_bb_update(board, action::Action)
+    goal_loc = action.goal_loc
+    place!(board, goal_loc)
+    moving_loc = action.moving_loc
+    remove!(board, moving_loc)
+end
+
+function pre_action_bb_update(board, pass::Pass) end
+
+function post_action_bb_update(board, placement::Placement)
+    goal_loc = placement.goal_loc
+    remove!(board, goal_loc)
+end
+
+function post_action_bb_update(board, action::Action)
+    goal_loc = action.goal_loc
+    remove!(board, goal_loc)
+    moving_loc = action.moving_loc
+    place!(board, moving_loc)
+end
+
+function post_action_bb_update(board, pass::Pass) end
 
 function post_action_general_update(board::Board, action)
     check_gameover(board)
@@ -890,7 +914,7 @@ end
 end
 
 @inline function placement_index(loc::Int, tile::UInt8)
-    return (tile >> INDEX_SHIFT) * GRID_SIZE + loc + 1
+    return (tile >>> INDEX_SHIFT) * GRID_SIZE + loc + 1
 end
 
 const MOVEMENT_INDEX_OFFSET = MAX_PLACEMENT_INDEX + 1

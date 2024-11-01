@@ -31,6 +31,36 @@ function show_valid_actions(board)
     return nothing
 end
 
+function Base.show(bb::BitBoard, show_locs::Bool=true)
+    for row in 1:ROW_SIZE
+        # Each name takes up 6 tokens
+        # each new row should be 3 less indented
+        print("  "^(ROW_SIZE - row))
+        for col in 1:ROW_SIZE
+            index = (row - 1) * ROW_SIZE + col - 1
+            if bb[index]
+                name = " ⬣ "
+            else
+                name = ""
+                if show_locs
+                    name = string(index)
+                    if length(name) == 1
+                        name = " " * name
+                    end
+                    if length(name) == 2
+                        name *= " "
+                    end
+                else
+                    name = " ⎔ "
+                end
+                name = "\e[2m" * name * "\e[0m"
+            end
+            print("" * name * " ")
+        end
+        println("")
+    end
+end
+
 function Base.show(board::Board, show_locs::Bool=true)
     println("-----------------")
     show(GameString(board))
@@ -52,12 +82,12 @@ function Base.show(board::Board, show_locs::Bool=true)
         # each new row should be 3 less indented
         print("  "^(ROW_SIZE - row))
         for col in 1:ROW_SIZE
-            index = (row - 1) * ROW_SIZE + col
-            tile = board.tiles[index]
+            index = (row - 1) * ROW_SIZE + col - 1
+            tile = get_tile_on_board(board, index)
             name = get_tile_name_padded(tile, show_locs)
             if name == " ⬡ "
                 if show_locs
-                    name = string(index - 1)
+                    name = string(index)
                     if length(name) == 1
                         name = " " * name
                     end

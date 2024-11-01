@@ -474,35 +474,8 @@ From the current position, one can travel in a direcion when:
     )
 end
 
-"""
-For enforcing the one hive rule. Alogirthm is as follows:
-articulation point = cut vertex = tile cannot be moved
-
-GetArticulationPoints(i, d)
-    # i = node, d = depth
-    # initialize with some i and d = 0
-
-    visited[i] := true
-    depth[i] := d
-    low[i] := d
-    childCount := 0
-    isArticulation := false
-
-    for each ni in adj[i] do
-        if not visited[ni] then
-            parent[ni] := i
-            GetArticulationPoints(ni, d + 1)
-            childCount := childCount + 1
-            if low[ni] ≥ depth[i] then
-                isArticulation := true
-            low[i] := Min (low[i], low[ni])
-        else if ni ≠ parent[i] then
-            low[i] := Min (low[i], depth[ni])
-    if (parent[i] ≠ null and isArticulation) or (parent[i] = null and childCount > 1) then
-        Output i as articulation point
-"""
 @inline function get_pinned_tiles!(board)
-    # return update_ispinned_general!(board)
+    return update_ispinned_general!(board)
 
     goal_loc, moving_loc = get_last_changed_locs(board)
     is_simple_goal, goal_neigh = is_simple_loc(board, goal_loc)
@@ -560,6 +533,33 @@ end
     return goal_loc, moving_loc
 end
 
+"""
+For enforcing the one hive rule. Alogirthm is as follows:
+articulation point = cut vertex = tile cannot be moved
+
+GetArticulationPoints(i, d)
+    # i = node, d = depth
+    # initialize with some i and d = 0
+
+    visited[i] := true
+    depth[i] := d
+    low[i] := d
+    childCount := 0
+    isArticulation := false
+
+    for each ni in adj[i] do
+        if not visited[ni] then
+            parent[ni] := i
+            GetArticulationPoints(ni, d + 1)
+            childCount := childCount + 1
+            if low[ni] ≥ depth[i] then
+                isArticulation := true
+            low[i] := Min (low[i], low[ni])
+        else if ni ≠ parent[i] then
+            low[i] := Min (low[i], depth[ni])
+    if (parent[i] ≠ null and isArticulation) or (parent[i] = null and childCount > 1) then
+        Output i as articulation point
+"""
 @inline function update_ispinned_general!(board)
     fill!(board.ispinned, false)
 
@@ -623,6 +623,6 @@ end
 end
 
 function get_pinned_tiles(board)
-    get_pinned_tiles!(board)
+    update_ispinned_general!(board)
     return copy(board.ispinned)
 end
