@@ -401,18 +401,8 @@ function do_action(board::Board, string::AbstractString)
 end
 
 function do_action(board::Board, action_as_index::Int)
-    if action_as_index < MAX_PLACEMENT_INDEX
-        action = ALL_PLACEMENTS[action_as_index]
-        do_action(board, action)
-    elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX
-        action = ALL_MOVEMENTS[action_as_index - MAX_PLACEMENT_INDEX]
-        do_action(board, action)
-    elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX
-        action = ALL_CLIMBS[action_as_index - (MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX)]
-        do_action(board, action)
-    else
-        do_action(board, Pass())
-    end
+    do_for_action(action_as_index, action -> do_action(board, action))
+    return nothing
 end
 
 function do_action(board::Board, pass::Pass)
@@ -592,18 +582,7 @@ function undo(board::Board)
 end
 
 function undo_action(board::Board, action_as_index::Integer)
-    if action_as_index < MAX_PLACEMENT_INDEX
-        action = ALL_PLACEMENTS[action_as_index]
-        undo_action(board, action)
-    elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX
-        action = ALL_MOVEMENTS[action_as_index - MAX_PLACEMENT_INDEX]
-        undo_action(board, action)
-    elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX
-        action = ALL_CLIMBS[action_as_index - (MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX)]
-        undo_action(board, action)
-    else
-        undo_action(board, Pass())
-    end
+    do_for_action(action_as_index, action -> undo_action(board, action))
     return nothing
 end
 
@@ -702,17 +681,7 @@ function inverse_post_action_pillbug_update(board::Board)
     # Find the last move again (so one step deeper then undo)
     if !(board.last_history_index == 0)
         action_as_index = board.history[board.last_history_index]
-        if action_as_index < MAX_PLACEMENT_INDEX
-            post_action_pillbug_update(board, ALL_PLACEMENTS[action_as_index])
-        elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX
-            post_action_pillbug_update(board, ALL_MOVEMENTS[action_as_index - MAX_PLACEMENT_INDEX])
-        elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX
-            post_action_pillbug_update(
-                board, ALL_CLIMBS[action_as_index - (MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX)]
-            )
-        else
-            post_action_pillbug_update(board, Pass())
-        end
+        do_for_action(action_as_index, action -> post_action_pillbug_update(board, action))
     else
         board.just_moved_loc = INVALID_LOC
         board.moved_by_pillbug_loc = INVALID_LOC
@@ -989,15 +958,18 @@ end
 """
 This returns a union of types and as such is not the best, moves should be linked to
 """
-function get_action(index)
-    if index < MAX_PLACEMENT_INDEX
-        return ALL_PLACEMENTS[index]
-    elseif index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX
-        return ALL_MOVEMENTS[index -MAX_PLACEMENT_INDEX]
-    elseif index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX
-        return ALL_CLIMBS[index - (MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX)]
+function do_for_action(action_as_index, func)
+    if action_as_index < MAX_PLACEMENT_INDEX
+        action = ALL_PLACEMENTS[action_as_index]
+        return func(action)
+    elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX
+        action = ALL_MOVEMENTS[action_as_index - MAX_PLACEMENT_INDEX]
+        return func(action)
+    elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX
+        action = ALL_CLIMBS[action_as_index - (MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX)]
+        return func(action)
     else
-        return Pass()
+        return func(action)
     end
 end
 

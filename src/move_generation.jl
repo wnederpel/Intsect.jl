@@ -522,13 +522,21 @@ end
 end
 
 @inline function get_last_changed_locs(board)
-    @inbounds last_action = ALL_ACTIONS[board.history[board.last_history_index]]
-    goal_loc = last_action.goal_loc
-    moving_loc = INVALID_LOC
-    if !(last_action isa Placement)
-        moving_loc = last_action.moving_loc
-    end
-    return goal_loc, moving_loc
+    @inbounds last_action_index = board.history[board.last_history_index]
+
+    return do_for_action(last_action_index, last_action -> get_last_changed_locs(last_action))
+end
+
+@inline function get_last_changed_locs(last_action::Placement)
+    return last_action.goal_loc, INVALID_LOC
+end
+
+@inline function get_last_changed_locs(last_action::Pass)
+    return last_action.goal_loc, INVALID_LOC
+end
+
+@inline function get_last_changed_locs(last_action::Action)
+    return last_action.goal_loc, last_action.moving_loc
 end
 
 """
