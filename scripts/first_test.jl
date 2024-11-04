@@ -5,53 +5,66 @@ using Bumper
 using PProf
 using Profile
 
-# ANT = 0         # 3
-# GRASSHOPPER = 1 # 3
-# BEETLE = 2      # 2
-# SPIDER = 3      # 2
-# QUEEN = 4       # 1
-# LADYBUG = 5     # 1
-# MOSQUITO = 6    # 1
-# PILLBUG = 7     # 1
-
-w1 = "wP"
-w2 = "wQ"
-w3 = "wM"
-
-b1 = "bB1"
-b2 = "bB2"
-b3 = "bA1"
-
-# Add a test case for this!
-game = raw"wA1;bA1 \wA1;wQ wA1-;bQ bA1/;wP wQ/;bP bQ/"
-game = raw"wA1;bA1 \wA1;wQ wA1-;bQ bA1/"
-movestrings = split(game, ';')
+game1 = raw"wA1;bA1 \wA1;wQ wA1-;bQ bA1/;wP wQ/;bP bQ/"
+game2 = raw"wA1;bA1 \wA1;wA2 wA1-;bA2 bA1/;wP wA2/"
+movestrings1 = split(game1, ';')
+movestrings2 = split(game2, ';')
 
 board = handle_newgame_command(Gametype.MLP)
 
-for movestring in movestrings
-    action = action_from_move_string(board, movestring)
-    do_action(board, action)
+const actions1 = map(
+    movestring -> begin
+        action = action_from_move_string(board, movestring)
+        do_action(board, action)
+        return action
+    end, movestrings1
+)
+
+for _ in actions1
+    undo(board)
+end
+
+const actions2 = map(
+    movestring -> begin
+        action = action_from_move_string(board, movestring)
+        do_action(board, action)
+        return action
+    end, movestrings2
+)
+
+for _ in actions2
+    undo(board)
 end
 
 function f(board)
-    @no_escape PERFT_BUFFER[1] begin
-        move_buffer = @alloc(eltype(Int), 100)
-        validactions!(board, move_buffer)
+    for action in actions1
+        do_action(board, action)
+        undo(board)
+        do_action(board, action)
     end
-    return board.action_index - 1
-end
 
-function g(board)
-    for _ in 1:10000000
-        f(board)
+    for _ in actions1
+        undo(board)
+    end
+
+    for action in actions2
+        do_action(board, action)
+        undo(board)
+        do_action(board, action)
+    end
+
+    for _ in actions2
+        undo(board)
     end
 end
 
-function h(x, y)
-    return x + y
-end
-
-show(board)
 f(board)
-# eachindex(board.ispinned) |> locs -> filter(loc -> board.ispinned[loc] == true, locs) |> display
+
+@btime f($board)
+
+Profile.clear()
+Profile.@profile for _ in 1:100_000
+    f(board)
+end
+
+PProf.pprof()

@@ -660,7 +660,7 @@ function inverse_post_action_update(board::Board, action)
     inverse_post_action_pillbug_update(board)
     inverse_post_action_general_update(board)
 
-    post_action_bb_update(board, action)
+    inverse_post_action_bb_update(board, action)
     goal_loc_normal, moving_loc_normal = get_last_changed_locs(action)
     # since we are trying to undo this move pas it as a move from goal -> moving loc
     # nothing looks strange but get pinned tiles expect goal loc first then moving loc
@@ -741,19 +741,19 @@ end
 
 function pre_action_bb_update(board, pass::Pass) end
 
-function post_action_bb_update(board, placement::Placement)
+function inverse_post_action_bb_update(board, placement::Placement)
     goal_loc = placement.goal_loc
     remove!(board, goal_loc)
 end
 
-function post_action_bb_update(board, action::Action)
+function inverse_post_action_bb_update(board, action::Action)
     goal_loc = action.goal_loc
     remove!(board, goal_loc)
     moving_loc = action.moving_loc
     place!(board, moving_loc)
 end
 
-function post_action_bb_update(board, pass::Pass) end
+function inverse_post_action_bb_update(board, pass::Pass) end
 
 function post_action_general_update(board::Board, action)
     check_gameover(board)

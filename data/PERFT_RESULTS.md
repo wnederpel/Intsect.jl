@@ -551,6 +551,8 @@ memory per node  = 0.0 bytes
 gc time          = 0.0%
 total time       = 0.98 seconds
 
+### FIX / CHECK PILLBUG RULES
+https://boardgamegeek.com/boardgame/139666/hive-the-pillbug
 
 # Known solutions
 
