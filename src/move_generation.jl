@@ -495,20 +495,23 @@ end
 
 @inline function get_pinned_tiles!(board, last_goal_loc, last_moving_loc; inverse=false)
     # NOTE! the goal and moving loc have already happened!
-    is_simple_goal, goal_neigh = is_simple_last_goal_loc(board, last_goal_loc, inverse)
-    is_simple_moving, moving_neigh = is_simple_last_moving_loc(
-        board, last_moving_loc, last_goal_loc
-    )
-    # The simple rule only holds when there are already 2 other pieces in play, this is called just after doing a move, that move should have been the 3rd stone -> ply is then already incremented to 4. 
-    if is_simple_goal && is_simple_moving && board.ply > (3 - inverse)
-        update_ispinned_simple!(board, last_goal_loc, goal_neigh, last_moving_loc, moving_neigh)
-        # TODO speed: implement the commented code
-        # elseif is_last_change_elbow(board)
-        #     update_ispinned_elbow!(board)
-        #     return nothing
-    else
-        update_ispinned_general!(board)
+    if board.ply > (3 - inverse)
+        is_simple_goal, goal_neigh = is_simple_last_goal_loc(board, last_goal_loc, inverse)
+        is_simple_moving, moving_neigh = is_simple_last_moving_loc(
+            board, last_moving_loc, last_goal_loc
+        )
+        # The simple rule only holds when there are already 2 other pieces in play, this is called just after doing a move, that move should have been the 3rd stone -> ply is then already incremented to 4. 
+        if is_simple_goal && is_simple_moving
+            return update_ispinned_simple!(
+                board, last_goal_loc, goal_neigh, last_moving_loc, moving_neigh
+            )
+            # TODO speed: implement the commented code
+            # elseif is_last_change_elbow(board)
+            #     update_ispinned_elbow!(board)
+            #     return nothing
+        end
     end
+    update_ispinned_general!(board)
 end
 
 @inline function is_simple_last_goal_loc(board, last_goal_loc, inverse)
@@ -575,19 +578,6 @@ end
     return num_neighs == x
 end
 
-@inline function has_x_neighs(board, loc, x, known_neigh)
-    num_neighs::Int = 1
-    for neigh in allneighs(loc)
-        if neigh != known_neigh && get_tile_on_board(board, neigh) != EMPTY_TILE
-            num_neighs += 1
-            if num_neighs > x
-                return false
-            end
-        end
-    end
-    return num_neighs == x
-end
-
 @inline function has_one_neigh(board, loc)
     has_x_neighs(board, loc, 1)
     # neigh_bb = get_neigh_bb(loc)
@@ -599,8 +589,8 @@ end
     # return isempty(filled_neighs)
 end
 
-@inline function has_two_neighs(board, loc, known_neigh)
-    has_x_neighs(board, loc, 2, known_neigh)
+@inline function has_two_neighs(board, loc)
+    has_x_neighs(board, loc, 2)
     # neigh_bb = get_neigh_bb(loc)
     # filled_neighs = neigh_bb & (board.white_pieces | board.black_pieces)
     # success = remove_first_loc!(filled_neighs)

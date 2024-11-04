@@ -422,8 +422,6 @@ function do_action(board::Board, placement::Placement)
     bug = get_tile_bug(placement.tile)
     board.placeable_tiles[board.current_color + 1][bug] = next_bug_num(placement.tile)
 
-    # update_placement_locs_goal(board, placement.goal_loc)
-
     post_action_update(board, placement)
     return nothing
 end
@@ -439,9 +437,6 @@ function do_action(board::Board, move::Move)
     set_tile_on_board(board, move.goal_loc, moving_tile)
     set_tile_on_board(board, move.moving_loc, EMPTY_TILE)
     set_loc(board, moving_tile, move.goal_loc)
-
-    # update_placement_locs_start(board, move.moving_loc)
-    # update_placement_locs_goal(board, move.goal_loc)
 
     post_action_update(board, move)
     return nothing
@@ -471,103 +466,7 @@ function do_action(board::Board, climb::Climb)
     )
     set_loc(board, moving_tile, climb.goal_loc)
 
-    # Many things can go happen with climbs (in terms of placement locs), just recalculate entirely
-    update_placement_locs_recompute(board, climb.moving_loc)
-    update_placement_locs_recompute(board, climb.goal_loc)
-
     post_action_update(board, climb)
-    return nothing
-end
-
-function update_placement_locs_recompute(board::Board, changed_loc)
-    changed_tile = get_tile_on_board(board, changed_loc)
-    changed_color = get_tile_color(changed_tile)
-    changed_tile_is_empty = (changed_tile == EMPTY_TILE)
-    for i in 1:7
-        if i == 7
-            loc = changed_loc
-        else
-            loc = allneighs(changed_loc)[i]
-        end
-
-        for color in 0:1
-            delete!(board.placement_locs[color + 1], loc)
-
-            if get_tile_on_board(board, loc) == EMPTY_TILE
-                any_attached = !changed_tile_is_empty
-                all_same_color = changed_tile_is_empty || changed_color == color
-                for neigh in allneighs(loc)
-                    neigh_tile = get_tile_on_board(board, neigh)
-                    all_same_color &= (
-                        neigh_tile == EMPTY_TILE || get_tile_color(neigh_tile) == color
-                    )
-                    if !all_same_color
-                        break
-                    end
-                    any_attached |= (neigh_tile != EMPTY_TILE)
-                end
-                all_same_color && any_attached && push!(board.placement_locs[color + 1], loc)
-            end
-        end
-    end
-end
-
-## TODO: DO THIS WITH BITBOARDS
-function update_placement_locs_goal(board::Board, goal_loc)
-    # TODO eff: do not use the struct's placement_locs (the bitset), but use a vector.
-
-    # We know that we moved to the changed_loc, so that must become unavailable for us
-    delete!(board.placement_locs[board.current_color + 1], goal_loc)
-
-    # Everything touching the goal loc is now unavailable for the opponent
-    for loc in allneighs(goal_loc)
-        delete!(board.placement_locs[board.current_color == WHITE ? BLACK + 1 : WHITE + 1], loc)
-    end
-    delete!(board.placement_locs[board.current_color == WHITE ? BLACK + 1 : WHITE + 1], goal_loc)
-
-    # Everything we now touch & is free might have become available if it was not before
-    for loc in allneighs(goal_loc)
-        tile = get_tile_on_board(board, loc)
-        if tile == EMPTY_TILE && !(tile in board.placement_locs[board.current_color + 1])
-            all_same_color = true
-            for neigh in allneighs(loc)
-                neigh_tile = get_tile_on_board(board, neigh)
-                all_same_color &= (
-                    neigh_tile == EMPTY_TILE || get_tile_color(neigh_tile) == board.current_color
-                )
-                if !all_same_color
-                    break
-                end
-            end
-            all_same_color && push!(board.placement_locs[board.current_color + 1], loc)
-        end
-    end
-
-    if board.ply == 2
-        # On ply 2 we can move to a location that the other color is touching
-        delete!(
-            board.placement_locs[board.current_color == WHITE ? BLACK + 1 : WHITE + 1], goal_loc
-        )
-    end
-end
-
-function update_placement_locs_start(board::Board, moving_loc)
-    # TODO eff: split this in removing a tile after placement and not doing that, keep placement locs under still placeable locs?
-
-    # This is an important case, remove a tile is hard to predict, just recompute.
-    update_placement_locs_recompute(board, moving_loc)
-    return nothing
-end
-
-function inverse_update_placement_locs_start(board::Board, moving_loc)
-    # This is like placing it at the moving loc
-    update_placement_locs_goal(board, moving_loc)
-    return nothing
-end
-
-function inverse_update_placement_locs_goal(board::Board, goal_loc)
-    # This is like removing the tile from the goal loc
-    update_placement_locs_start(board, goal_loc)
     return nothing
 end
 
@@ -646,8 +545,6 @@ function undo_action(board::Board, climb::Climb)
 
     inverse_post_action_update(board, climb)
 
-    update_placement_locs_recompute(board, climb.moving_loc)
-    update_placement_locs_recompute(board, climb.goal_loc)
     return nothing
 end
 

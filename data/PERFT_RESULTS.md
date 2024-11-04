@@ -551,6 +551,32 @@ memory per node  = 0.0 bytes
 gc time          = 0.0%
 total time       = 0.98 seconds
 
+## Use bit boards for generating placement locs
+
+Perft(3)         = 6.678
+KN/S             = 109.836
+memory per node  = 1.92 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(4)         = 151.686
+KN/S             = 166.725
+memory per node  = 0.08 bytes
+gc time          = 0.0%
+total time       = 0.0 seconds
+
+Perft(5)         = 5.427.108
+KN/S             = 449.852
+memory per node  = 0.0 bytes
+gc time          = 0.0%
+total time       = 0.01 seconds
+
+Perft(6)         = 192.353.904
+KN/S             = 304.857
+memory per node  = 0.0 bytes
+gc time          = 0.0%
+total time       = 0.63 seconds
+
 ### FIX / CHECK PILLBUG RULES
 https://boardgamegeek.com/boardgame/139666/hive-the-pillbug
 
