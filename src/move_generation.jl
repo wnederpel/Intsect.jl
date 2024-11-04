@@ -94,11 +94,29 @@ function validactions_general(board::Board, move_buffer)
     return nothing
 end
 
+@inline function get_placement_bb(board, color)
+    if color == WHITE
+        return board.white_adjacent &
+               ~(board.black_adjacent | board.black_pieces | board.white_pieces)
+    else
+        return board.black_adjacent &
+               ~(board.white_adjacent | board.black_pieces | board.white_pieces)
+    end
+end
+
 function add_placements(board, move_buffer)
     color = board.current_color
-    placement_locs = @inbounds board.placement_locs[color + 1]
+    placement_locs_bb = BitBoard(0, 0)
+    fill_placement_locs_bb!(placement_locs_bb, board, color)
+
     placeable_tiles = @inbounds board.placeable_tiles[color + 1]
-    for loc in placement_locs
+    prev_loc = -1
+    while true
+        loc = get_and_remove_first_loc!(placement_locs_bb)
+        prev_loc = loc
+        if loc == INVALID_LOC
+            break
+        end
         for tile in placeable_tiles
             tile != EMPTY_TILE && add_action(board, Placement(loc, tile), move_buffer)
         end

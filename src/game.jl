@@ -422,7 +422,7 @@ function do_action(board::Board, placement::Placement)
     bug = get_tile_bug(placement.tile)
     board.placeable_tiles[board.current_color + 1][bug] = next_bug_num(placement.tile)
 
-    update_placement_locs_goal(board, placement.goal_loc)
+    # update_placement_locs_goal(board, placement.goal_loc)
 
     post_action_update(board, placement)
     return nothing
@@ -440,8 +440,8 @@ function do_action(board::Board, move::Move)
     set_tile_on_board(board, move.moving_loc, EMPTY_TILE)
     set_loc(board, moving_tile, move.goal_loc)
 
-    update_placement_locs_start(board, move.moving_loc)
-    update_placement_locs_goal(board, move.goal_loc)
+    # update_placement_locs_start(board, move.moving_loc)
+    # update_placement_locs_goal(board, move.goal_loc)
 
     post_action_update(board, move)
     return nothing
@@ -601,7 +601,7 @@ function undo_action(board::Board, action::Placement)
     bug = get_tile_bug(action.tile)
     board.placeable_tiles[board.current_color + 1][bug] = action.tile
 
-    inverse_update_placement_locs_goal(board, action.goal_loc)
+    # inverse_update_placement_locs_goal(board, action.goal_loc)
     return nothing
 end
 
@@ -613,8 +613,8 @@ function undo_action(board::Board, action::Move)
 
     inverse_post_action_update(board, action)
 
-    inverse_update_placement_locs_goal(board, action.goal_loc)
-    inverse_update_placement_locs_start(board, action.moving_loc)
+    # inverse_update_placement_locs_goal(board, action.goal_loc)
+    # inverse_update_placement_locs_start(board, action.moving_loc)
     return nothing
 end
 

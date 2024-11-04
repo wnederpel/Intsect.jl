@@ -11,6 +11,24 @@ end
     return BitBoard(~bb1.first, ~bb1.second)
 end
 
+@inline function fill_placement_locs_bb!(placement_locs_bb, board, color)
+    if color == WHITE
+        placement_locs_bb.first |= board.white_adjacent.first
+        placement_locs_bb.second |= board.white_adjacent.second
+        placement_locs_bb.first &=
+            ~(board.black_adjacent.first | board.black_pieces.first | board.white_pieces.first)
+        placement_locs_bb.second &=
+            ~(board.black_adjacent.second | board.black_pieces.second | board.white_pieces.second)
+    else
+        placement_locs_bb.first |= board.black_adjacent.first
+        placement_locs_bb.second |= board.black_adjacent.second
+        placement_locs_bb.first &=
+            ~(board.white_adjacent.first | board.black_pieces.first | board.white_pieces.first)
+        placement_locs_bb.second &=
+            ~(board.white_adjacent.second | board.black_pieces.second | board.white_pieces.second)
+    end
+end
+
 @inline function inplace_or!(bb1::BitBoard, bb2::BitBoard)
     bb1.first |= bb2.first
     bb1.second |= bb2.second
@@ -27,24 +45,31 @@ end
         # First loc is in first
         only_first_loc = bb.first & (~bb.first + 1)
         # Now remove this first loc from the bb and return 
-        bb.first &= only_first_loc
+        bb.first &= ~only_first_loc
         return true
     elseif bb.second != UInt128(0)
         # First loc is in second
         only_first_loc = bb.second & (~bb.second + 1)
         # Now remove this first loc from the bb and return 
-        bb.second &= only_first_loc
+        bb.second &= ~only_first_loc
         return true
     end
     return false
 end
 
-@inline function get_first_loc(bb::BitBoard)
-    # We have to & the bb with a special bb
-    if bb.first != UInt128(0)
-        return first_loc(~bb.first + 1)
-    elseif bb.second != UInt128(0)
-        return first_loc(~bb.second + 1)
+@inline function get_first_loc(bb::BitBoard; after=-1)
+    if after < 127
+        first_shifted = bb.first >>> (after + 1)
+        if first_shifted != UInt128(0)
+            return first_loc(first_shifted) + after + 1
+        elseif bb.second != UInt128(0)
+            return first_loc(bb.second) + 128
+        end
+    else
+        second_shifted = bb.second >>> (after - 127)
+        if second_shifted != UInt128(0)
+            return first_loc(second_shifted) + after + 1
+        end
     end
     return INVALID_LOC
 end
@@ -55,14 +80,14 @@ end
         # First loc is in first
         only_first_loc = bb.first & (~bb.first + 1)
         # Now remove this first loc from the bb and return 
-        bb.first &= only_first_loc
+        bb.first &= ~only_first_loc
         return first_loc(only_first_loc)
     elseif bb.second != UInt128(0)
         # First loc is in second
         only_first_loc = bb.second & (~bb.second + 1)
         # Now remove this first loc from the bb and return 
-        bb.second &= only_first_loc
-        return first_loc(only_first_loc)
+        bb.second &= ~only_first_loc
+        return first_loc(only_first_loc) + 128
     end
     return INVALID_LOC
 end
@@ -188,19 +213,20 @@ const VAL4::UInt128 = 2^8 - 1
 const VAL5::UInt128 = 2^4 - 1
 const VAL6::UInt128 = 2^2 - 1
 const VAL7::UInt128 = 2^1 - 1
-function first_loc(num::Number)
+
+function first_loc(num::Number; after=-1)
     val = 0
-    if num & VAL1 == 0
+    if after > 64 || num & VAL1 == 0
         val += 64
-        num = num >> 64
+        num = num >>> 64
     end
     if num & VAL2 == 0
         val += 32
-        num = num >> 32
+        num = num >>> 32
     end
     if num & VAL3 == 0
         val += 16
-        num = num >> 16
+        num = num >>> 16
     end
     if num & VAL4 == 0
         val += 8

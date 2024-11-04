@@ -91,6 +91,8 @@ export format_with_dots
 export extract_valid_actions
 export get_all_placements
 export place!
+export get_first_loc
+export first_loc
 
 # Files
 include("enums.jl")

@@ -62,9 +62,9 @@ f(board)
 
 @btime f($board)
 
-Profile.clear()
-Profile.@profile for _ in 1:100_000
-    f(board)
-end
+# Profile.clear()
+# Profile.@profile for _ in 1:100_000
+#     f(board)
+# end
 
-PProf.pprof()
+# PProf.pprof()
