@@ -74,7 +74,7 @@ function start(board, gamestring)
                     show(gamestring)
 
                 elseif command == "show"
-                    show(board, false)
+                    show(board; show_locs=false)
                 elseif command == "pass"
                     if Pass() in validactions(board)
                         do_action(board, Pass())

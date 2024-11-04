@@ -79,7 +79,7 @@ function validactions_general(board::Board, move_buffer)
         return nothing
     end
 
-    get_pinned_tiles!(board)
+    # get_pinned_tiles!(board)
 
     add_placements(board, move_buffer)
 
@@ -359,6 +359,7 @@ end
 end
 
 @inline function canslidehigh(i, board, neighlocs, height)
+    # TODO FIX: this might be in correct? 
     neighleft = get_tile_on_board(board, neighlocs[i == 1 ? 6 : i - 1])
     neighright = get_tile_on_board(board, neighlocs[i == 6 ? 1 : i + 1])
     goalheight = get_tile_height(get_tile_on_board(board, neighlocs[i]))
@@ -474,31 +475,84 @@ From the current position, one can travel in a direcion when:
     )
 end
 
-@inline function get_pinned_tiles!(board)
-    goal_loc, moving_loc = get_last_changed_locs(board)
-    is_simple_goal, goal_neigh = is_simple_loc(board, goal_loc)
-    is_simple_moving, moving_neigh = is_simple_loc(board, moving_loc)
-    if is_simple_goal && is_simple_moving
-        update_ispinned_simple!(board, goal_loc, goal_neigh, moving_loc, moving_neigh)
+# @inline function get_pinned_tiles!(board)
+#     goal_loc, moving_loc = get_last_changed_locs(board)
+#     get_pinned_tiles!(board, goal_loc, moving_loc)
+# end
+
+@inline function get_pinned_tiles!(board, last_goal_loc, last_moving_loc; inverse=false)
+    # NOTE! this breaks when last_goal_loc is invalid.
+
+    # NOTE! the goal and moving loc have already happened!
+    is_simple_goal, goal_neigh = is_simple_last_goal_loc(board, last_goal_loc, inverse)
+    is_simple_moving, moving_neigh = is_simple_last_moving_loc(
+        board, last_moving_loc, last_goal_loc
+    )
+    # The simple rule only holds when there are already 2 other pieces in play, this is called just after doing a move, that move should have been the 3rd stone -> ply is then already incremented to 4. 
+    if is_simple_goal && is_simple_moving && board.ply > (3 - inverse)
+        update_ispinned_simple!(
+            board, last_goal_loc, goal_neigh, last_moving_loc, moving_neigh, inverse
+        )
         # TODO speed: implement the commented code
         # elseif is_last_change_elbow(board)
         #     update_ispinned_elbow!(board)
         #     return nothing
+        simply_updated = copy(board.ispinned)
+        update_ispinned_general!(board)
+        fully_updated = copy(board.ispinned)
+
+        for i in 0:(GRID_SIZE - 1)
+            if simply_updated[i + 1] != fully_updated[i + 1]
+                show(board)
+                # ispinned at loc 136 is missing
+                println(
+                    "at loc $i, simple update gives $(simply_updated[i+1]) and full update gives $(fully_updated[i+1])",
+                )
+                error("simply and fully updated pinned vectors are not equal!")
+            end
+        end
     else
         update_ispinned_general!(board)
     end
 end
 
-@inline function is_simple_loc(board, loc::Int)
-    if loc < 0
+@inline function is_simple_last_goal_loc(board, last_goal_loc, inverse)
+    # if the update comes from an inverse update, the last_goal_loc might be invalid (i.e. removal from moving loc, inverse placement, no relevant goal loc)
+    if inverse && last_goal_loc < 0
         return true, INVALID_LOC
     end
-    ## TODO: DO WITH BIT BOARD
-    neighs = allneighs(loc)
+    # there now is a tile at goal loc, if it has one neighbor is has created no cycles and a simple update can be done
+    return has_one_neigh(board, last_goal_loc)
+end
+
+@inline function is_simple_last_moving_loc(board, last_moving_loc, last_goal_loc)
+    if last_moving_loc < 0
+        return true, INVALID_LOC
+    end
+    # So a tile has moved avoid from last_moving_loc
+
+    # If it is not emtpy rn (tile was on top), nothing changes at the moving loc, return true, invalid_loc as if it was a placement
+    if get_tile_on_board(board, last_moving_loc) != EMPTY_TILE
+        return true, INVALID_LOC
+    end
+
+    # If it is now empty and it had one neigh and that neigh is now free
+    # make sure to avoid the last_goal_loc in the neigh check as that is the tile that just moved away from the movingloc 
+    # only avoid the last_goal_loc if it is not on top of some other tile and it exists
+    skip_loc = INVALID_LOC
+    if last_goal_loc >= 0 && get_tile_height_unsafe(get_tile_on_board(board, last_goal_loc)) == 0x01
+        skip_loc = last_goal_loc
+    end
+    return has_one_neigh(board, last_moving_loc; skip_loc=skip_loc)
+end
+
+@inline function has_one_neigh(board, loc; skip_loc=INVALID_LOC)
+    # TODO: DO WITH BIT BOARD? -> still have to find the actual neigh somehow
     num_neighs = 0
+
     only_neigh = INVALID_LOC
-    for neigh in neighs
-        if get_tile_on_board(board, neigh) != EMPTY_TILE
+    for neigh in allneighs(loc)
+        if neigh != skip_loc && get_tile_on_board(board, neigh) != EMPTY_TILE
             only_neigh = neigh
             num_neighs += 1
             if num_neighs > 1
@@ -509,21 +563,25 @@ end
     return num_neighs == 1, only_neigh
 end
 
-@inline function update_ispinned_simple!(board, goal_loc, goal_neigh, moving_loc, moving_neigh)
-    # At the goal loc, the neigh becomes stuck and you are unstuck
-    board.ispinned[goal_loc + 1] = false
-    board.ispinned[goal_neigh + 1] = true
-
-    # At the moving loc, the neigh is freed, if it exists.
-    if moving_loc >= 0
-        board.ispinned[moving_neigh + 1] = false
+@inline function update_ispinned_simple!(
+    board, last_goal_loc, goal_neigh, last_moving_loc, moving_neigh, inverse::Bool
+)
+    if moving_neigh >= 0
+        @inbounds board.ispinned[moving_neigh + 1] = false
     end
+
+    # If the goal_loc exists, 
+    # Then, at the goal loc, the neigh becomes stuck and you are unstuck
+    if last_goal_loc >= 0
+        @inbounds board.ispinned[last_goal_loc + 1] = false
+        @inbounds board.ispinned[goal_neigh + 1] = true
+    end
+
     return nothing
 end
 
 @inline function get_last_changed_locs(board)
     @inbounds last_action_index = board.history[board.last_history_index]
-
     return do_for_action(last_action_index, last_action -> get_last_changed_locs(last_action))
 end
 

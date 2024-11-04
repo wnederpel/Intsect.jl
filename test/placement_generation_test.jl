@@ -104,14 +104,19 @@ end
     do_action(board, action_from_move_string(board, "wB1 -wL"))
     do_action(board, action_from_move_string(board, "bB1 bL-"))
 
+    @test (board.ispinned |> x -> filter(y -> y == true, x) |> x -> reduce(+, x)) == 2
     undo(board)
+    @test (board.ispinned |> x -> filter(y -> y == true, x) |> x -> reduce(+, x)) == 3
     undo(board)
+    @test (board.ispinned |> x -> filter(y -> y == true, x) |> x -> reduce(+, x)) == 4
 
     @test length(board.placement_locs[1]) == 7
     @test length(board.placement_locs[2]) == 7
 
     do_action(board, action_from_move_string(board, "wB1 -wL"))
+    @test (board.ispinned |> x -> filter(y -> y == true, x) |> x -> reduce(+, x)) == 3
     do_action(board, action_from_move_string(board, "bB1 bL-"))
+    @test (board.ispinned |> x -> filter(y -> y == true, x) |> x -> reduce(+, x)) == 2
 
     @test length(board.placement_locs[2]) == 5
     @test apply_direction(wQ_loc, Direction.NW) in board.placement_locs[2]

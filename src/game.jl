@@ -150,10 +150,10 @@ function handle_newgame_command(game_type)
         newboard = Board(tiles, tile_locs)
         return newboard
     else
-        return "game type $game_type unknown"
+        error("game type $game_type unknown")
     end
 
-    return "starting new game.. not implemented"
+    error("starting new game.. not implemented")
 end
 
 function isvalid_shifted_tile(shifted_tile)
@@ -596,7 +596,7 @@ function undo_action(board::Board, action::Placement)
         board.queen_placed[board.current_color == WHITE ? (BLACK + 1) : (WHITE + 1)] = false
     end
 
-    inverse_post_action_update(board)
+    inverse_post_action_update(board, action)
 
     bug = get_tile_bug(action.tile)
     board.placeable_tiles[board.current_color + 1][bug] = action.tile
@@ -611,7 +611,7 @@ function undo_action(board::Board, action::Move)
     set_tile_on_board(board, action.moving_loc, moving_tile)
     set_loc(board, moving_tile, action.moving_loc)
 
-    inverse_post_action_update(board)
+    inverse_post_action_update(board, action)
 
     inverse_update_placement_locs_goal(board, action.goal_loc)
     inverse_update_placement_locs_start(board, action.moving_loc)
@@ -644,7 +644,7 @@ function undo_action(board::Board, climb::Climb)
         set_tile_on_board(board, climb.goal_loc, EMPTY_TILE)
     end
 
-    inverse_post_action_update(board)
+    inverse_post_action_update(board, climb)
 
     update_placement_locs_recompute(board, climb.moving_loc)
     update_placement_locs_recompute(board, climb.goal_loc)
@@ -652,13 +652,19 @@ function undo_action(board::Board, climb::Climb)
 end
 
 function undo_action(board::Board, pass::Pass)
-    inverse_post_action_update(board)
+    inverse_post_action_update(board, pass)
     return nothing
 end
 
-function inverse_post_action_update(board::Board)
+function inverse_post_action_update(board::Board, action)
     inverse_post_action_pillbug_update(board)
     inverse_post_action_general_update(board)
+
+    post_action_bb_update(board, action)
+    goal_loc_normal, moving_loc_normal = get_last_changed_locs(action)
+    # since we are trying to undo this move pas it as a move from goal -> moving loc
+    # nothing looks strange but get pinned tiles expect goal loc first then moving loc
+    get_pinned_tiles!(board, moving_loc_normal, goal_loc_normal; inverse=true)
     return nothing
 end
 
@@ -692,7 +698,8 @@ end
 function post_action_update(board::Board, action::Action)
     post_action_pillbug_update(board, action)
     post_action_general_update(board, action)
-    post_action_bb_update(board, action)
+    goal_loc, moving_loc = get_last_changed_locs(action)
+    get_pinned_tiles!(board, goal_loc, moving_loc)
     return nothing
 end
 
@@ -803,7 +810,7 @@ function validate_move_string(move_string)
         valid = validate_tile_string(move_string)
     end
     if !valid
-        error("Invalid move string $move_string")
+        error("Invalid move string `$move_string`")
     end
     return nothing
 end
@@ -824,11 +831,9 @@ end
 
 function gametype_from_string(gametype_string)
     if gametype_string == "Base+MLP"
-        Gametype.MLP
-    else
-        error("game type '$gametype_string' not yet supported")
+        return Gametype.MLP
     end
-    return nothing
+    error("game type '$gametype_string' not yet supported")
 end
 
 """

@@ -48,6 +48,8 @@ export start
 export perft
 export direction_from_string
 export show
+export show_valid_actions
+export show_pinned
 export handle_newgame_command
 export get_tile_from_string
 export get_tile_info
@@ -88,7 +90,6 @@ export get_pinned_tiles
 export format_with_dots
 export extract_valid_actions
 export get_all_placements
-export show_valid_actions
 export place!
 
 # Files
