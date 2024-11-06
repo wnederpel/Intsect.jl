@@ -214,9 +214,9 @@ const VAL5::UInt128 = 2^4 - 1
 const VAL6::UInt128 = 2^2 - 1
 const VAL7::UInt128 = 2^1 - 1
 
-function first_loc(num::Number; after=-1)
+function first_loc(num::Number)
     val = 0
-    if after > 64 || num & VAL1 == 0
+    if num & VAL1 == 0
         val += 64
         num = num >>> 64
     end
