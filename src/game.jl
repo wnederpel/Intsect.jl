@@ -430,8 +430,9 @@ function do_action(board::Board, move::Move)
     pre_action_update(board, move)
     moving_tile = get_tile_on_board(board, move.moving_loc)
     if moving_tile == EMPTY_TILE
+        show(board; simple=true)
         error(
-            "processing move $(move_string_from_action(board, action)); no tile to move at loc $(move.moving_loc)",
+            "processing move $(move_string_from_action(board, move)); no tile to move at loc $(move.moving_loc)",
         )
     end
     set_tile_on_board(board, move.goal_loc, moving_tile)
@@ -871,7 +872,7 @@ function do_for_action(action_as_index, func)
         action = ALL_CLIMBS[action_as_index - (MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX)]
         return func(action)
     else
-        return func(action)
+        return func(Pass())
     end
 end
 

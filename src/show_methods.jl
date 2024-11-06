@@ -91,9 +91,15 @@ function show_pinned(board::Board, show_locs::Bool=true)
     end
 end
 
-function Base.show(board::Board; show_locs::Bool=true)
+function Base.show(board::Board; show_locs::Bool=true, simple::Bool=false)
     println("-----------------")
-    show(GameString(board))
+    if !simple
+        show(GameString(board))
+    else
+        for i in 1:(board.last_history_index)
+            println(i, " ", ALL_ACTIONS[board.history[i]])
+        end
+    end
     println("-----------------")
     # somehow print this
     #         11  12  13  14  15

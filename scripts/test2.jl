@@ -6,7 +6,14 @@ using Profile
 
 board = handle_newgame_command(Gametype.MLP)
 
-game = raw"wS1;bS1 wS1-"
+game = raw"wA1;wB1 wA1/;"
+# 1Placement(136, 0x04)
+# 2Placement(137, 0x10)
+# 3Placement(19, 0x24)
+# 4Placement(138, 0x20)
+# 5Move(136, 153)
+# 6Move(138, 154)
+
 movestrings = strip.(split(game, ';'))
 
 for movestring in movestrings
