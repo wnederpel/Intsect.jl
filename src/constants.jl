@@ -38,7 +38,7 @@ const NOT_PLACED::Int = -1
 const INVALID_LOC::Int = -2
 const UNDERGROUND::Int = -3
 
-const VALID_BUFFER_SIZE::Int = 100
+const VALID_BUFFER_SIZE::Int = 400
 const HISTORY_BUFFER_SIZE::Int = 400
 
 const WHITE::UInt8 = 1

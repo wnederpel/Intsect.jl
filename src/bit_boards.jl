@@ -110,8 +110,11 @@ function tile_at_loc(bb::BitBoard, loc)::Bool
     return bb[loc]
 end
 
-@inline function place!(board::Board, loc::Int64)
-    if board.current_color == WHITE
+@inline function place!(board::Board, loc::Int64; color=2)
+    if color == 2
+        color = board.current_color
+    end
+    if color == WHITE
         place!(board.white_pieces, loc)
         inplace_or!(board.white_adjacent, get_neigh_bb(loc))
         return nothing
@@ -122,8 +125,11 @@ end
     end
 end
 
-@inline function remove!(board::Board, loc::Int64)
-    if board.current_color == WHITE
+@inline function remove!(board::Board, loc::Int64; color=2)
+    if color == 2
+        color = board.current_color
+    end
+    if color == WHITE
         remove!(board.white_pieces, loc)
         remove_adj!(board.white_adjacent, loc, board.white_pieces)
     else

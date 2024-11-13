@@ -273,7 +273,9 @@ end
 function move_string_from_action(board::Board, action::Climb)
     moving_tile = get_tile_on_board(board, action.moving_loc)
     if moving_tile == EMPTY_TILE
-        error("no tile to move at loc $(action.moving_loc)")
+        error(
+            "no tile to move at loc $(action.moving_loc) for climb from $(action.moving_loc) to $(action.goal_loc)",
+        )
     end
     move_string = get_tile_name(moving_tile)
     # the tile might be moving on top of another piece, if so, the goal string is just that piece
@@ -289,7 +291,9 @@ end
 function move_string_from_action(board::Board, action::Move)
     moving_tile = get_tile_on_board(board, action.moving_loc)
     if moving_tile == EMPTY_TILE
-        error("no tile to move at loc $(action.moving_loc)")
+        error(
+            "no tile to move at loc $(action.moving_loc) for move from $(action.moving_loc) to $(action.goal_loc)",
+        )
     end
     move_string = get_tile_name(moving_tile)
 
@@ -401,7 +405,37 @@ function do_action(board::Board, string::AbstractString)
 end
 
 function do_action(board::Board, action_as_index::Int)
-    do_for_action(action_as_index, action -> do_action(board, action))
+    # board.last_moves_index += 1
+    # if board.last_moves_index == length(board.last_moves) + 1
+    #     board.last_moves_index = 1
+    # end
+    # board.last_moves[board.last_moves_index] = (action_as_index, :done)
+
+    do_for_action(action_as_index, action -> begin
+        if action.goal_loc <= 84
+            show(board; simple=true)
+            # show(action)
+            # println()
+            # println(
+            #     ALL_ACTIONS[getindex.(board.last_moves, 1)][begin:(board.last_moves_index)]
+            # )
+            # valid_actions = validactions(board)
+            # println(valid_actions)
+            # # println(getindex.(board.last_moves, 2))
+            # println(board.last_moves_index)
+            # show(board.white_pieces)
+            # show(board.black_pieces)
+            # println(board.ply)
+
+            # println("one move ago: ")
+            # undo(board)
+            # show(board; simple=true)
+            # show(board.white_pieces)
+            # show(board.black_pieces)
+            error("This is wrong")
+        end
+        do_action(board, action)
+    end)
     return nothing
 end
 
@@ -430,6 +464,9 @@ function do_action(board::Board, move::Move)
     pre_action_update(board, move)
     moving_tile = get_tile_on_board(board, move.moving_loc)
     if moving_tile == EMPTY_TILE
+        println(ALL_ACTIONS[getindex.(board.last_moves, 1)])
+        println(getindex.(board.last_moves, 2))
+        println(board.last_moves_index)
         show(board; simple=true)
         error(
             "processing move $(move_string_from_action(board, move)); no tile to move at loc $(move.moving_loc)",
@@ -450,10 +487,10 @@ function do_action(board::Board, climb::Climb)
 
     if burrowed_tile != EMPTY_TILE
         # put the burrowed tile in the underworld
-        push!(board.underworld[get_loc(board, burrowed_tile)], burrowed_tile)
+        push!(board.underworld[climb.goal_loc], burrowed_tile)
         set_loc(board, burrowed_tile, UNDERGROUND)
     end
-    if get_tile_height(moving_tile) > 1
+    if get_tile_height(moving_tile) > 0x01
         # Release the tile below moving_tile from the underworld
         released_tile = pop!(board.underworld[climb.moving_loc])
         set_tile_on_board(board, climb.moving_loc, released_tile)
@@ -462,9 +499,11 @@ function do_action(board::Board, climb::Climb)
         set_tile_on_board(board, climb.moving_loc, EMPTY_TILE)
     end
 
-    set_tile_on_board(
-        board, climb.goal_loc, moving_tile + UInt8(length(board.underworld[climb.goal_loc]))
-    )
+    # This assumes the doing has already happened
+    old_height = get_tile_height_unsafe(moving_tile) - 0x01
+    moving_tile += UInt8(length(board.underworld[climb.goal_loc])) - old_height
+
+    set_tile_on_board(board, climb.goal_loc, moving_tile)
     set_loc(board, moving_tile, climb.goal_loc)
 
     post_action_update(board, climb)
@@ -482,6 +521,12 @@ function undo(board::Board)
 end
 
 function undo_action(board::Board, action_as_index::Integer)
+    # board.last_moves_index += 1
+    # if board.last_moves_index == length(board.last_moves) + 1
+    #     board.last_moves_index = 1
+    # end
+    # board.last_moves[board.last_moves_index] = (action_as_index, :undone)
+
     do_for_action(action_as_index, action -> undo_action(board, action))
     return nothing
 end
@@ -489,7 +534,12 @@ end
 function undo_action(board::Board, action::Placement)
     set_tile_on_board(board, action.goal_loc, EMPTY_TILE)
 
-    @assert get_loc(board, action.tile) == action.goal_loc
+    if get_loc(board, action.tile) != action.goal_loc
+        show(board; simple=true)
+        error(
+            "get_loc(board, action.tile) != action.goal_loc, i.e. $(get_loc(board, action.tile)) != $(action.goal_loc)",
+        )
+    end
 
     set_loc(board, action.tile, NOT_PLACED)
     if get_tile_bug(action.tile) == Integer(Bug.QUEEN)
@@ -522,20 +572,12 @@ function undo_action(board::Board, climb::Climb)
     burrowed_tile = get_tile_on_board(board, climb.moving_loc)
     moving_tile = get_tile_on_board(board, climb.goal_loc)
 
-    set_tile_on_board(
-        board,
-        climb.moving_loc,
-        moving_tile - get_tile_height(moving_tile) +
-        UInt8(length(board.underworld[climb.goal_loc])),
-    )
-    set_loc(board, moving_tile, climb.moving_loc)
-
     if burrowed_tile != EMPTY_TILE
         # put the burrowed tile in the underworld
         push!(board.underworld[get_loc(board, burrowed_tile)], burrowed_tile)
         set_loc(board, burrowed_tile, UNDERGROUND)
     end
-    if get_tile_height(moving_tile) > 1
+    if get_tile_height_unsafe(moving_tile) > 0x01
         # Release the tile below moving_tile from the underworld
         released_tile = pop!(board.underworld[climb.goal_loc])
         set_tile_on_board(board, climb.goal_loc, released_tile)
@@ -543,6 +585,13 @@ function undo_action(board::Board, climb::Climb)
     else
         set_tile_on_board(board, climb.goal_loc, EMPTY_TILE)
     end
+
+    # This assumes that the undoing has already happened
+    old_height = get_tile_height_unsafe(moving_tile) - 0x01
+    new_tile = moving_tile + UInt8(length(board.underworld[climb.moving_loc])) - old_height
+
+    set_tile_on_board(board, climb.moving_loc, new_tile)
+    set_loc(board, new_tile, climb.moving_loc)
 
     inverse_post_action_update(board, climb)
 
@@ -558,7 +607,9 @@ function inverse_post_action_update(board::Board, action)
     inverse_post_action_pillbug_update(board)
     inverse_post_action_general_update(board)
 
+    # This assumes the color is already back at the color that made the change!!
     inverse_post_action_bb_update(board, action)
+
     goal_loc_normal, moving_loc_normal = get_last_changed_locs(action)
     # since we are trying to undo this move pas it as a move from goal -> moving loc
     # nothing looks strange but get pinned tiles expect goal loc first then moving loc
@@ -594,6 +645,7 @@ function inverse_post_action_pillbug_update(board::Board)
 end
 
 function post_action_update(board::Board, action::Action)
+    post_action_bb_update(board, action)
     post_action_pillbug_update(board, action)
     post_action_general_update(board, action)
     goal_loc, moving_loc = get_last_changed_locs(action)
@@ -621,34 +673,79 @@ end
 function pre_action_update(board::Board, action)
     board.last_history_index += 1
     board.history[board.last_history_index] = action_index(action)
-    pre_action_bb_update(board, action)
     return nothing
 end
 
-function pre_action_bb_update(board, placement::Placement)
+function post_action_bb_update(board, placement::Placement)
+    # This assumes the color is not yet changed!!
     goal_loc = placement.goal_loc
     place!(board, goal_loc)
 end
 
-function pre_action_bb_update(board, action::Action)
+function post_action_bb_update(board, action::Move)
+    # This assumes the color is not yet changed!!
     goal_loc = action.goal_loc
     place!(board, goal_loc)
     moving_loc = action.moving_loc
     remove!(board, moving_loc)
 end
 
-function pre_action_bb_update(board, pass::Pass) end
+function post_action_bb_update(board, action::Climb)
+    # This assumes the color is not yet changed!!
+    opened_tile = get_tile_on_board(board, action.moving_loc)
+    moved_tile = get_tile_on_board(board, action.goal_loc)
+
+    remove!(board, action.moving_loc)
+    if opened_tile != EMPTY_TILE
+        color = get_tile_color(opened_tile)
+        # This is like a $color tile was placed at the moving_loc
+        place!(board, action.moving_loc; color=color)
+    end
+
+    place!(board, action.goal_loc)
+    if get_tile_height_unsafe(moved_tile) > 0x01
+        covered_tile = first(board.underworld[action.goal_loc])
+        color = get_tile_color(covered_tile)
+        # This is like a $color tile was removed at the goal_loc
+        remove!(board, action.goal_loc; color=color)
+    end
+end
+
+function post_action_bb_update(board, pass::Pass) end
 
 function inverse_post_action_bb_update(board, placement::Placement)
+    # This assumes the color is already back at the color that made the change!!
     goal_loc = placement.goal_loc
     remove!(board, goal_loc)
 end
 
-function inverse_post_action_bb_update(board, action::Action)
+function inverse_post_action_bb_update(board, action::Move)
+    # This assumes the color is already back at the color that made the change!!
     goal_loc = action.goal_loc
     remove!(board, goal_loc)
     moving_loc = action.moving_loc
     place!(board, moving_loc)
+end
+
+function inverse_post_action_bb_update(board, action::Climb)
+    # This assumes the color is already back at the color that made the change!!
+    opened_tile = get_tile_on_board(board, action.goal_loc)
+    moved_tile = get_tile_on_board(board, action.moving_loc)
+
+    remove!(board, action.goal_loc)
+    if opened_tile != EMPTY_TILE
+        color = get_tile_color(opened_tile)
+        # This is like a $color tile was placed at the goal_loc
+        place!(board, action.goal_loc; color=color)
+    end
+
+    place!(board, action.moving_loc)
+    if get_tile_height_unsafe(moved_tile) > 0x01
+        covered_tile = first(board.underworld[action.moving_loc])
+        color = get_tile_color(covered_tile)
+        # This is like a $color tile was removed at the moving_loc
+        remove!(board, action.moving_loc; color=color)
+    end
 end
 
 function inverse_post_action_bb_update(board, pass::Pass) end

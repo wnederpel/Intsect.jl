@@ -20,7 +20,7 @@ function get_tile_name(tile)
         name *= "b"
     end
     name *= BUG_NAMES[bug]
-    if bug < 4
+    if bug < 5
         name *= string(bug_num + 1)
     end
     return name
@@ -91,7 +91,7 @@ function show_pinned(board::Board, show_locs::Bool=true)
     end
 end
 
-function Base.show(board::Board; show_locs::Bool=true, simple::Bool=false)
+function Base.show(board::Board; show_locs::Bool=true, simple::Bool=true)
     println("-----------------")
     if !simple
         show(GameString(board))
@@ -145,11 +145,11 @@ function Base.show(board::Board; show_locs::Bool=true, simple::Bool=false)
         bpiece = "b" * nummed_bug
         wloc = get_loc(board, get_tile_from_string(board, wpiece))
         bloc = get_loc(board, get_tile_from_string(board, bpiece))
-        if wloc >= 0 && bloc >= 0
+        if wloc != -1 && bloc != -1
             println("$wpiece : $wloc \t $bpiece : $bloc")
-        elseif wloc >= 0
+        elseif wloc != -1
             println("$wpiece : $wloc")
-        elseif bloc >= 0
+        elseif bloc != -1
             println("\t\t $bpiece : $bloc")
         end
     end

@@ -83,6 +83,8 @@ mutable struct Board
     white_adjacent::BitBoard
     black_pieces::BitBoard
     black_adjacent::BitBoard
+    last_moves::Vector
+    last_moves_index::Int
 end
 
 function Board(tiles, tile_locs)
@@ -116,6 +118,8 @@ function Board(tiles, tile_locs)
         BitBoard(),
         BitBoard(),
         BitBoard(),
+        repeat([(-1, :pass)], 1000),
+        0,
     )
 end
 
