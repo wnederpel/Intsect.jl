@@ -495,21 +495,18 @@ end
 
 @inline function get_pinned_tiles!(board, last_goal_loc, last_moving_loc; inverse=false)
     # NOTE! the goal and moving loc have already happened!
-    if board.ply > (3 - inverse)
-        is_simple_goal, goal_neigh = is_simple_last_goal_loc(board, last_goal_loc, inverse)
-        is_simple_moving, moving_neigh = is_simple_last_moving_loc(
-            board, last_moving_loc, last_goal_loc
+    is_simple_goal, goal_neigh = is_simple_last_goal_loc(board, last_goal_loc, inverse)
+    is_simple_moving, moving_neigh = is_simple_last_moving_loc(
+        board, last_moving_loc, last_goal_loc
+    )
+    if is_simple_goal && is_simple_moving
+        return update_ispinned_simple!(
+            board, last_goal_loc, goal_neigh, last_moving_loc, moving_neigh
         )
-        # The simple rule only holds when there are already 2 other pieces in play, this is called just after doing a move, that move should have been the 3rd stone -> ply is then already incremented to 4. 
-        if is_simple_goal && is_simple_moving
-            return update_ispinned_simple!(
-                board, last_goal_loc, goal_neigh, last_moving_loc, moving_neigh
-            )
-            # TODO speed: implement the commented code
-            # elseif is_last_change_elbow(board)
-            #     update_ispinned_elbow!(board)
-            #     return nothing
-        end
+        # TODO speed: implement the commented code
+        # elseif is_last_change_elbow(board)
+        #     update_ispinned_elbow!(board)
+        #     return nothing
     end
     update_ispinned_general!(board)
 end
@@ -521,7 +518,7 @@ end
     end
     # there now is a tile at goal loc, if it has one neighbor is has created no cycles and a simple update can be done
     one_neigh, that_neigh = has_one_neigh_and_get(board, last_goal_loc)
-    return one_neigh, that_neigh # && has_two_neighs(board, that_neigh, last_goal_loc), that_neigh
+    return one_neigh, that_neigh
 end
 
 @inline function is_simple_last_moving_loc(board, last_moving_loc, last_goal_loc)
@@ -548,60 +545,19 @@ end
 
 @inline function has_one_neigh_and_get(board, loc; skip_loc=INVALID_LOC)
     # TODO: DO WITH BIT BOARD? -> still have to find the actual neigh somehow
-    num_neighs = 0
-
-    only_neigh = INVALID_LOC
-    for neigh in allneighs(loc)
-        if neigh != skip_loc && get_tile_on_board(board, neigh) != EMPTY_TILE
-            only_neigh = neigh
-            num_neighs += 1
-            if num_neighs > 1
-                return false, INVALID_LOC
-            end
-        end
+    neigh_bb = get_neigh_bb(loc)
+    filled_neighs = neigh_bb & (board.white_pieces | board.black_pieces)
+    if skip_loc != INVALID_LOC
+        skip_bb = get_bb(skip_loc)
+        filled_neighs &= ~skip_bb
     end
-    return num_neighs == 1, only_neigh
-    # neigh_bb = get_neigh_bb(loc)
-    # filled_neighs = neigh_bb & (board.white_pieces | board.black_pieces)
-end
-
-@inline function has_x_neighs(board, loc, x)
-    num_neighs::Int = 0
-    for neigh in allneighs(loc)
-        if get_tile_on_board(board, neigh) != EMPTY_TILE
-            num_neighs += 1
-            if num_neighs > x
-                return false
-            end
-        end
-    end
-    return num_neighs == x
+    return count_ones(filled_neighs) == 1, get_first_loc(filled_neighs)
 end
 
 @inline function has_one_neigh(board, loc)
-    has_x_neighs(board, loc, 1)
-    # neigh_bb = get_neigh_bb(loc)
-    # filled_neighs = neigh_bb & (board.white_pieces | board.black_pieces)
-    # success = remove_first_loc!(filled_neighs)
-    # if !success
-    #     return false
-    # end
-    # return isempty(filled_neighs)
-end
-
-@inline function has_two_neighs(board, loc)
-    has_x_neighs(board, loc, 2)
-    # neigh_bb = get_neigh_bb(loc)
-    # filled_neighs = neigh_bb & (board.white_pieces | board.black_pieces)
-    # success = remove_first_loc!(filled_neighs)
-    # if !success
-    #     return false
-    # end
-    # success = remove_first_loc!(filled_neighs)
-    # if !success
-    #     return false
-    # end
-    # return isempty(filled_neighs)
+    neigh_bb = get_neigh_bb(loc)
+    filled_neighs = neigh_bb & (board.white_pieces | board.black_pieces)
+    return count_ones(filled_neighs) == 1
 end
 
 @inline function update_ispinned_simple!(

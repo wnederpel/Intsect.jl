@@ -13,6 +13,8 @@ perft(depth; output=true)
 # PProf.Allocs.pprof()
 
 Profile.clear()
-Profile.@profile perft(depth; output=false)
+Profile.@profile for _ in 1:5
+    perft(depth; output=false)
+end
 
 PProf.pprof()
