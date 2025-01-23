@@ -13,12 +13,16 @@ actions = [
     Placement(103, 0x20),
     Move(135, 119),
     Climb(120, 103),
-    # Climb(136, 135),
-    # Climb(103, 104),
+    Climb(136, 135),
+    Climb(103, 104),
 ]
 
 for action in actions
     do_action(board, action)
 end
-
-perft(2, board)
+undo(board)
+undo(board)
+undo(board)
+show(board)
+show(board.white_pieces)
+show(board.black_pieces)
