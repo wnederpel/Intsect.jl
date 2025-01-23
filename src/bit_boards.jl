@@ -110,7 +110,7 @@ function tile_at_loc(bb::BitBoard, loc)::Bool
     return bb[loc]
 end
 
-@inline function place!(board::Board, loc::Int64; color=2)
+@inline function place!(board::Board, loc::Int64; color::Number=2)
     if color == 2
         color = board.current_color
     end
@@ -125,7 +125,7 @@ end
     end
 end
 
-@inline function remove!(board::Board, loc::Int64; color=2)
+@inline function remove!(board::Board, loc::Int64; color::Number=2)
     if color == 2
         color = board.current_color
     end

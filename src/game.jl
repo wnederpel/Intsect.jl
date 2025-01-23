@@ -574,7 +574,7 @@ function undo_action(board::Board, climb::Climb)
 
     if burrowed_tile != EMPTY_TILE
         # put the burrowed tile in the underworld
-        push!(board.underworld[get_loc(board, burrowed_tile)], burrowed_tile)
+        push!(board.underworld[climb.moving_loc], burrowed_tile)
         set_loc(board, burrowed_tile, UNDERGROUND)
     end
     if get_tile_height_unsafe(moving_tile) > 0x01
