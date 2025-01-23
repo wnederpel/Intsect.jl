@@ -5,7 +5,6 @@ using StaticArrays
 using EnumX
 using DataStructures
 using Memoize
-using Base.Threads
 using Bumper
 using InteractiveUtils
 
@@ -91,7 +90,6 @@ export format_with_dots
 export extract_valid_actions
 export get_all_placements
 export place!
-export get_first_loc
 export first_loc
 
 # Files
