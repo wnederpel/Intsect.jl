@@ -91,6 +91,7 @@ export extract_valid_actions
 export get_all_placements
 export place!
 export first_loc
+export get_adjacent_bb
 
 # Files
 include("enums.jl")
