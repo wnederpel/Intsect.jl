@@ -180,14 +180,10 @@ function compute_neigh_bb(loc)
     neighs = allneighs(loc)
     bb = BitBoard(0, 0)
     for i in 1:6
-        bb |= bb_val[neighs[i]]
+        inplace_or!(bb, get_bb(neighs[i]))
     end
     return bb
 end
-
-const ALL_NEIGHS_BBS::SVector{GRID_SIZE,BitBoard} = map(
-    loc -> compute_neigh_bb(loc), 0:(GRID_SIZE - 1)
-)
 
 @inline function get_neigh_bb(loc)
     return @inbounds view(ALL_NEIGHS_BBS, loc + 1)[1]
@@ -209,10 +205,6 @@ function compute_bb(loc)
     end
 end
 
-const ALL_BB_VALS::SVector{GRID_SIZE,UInt128} = map(loc -> compute_bb_val(loc), 0:(GRID_SIZE - 1))
-
-const ALL_BB::SVector{GRID_SIZE,BitBoard} = map(loc -> compute_bb(loc), 0:(GRID_SIZE - 1))
-
 @inline function get_bb_val(loc)
     return @inbounds view(ALL_BB_VALS, loc + 1)[1]
 end
@@ -220,3 +212,11 @@ end
 @inline function get_bb(loc)
     return @inbounds view(ALL_BB, loc + 1)[1]
 end
+
+const ALL_BB_VALS::SVector{GRID_SIZE,UInt128} = map(loc -> compute_bb_val(loc), 0:(GRID_SIZE - 1))
+
+const ALL_BB::SVector{GRID_SIZE,BitBoard} = map(loc -> compute_bb(loc), 0:(GRID_SIZE - 1))
+
+const ALL_NEIGHS_BBS::SVector{GRID_SIZE,BitBoard} = map(
+    loc -> compute_neigh_bb(loc), 0:(GRID_SIZE - 1)
+)
