@@ -8,3 +8,4 @@ trailing_comma = true
 conditional_to_if = false
 pipe_to_function_call = false
 separate_kwargs_with_semicolon = true
+    

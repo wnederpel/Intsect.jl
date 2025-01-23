@@ -401,44 +401,41 @@ end
 function do_action(board::Board, string::AbstractString)
     action = action_from_move_string(board, string)
     do_action(board, action)
-
     return nothing
 end
 
 function do_action(board::Board, action_as_index::Int)
-    board.last_moves_index += 1
-    if board.last_moves_index == length(board.last_moves) + 1
-        board.last_moves_index = 1
-    end
-    board.last_moves[board.last_moves_index] = (action_as_index, :done)
+    # board.last_moves_index += 1
+    # if board.last_moves_index == length(board.last_moves) + 1
+    #     board.last_moves_index = 1
+    # end
+    # board.last_moves[board.last_moves_index] = (action_as_index, :done)
 
-    do_for_action(
-        action_as_index,
-        action -> begin
-            if action.goal_loc <= 84
-                show(board; simple=true)
-                println(action)
-                # println()
-                println(
-                    ALL_ACTIONS[getindex.(board.last_moves[begin:(board.last_moves_index)], 1)]
-                )
-                println(board.last_moves_index)
-                # valid_actions = validactions(board)
-                # println(valid_actions)
-                println(getindex.(board.last_moves[begin:(board.last_moves_index)], 2))
-                # println(board.last_moves_index)
-                # println(board.ply)
+    do_for_action(action_as_index, action -> begin
+        if action.goal_loc <= 84
+            show(board; simple=true)
+            # show(action)
+            # println()
+            # println(
+            #     ALL_ACTIONS[getindex.(board.last_moves, 1)][begin:(board.last_moves_index)]
+            # )
+            # valid_actions = validactions(board)
+            # println(valid_actions)
+            # # println(getindex.(board.last_moves, 2))
+            # println(board.last_moves_index)
+            # show(board.white_pieces)
+            # show(board.black_pieces)
+            # println(board.ply)
 
-                # println("one move ago: ")
-                # undo(board)
-                # show(board; simple=true)
-                # show(board.white_pieces)
-                # show(board.black_pieces)
-                error("This is wrong")
-            end
-            do_action(board, action)
-        end,
-    )
+            # println("one move ago: ")
+            # undo(board)
+            # show(board; simple=true)
+            # show(board.white_pieces)
+            # show(board.black_pieces)
+            error("This is wrong")
+        end
+        do_action(board, action)
+    end)
     return nothing
 end
 
@@ -524,11 +521,11 @@ function undo(board::Board)
 end
 
 function undo_action(board::Board, action_as_index::Integer)
-    board.last_moves_index += 1
-    if board.last_moves_index == length(board.last_moves) + 1
-        board.last_moves_index = 1
-    end
-    board.last_moves[board.last_moves_index] = (action_as_index, :undone)
+    # board.last_moves_index += 1
+    # if board.last_moves_index == length(board.last_moves) + 1
+    #     board.last_moves_index = 1
+    # end
+    # board.last_moves[board.last_moves_index] = (action_as_index, :undone)
 
     do_for_action(action_as_index, action -> undo_action(board, action))
     return nothing
