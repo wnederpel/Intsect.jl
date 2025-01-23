@@ -94,16 +94,6 @@ function validactions_general(board::Board, move_buffer)
     return nothing
 end
 
-@inline function get_placement_bb(board, color)
-    if color == WHITE
-        return board.white_adjacent &
-               ~(board.black_adjacent | board.black_pieces | board.white_pieces)
-    else
-        return board.black_adjacent &
-               ~(board.white_adjacent | board.black_pieces | board.white_pieces)
-    end
-end
-
 function add_placements(board, move_buffer)
     color = board.current_color
     placement_locs_bb = BitBoard(0, 0)

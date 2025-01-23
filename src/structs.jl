@@ -80,9 +80,7 @@ mutable struct Board
     placement_locs::SVector{2,BitSet}
     ispinned::MVector{GRID_SIZE,Bool}
     white_pieces::BitBoard
-    white_adjacent::BitBoard
     black_pieces::BitBoard
-    black_adjacent::BitBoard
     last_moves::Vector
     last_moves_index::Int
 end
@@ -114,8 +112,6 @@ function Board(tiles, tile_locs)
         ),
         SVector{2,Set}(BitSet(), BitSet()),
         MVector{GRID_SIZE,Bool}(fill(false, GRID_SIZE)),
-        BitBoard(),
-        BitBoard(),
         BitBoard(),
         BitBoard(),
         repeat([(-1, :pass)], 1000),

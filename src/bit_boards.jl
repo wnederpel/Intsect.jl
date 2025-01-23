@@ -11,21 +11,49 @@ end
     return BitBoard(~bb1.first, ~bb1.second)
 end
 
+@inline function Base.:>>>(bb::BitBoard, n::Integer)
+    second = bb.second >>> n
+    first = bb.first >>> n | (bb.second << (128 - n))
+    return BitBoard(first, second)
+end
+
+@inline function Base.:<<(bb::BitBoard, n::Integer)
+    first = bb.first << n
+    second = bb.second << n | (bb.first >>> (128 - n))
+    return BitBoard(first, second)
+end
+
+@inline function Base.bitrotate(x::T, k::Integer) where {T}
+    return (x << ((sizeof(T) << 3 - 1) & k)) | (x >>> ((sizeof(T) << 3 - 1) & -k))
+end
+
+function get_adjacent_bb(bb::BitBoard)
+    return bb |
+           bitrotate(bb, 1) |
+           bitrotate(bb, -1) |
+           bitrotate(bb, ROW_SIZE) |
+           bitrotate(bb, -ROW_SIZE) |
+           bitrotate(bb, ROW_SIZE + 1) |
+           bitrotate(bb, -ROW_SIZE - 1)
+end
+
 @inline function fill_placement_locs_bb!(placement_locs_bb, board, color)
+    white_adjacent = get_adjacent_bb(board.white_pieces)
+    black_adjacent = get_adjacent_bb(board.black_pieces)
     if color == WHITE
-        placement_locs_bb.first |= board.white_adjacent.first
-        placement_locs_bb.second |= board.white_adjacent.second
+        placement_locs_bb.first |= white_adjacent.first
+        placement_locs_bb.second |= white_adjacent.second
         placement_locs_bb.first &=
-            ~(board.black_adjacent.first | board.black_pieces.first | board.white_pieces.first)
+            ~(black_adjacent.first | board.black_pieces.first | board.white_pieces.first)
         placement_locs_bb.second &=
-            ~(board.black_adjacent.second | board.black_pieces.second | board.white_pieces.second)
+            ~(black_adjacent.second | board.black_pieces.second | board.white_pieces.second)
     else
-        placement_locs_bb.first |= board.black_adjacent.first
-        placement_locs_bb.second |= board.black_adjacent.second
+        placement_locs_bb.first |= black_adjacent.first
+        placement_locs_bb.second |= black_adjacent.second
         placement_locs_bb.first &=
-            ~(board.white_adjacent.first | board.black_pieces.first | board.white_pieces.first)
+            ~(white_adjacent.first | board.black_pieces.first | board.white_pieces.first)
         placement_locs_bb.second &=
-            ~(board.white_adjacent.second | board.black_pieces.second | board.white_pieces.second)
+            ~(white_adjacent.second | board.black_pieces.second | board.white_pieces.second)
     end
 end
 
@@ -121,11 +149,11 @@ end
     end
     if color == WHITE
         place!(board.white_pieces, loc)
-        inplace_or!(board.white_adjacent, get_neigh_bb(loc))
+        # inplace_or!(board.white_adjacent, get_neigh_bb(loc))
         return nothing
     else
         place!(board.black_pieces, loc)
-        inplace_or!(board.black_adjacent, get_neigh_bb(loc))
+        # inplace_or!(board.black_adjacent, get_neigh_bb(loc))
         return nothing
     end
 end
@@ -136,24 +164,24 @@ end
     end
     if color == WHITE
         remove!(board.white_pieces, loc)
-        remove_adj!(board.white_adjacent, loc, board.white_pieces)
+        # remove_adj!(board.white_adjacent, loc, board.white_pieces)
     else
         remove!(board.black_pieces, loc)
-        remove_adj!(board.black_adjacent, loc, board.black_pieces)
+        # remove_adj!(board.black_adjacent, loc, board.black_pieces)
     end
 end
 
-@inline function remove_adj!(adj_bb::BitBoard, loc::Int, pieces_bb)
-    # TODO speed: The adjacent pieces bb can probably be quickly calculated from the pieces bb with bitshifts.
-    for neigh in allneighs(loc)
-        neigh_neigh_bb = get_neigh_bb(neigh)
-        # If this bb has no overlap with the pieces bb then the value at neigh should be set to zero, otherwise keep it at 1. 
-        if neigh_neigh_bb.first & pieces_bb.first == 0 &&
-            neigh_neigh_bb.second & pieces_bb.second == 0
-            remove!(adj_bb, neigh)
-        end
-    end
-end
+# @inline function remove_adj!(adj_bb::BitBoard, loc::Int, pieces_bb)
+#     # TODO speed: The adjacent pieces bb can probably be quickly calculated from the pieces bb with bitshifts.
+#     for neigh in allneighs(loc)
+#         neigh_neigh_bb = get_neigh_bb(neigh)
+#         # If this bb has no overlap with the pieces bb then the value at neigh should be set to zero, otherwise keep it at 1. 
+#         if neigh_neigh_bb.first & pieces_bb.first == 0 &&
+#             neigh_neigh_bb.second & pieces_bb.second == 0
+#             remove!(adj_bb, neigh)
+#         end
+#     end
+# end
 
 @inline function place!(bb::BitBoard, loc::Int64)
     inplace_or!(bb, get_bb(loc))
