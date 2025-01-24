@@ -149,13 +149,10 @@ end
     end
     if color == WHITE
         place!(board.white_pieces, loc)
-        # inplace_or!(board.white_adjacent, get_neigh_bb(loc))
-        return nothing
     else
         place!(board.black_pieces, loc)
-        # inplace_or!(board.black_adjacent, get_neigh_bb(loc))
-        return nothing
     end
+    return nothing
 end
 
 @inline function remove!(board::Board, loc::Int64; color::Number=2)
@@ -164,24 +161,11 @@ end
     end
     if color == WHITE
         remove!(board.white_pieces, loc)
-        # remove_adj!(board.white_adjacent, loc, board.white_pieces)
     else
         remove!(board.black_pieces, loc)
-        # remove_adj!(board.black_adjacent, loc, board.black_pieces)
     end
+    return nothing
 end
-
-# @inline function remove_adj!(adj_bb::BitBoard, loc::Int, pieces_bb)
-#     # TODO speed: The adjacent pieces bb can probably be quickly calculated from the pieces bb with bitshifts.
-#     for neigh in allneighs(loc)
-#         neigh_neigh_bb = get_neigh_bb(neigh)
-#         # If this bb has no overlap with the pieces bb then the value at neigh should be set to zero, otherwise keep it at 1. 
-#         if neigh_neigh_bb.first & pieces_bb.first == 0 &&
-#             neigh_neigh_bb.second & pieces_bb.second == 0
-#             remove!(adj_bb, neigh)
-#         end
-#     end
-# end
 
 @inline function place!(bb::BitBoard, loc::Int64)
     inplace_or!(bb, get_bb(loc))

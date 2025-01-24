@@ -405,37 +405,41 @@ function do_action(board::Board, string::AbstractString)
 end
 
 function do_action(board::Board, action_as_index::Int)
-    # board.last_moves_index += 1
-    # if board.last_moves_index == length(board.last_moves) + 1
-    #     board.last_moves_index = 1
-    # end
-    # board.last_moves[board.last_moves_index] = (action_as_index, :done)
+    board.last_moves_index += 1
+    if board.last_moves_index == length(board.last_moves) + 1
+        board.last_moves_index = 1
+    end
+    board.last_moves[board.last_moves_index] = (action_as_index, :done)
 
-    do_for_action(action_as_index, action -> begin
-        if action.goal_loc <= 84
-            show(board; simple=true)
-            # show(action)
-            # println()
-            # println(
-            #     ALL_ACTIONS[getindex.(board.last_moves, 1)][begin:(board.last_moves_index)]
-            # )
-            # valid_actions = validactions(board)
-            # println(valid_actions)
-            # # println(getindex.(board.last_moves, 2))
-            # println(board.last_moves_index)
-            # show(board.white_pieces)
-            # show(board.black_pieces)
-            # println(board.ply)
+    do_for_action(
+        action_as_index,
+        action -> begin
+            if action.goal_loc <= 84 || (board.ply == 3 && count_ones(board.black_pieces) == 2)
+                show(board; simple=true)
+                show(action)
+                println()
+                println(board.ply)
+                println(count_ones(board.black_pieces))
+                println(
+                    ALL_ACTIONS[getindex.(board.last_moves, 1)][begin:(board.last_moves_index)]
+                )
+                # valid_actions = validactions(board)
+                # println(valid_actions)
+                # # println(getindex.(board.last_moves, 2))
+                # println(board.last_moves_index)
+                # show(board.white_pieces)
+                # show(board.black_pieces)
+                # println(board.ply)
 
-            # println("one move ago: ")
-            # undo(board)
-            # show(board; simple=true)
-            # show(board.white_pieces)
-            # show(board.black_pieces)
-            error("This is wrong")
-        end
-        do_action(board, action)
-    end)
+                # println("one move ago: ")
+                # undo(board)
+                show(board.white_pieces)
+                show(board.black_pieces)
+                error("This is wrong")
+            end
+            do_action(board, action)
+        end,
+    )
     return nothing
 end
 
@@ -521,11 +525,11 @@ function undo(board::Board)
 end
 
 function undo_action(board::Board, action_as_index::Integer)
-    # board.last_moves_index += 1
-    # if board.last_moves_index == length(board.last_moves) + 1
-    #     board.last_moves_index = 1
-    # end
-    # board.last_moves[board.last_moves_index] = (action_as_index, :undone)
+    board.last_moves_index += 1
+    if board.last_moves_index == length(board.last_moves) + 1
+        board.last_moves_index = 1
+    end
+    board.last_moves[board.last_moves_index] = (action_as_index, :undone)
 
     do_for_action(action_as_index, action -> undo_action(board, action))
     return nothing
@@ -717,6 +721,7 @@ function inverse_post_action_bb_update(board, placement::Placement)
     # This assumes the color is already back at the color that made the change!!
     goal_loc = placement.goal_loc
     remove!(board, goal_loc)
+    return nothing
 end
 
 function inverse_post_action_bb_update(board, action::Move)
@@ -725,6 +730,7 @@ function inverse_post_action_bb_update(board, action::Move)
     remove!(board, goal_loc)
     moving_loc = action.moving_loc
     place!(board, moving_loc)
+    return nothing
 end
 
 function inverse_post_action_bb_update(board, action::Climb)
@@ -746,6 +752,7 @@ function inverse_post_action_bb_update(board, action::Climb)
         # This is like a $color tile was removed at the moving_loc
         remove!(board, action.moving_loc; color=color)
     end
+    return nothing
 end
 
 function inverse_post_action_bb_update(board, pass::Pass) end
