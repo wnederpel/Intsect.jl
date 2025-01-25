@@ -6,23 +6,18 @@ using Profile
 
 board = handle_newgame_command(Gametype.MLP)
 
-actions = [
-    Placement(136, 0x14),
-    Placement(120, 0x10),
-    Placement(135, 0x24),
-    Placement(103, 0x20),
-    Move(135, 119),
-    Climb(120, 103),
-    Climb(136, 135),
-    Climb(103, 104),
-]
+do_action(board, "wL")
+do_action(board, "bL wL-")
 
-for action in actions
-    do_action(board, action)
-end
-undo(board)
-undo(board)
-undo(board)
+do_action(board, "wP -wL")
+do_action(board, "bP bL-")
+
+do_action(board, "wA1 -wP")
+do_action(board, "bA1 bP-")
 show(board)
 show(board.white_pieces)
 show(board.black_pieces)
+show(extract_valid_actions(board))
+adj = get_adjacent_bb(board.white_pieces)
+show(adj)
+do_action(board, "wQ -wA1")

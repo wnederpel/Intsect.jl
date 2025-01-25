@@ -42,14 +42,55 @@ function perft(depth::Int, board)::Int
         validactions!(board, move_buffer)
         for action_i in 1:(board.action_index - 1)
             action_as_index = move_buffer[action_i]
+
             do_action(board, action_as_index)
+
+            # check_board(board, "after do")
 
             nodes += perft(depth - 1, board)
             undo(board)
+
+            # check_board(board, "after undo")
         end
     end
 
     return nodes
+end
+
+function check_board(board, name)
+    if count_color_on_board(board; color=BLACK) != count_ones(board.black_pieces) ||
+        count_color_on_board(board; color=WHITE) != count_ones(board.white_pieces)
+        println("---------------------------------------")
+        println(name)
+        show(board; simple=true)
+        # println(
+        #     ALL_ACTIONS[getindex.(board.last_moves, 1)][(board.last_moves_index - 10):(board.last_moves_index)],
+        # )
+        # println(
+        #     getindex.(board.last_moves, 2)[(board.last_moves_index - 10):(board.last_moves_index)],
+        # )
+
+        show(board.white_pieces)
+        print(count_color_on_board(board; color=WHITE, show=true))
+        show(board.black_pieces)
+        print(count_color_on_board(board; color=BLACK, show=true))
+
+        # println("looking back some moves")
+        # for i in 0:0
+        #     action_as_index, do_or_undo = board.last_moves[board.last_moves_index - (i * 2) - 1]
+        #     if do_or_undo == :done
+        #         println("undoing done move")
+        #         println(ALL_ACTIONS[action_as_index])
+        #         undo_action(board, action_as_index)
+        #     else
+        #         println("redoing undone move")
+        #         do_action(board, action_as_index)
+        #     end
+        # end
+        # show(board)
+
+        error("This is wrong in undo")
+    end
 end
 
 function format_with_dots(n)
@@ -64,3 +105,38 @@ function format_with_dots(n)
 
     return join(reverse(parts), '.')
 end
+
+# begin
+#     if action.goal_loc <= 84 || (board.ply == 3 && count_ones(board.black_pieces) == 2)
+#         println("---------------------------------------")
+#         println("bad in do!")
+#         show(board; simple=true)
+#         show(action)
+#         println(
+#             ALL_ACTIONS[getindex.(board.last_moves, 1)][(board.last_moves_index - 10):(board.last_moves_index)],
+#         )
+#         println(
+#             getindex.(board.last_moves, 2)[(board.last_moves_index - 10):(board.last_moves_index)],
+#         )
+
+#         show(board.white_pieces)
+#         show(board.black_pieces)
+
+#         # println("looking back some moves")
+#         # for i in 0:0
+#         #     action_as_index, do_or_undo = board.last_moves[board.last_moves_index - (i * 2) - 1]
+#         #     if do_or_undo == :done
+#         #         println("undoing done move")
+#         #         println(ALL_ACTIONS[action_as_index])
+#         #         error("This is wrong")
+#         #         undo_action(board, action_as_index)
+#         #     else
+#         #         println("redoing undone move")
+#         #         error("This is wrong")
+#         #         do_action(board, action_as_index)
+#         #     end
+#         # end
+#         # show(board)
+
+#         error("This is wrong in do")
+#     end

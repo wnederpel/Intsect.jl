@@ -11,6 +11,12 @@ end
     return BitBoard(~bb1.first, ~bb1.second)
 end
 
+import Base: ==
+
+function ==(bb1::BitBoard, bb2::BitBoard)
+    return bb1.first == bb2.first && bb1.second == bb2.second
+end
+
 @inline function Base.:>>>(bb::BitBoard, n::Integer)
     second = bb.second >>> n
     first = bb.first >>> n | (bb.second << (128 - n))
@@ -21,6 +27,10 @@ end
     first = bb.first << n
     second = bb.second << n | (bb.first >>> (128 - n))
     return BitBoard(first, second)
+end
+
+function Base.copy(bb::BitBoard)
+    return BitBoard(bb.first, bb.second)
 end
 
 @inline function Base.bitrotate(x::T, k::Integer) where {T}

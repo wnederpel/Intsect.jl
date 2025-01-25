@@ -88,6 +88,7 @@ function validactions_general(board::Board, move_buffer)
     end
 
     if board.action_index == 1
+        println("adding pass")
         add_action(board, Pass(), move_buffer; avoid_duplicates=false)
     end
 
@@ -147,10 +148,21 @@ function queenplacements(board, move_buffer)
     queen_tile =
         board.current_color == WHITE ? get_tile_from_string(board, "wQ") :
         get_tile_from_string(board, "bQ")
-    foreach(
-        loc -> add_action(board, Placement(loc, queen_tile), move_buffer),
-        board.placement_locs[board.current_color + 1],
-    )
+
+    color = board.current_color
+    placement_locs_bb = BitBoard(0, 0)
+    fill_placement_locs_bb!(placement_locs_bb, board, color)
+
+    prev_loc = -1
+    while true
+        loc = get_and_remove_first_loc!(placement_locs_bb)
+        prev_loc = loc
+        if loc == INVALID_LOC
+            break
+        end
+        add_action(board, Placement(loc, queen_tile), move_buffer)
+    end
+    return nothing
 
     return nothing
 end

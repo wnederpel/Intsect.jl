@@ -370,3 +370,28 @@ end
 @testitem "Pillbug special moves take into account that a piece sliding on the pill bug might add a possible down sliding move" begin
     # This should never occur, a piece can only make something new possible when it is stacked, and stacked pieces cannot be moved by this pillbug
 end
+
+@testitem "Sometimes you can only pass" begin
+    board = handle_newgame_command(Gametype.MLP)
+
+    actions = [
+        Placement(136, 0x14),
+        Placement(120, 0x10),
+        Placement(135, 0x24),
+        Placement(103, 0x20),
+        Move(135, 119),
+        Climb(120, 103),
+        Climb(136, 119),
+        Climb(103, 119),
+    ]
+
+    for action in actions
+        do_action(board, action)
+    end
+
+    moves = validactions(board)
+
+    println(moves)
+    @test length(moves) == 1
+    @test moves[begin] == Pass()
+end

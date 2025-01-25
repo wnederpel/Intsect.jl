@@ -19,7 +19,9 @@ function direction_from_string(tile_string::AbstractString)
             return Direction.NE
         end
     end
-    return error("char $direction is not a valid direction indicator, should be one of \\ - /.")
+    return error(
+        "char '$direction' in '$tile_string' is not a valid direction indicator, should be one of \\ - /",
+    )
 end
 
 function apply_direction(loc::Int, direction)::Int
@@ -405,41 +407,13 @@ function do_action(board::Board, string::AbstractString)
 end
 
 function do_action(board::Board, action_as_index::Int)
-    board.last_moves_index += 1
-    if board.last_moves_index == length(board.last_moves) + 1
-        board.last_moves_index = 1
-    end
-    board.last_moves[board.last_moves_index] = (action_as_index, :done)
+    # board.last_moves_index += 1
+    # if board.last_moves_index == length(board.last_moves) + 1
+    #     board.last_moves_index = 1
+    # end
+    # board.last_moves[board.last_moves_index] = (action_as_index, :done)
 
-    do_for_action(
-        action_as_index,
-        action -> begin
-            if action.goal_loc <= 84 || (board.ply == 3 && count_ones(board.black_pieces) == 2)
-                show(board; simple=true)
-                show(action)
-                println()
-                println(board.ply)
-                println(count_ones(board.black_pieces))
-                println(
-                    ALL_ACTIONS[getindex.(board.last_moves, 1)][begin:(board.last_moves_index)]
-                )
-                # valid_actions = validactions(board)
-                # println(valid_actions)
-                # # println(getindex.(board.last_moves, 2))
-                # println(board.last_moves_index)
-                # show(board.white_pieces)
-                # show(board.black_pieces)
-                # println(board.ply)
-
-                # println("one move ago: ")
-                # undo(board)
-                show(board.white_pieces)
-                show(board.black_pieces)
-                error("This is wrong")
-            end
-            do_action(board, action)
-        end,
-    )
+    do_for_action(action_as_index, action -> do_action(board, action))
     return nothing
 end
 
@@ -468,9 +442,9 @@ function do_action(board::Board, move::Move)
     pre_action_update(board, move)
     moving_tile = get_tile_on_board(board, move.moving_loc)
     if moving_tile == EMPTY_TILE
-        println(ALL_ACTIONS[getindex.(board.last_moves, 1)])
-        println(getindex.(board.last_moves, 2))
-        println(board.last_moves_index)
+        # println(ALL_ACTIONS[getindex.(board.last_moves, 1)])
+        # println(getindex.(board.last_moves, 2))
+        # println(board.last_moves_index)
         show(board; simple=true)
         error(
             "processing move $(move_string_from_action(board, move)); no tile to move at loc $(move.moving_loc)",
@@ -480,7 +454,9 @@ function do_action(board::Board, move::Move)
     set_tile_on_board(board, move.moving_loc, EMPTY_TILE)
     set_loc(board, moving_tile, move.goal_loc)
 
+    # show(board.black_pieces)
     post_action_update(board, move)
+    # show(board.black_pieces)
     return nothing
 end
 
@@ -521,15 +497,35 @@ function undo(board::Board)
     last_action_index = board.history[board.last_history_index]
     board.last_history_index -= 1
     undo_action(board, last_action_index)
-    return nothing
+end
+
+function count_color_on_board(board; color=BLACK, show=false)
+    count = 0
+    color_odd = color + 0x01
+    for bug in 0x01:0x08
+        if get_tile_bug_num(board.placeable_tiles[color_odd][bug]) != 0
+            for num in @inbounds 0x00:MAX_NUMS[bug]
+                semi_tile = tile_from_info_as_index_odd(color_odd, bug, num)
+                @inbounds loc = board.tile_locs[semi_tile]
+
+                if loc != NOT_PLACED && loc != UNDERGROUND
+                    show && println("found (semi) piece $semi_tile at $loc")
+                    count += 1
+                else
+                    break
+                end
+            end
+        end
+    end
+    return count
 end
 
 function undo_action(board::Board, action_as_index::Integer)
-    board.last_moves_index += 1
-    if board.last_moves_index == length(board.last_moves) + 1
-        board.last_moves_index = 1
-    end
-    board.last_moves[board.last_moves_index] = (action_as_index, :undone)
+    # board.last_moves_index += 1
+    # if board.last_moves_index == length(board.last_moves) + 1
+    #     board.last_moves_index = 1
+    # end
+    # board.last_moves[board.last_moves_index] = (action_as_index, :undone)
 
     do_for_action(action_as_index, action -> undo_action(board, action))
     return nothing
@@ -541,7 +537,7 @@ function undo_action(board::Board, action::Placement)
     if get_loc(board, action.tile) != action.goal_loc
         show(board; simple=true)
         error(
-            "get_loc(board, action.tile) != action.goal_loc, i.e. $(get_loc(board, action.tile)) != $(action.goal_loc)",
+            "Err in undoing $action, get_loc(board, action.tile) != action.goal_loc, i.e. $(get_loc(board, action.tile)) != $(action.goal_loc)",
         )
     end
 
@@ -687,11 +683,11 @@ function post_action_bb_update(board, placement::Placement)
 end
 
 function post_action_bb_update(board, action::Move)
-    # This assumes the color is not yet changed!!
     goal_loc = action.goal_loc
-    place!(board, goal_loc)
+    color = get_tile_color(get_tile_on_board(board, goal_loc))
+    place!(board, goal_loc; color=color)
     moving_loc = action.moving_loc
-    remove!(board, moving_loc)
+    remove!(board, moving_loc; color=color)
 end
 
 function post_action_bb_update(board, action::Climb)
@@ -706,13 +702,13 @@ function post_action_bb_update(board, action::Climb)
         place!(board, action.moving_loc; color=color)
     end
 
-    place!(board, action.goal_loc)
     if get_tile_height_unsafe(moved_tile) > 0x01
         covered_tile = first(board.underworld[action.goal_loc])
         color = get_tile_color(covered_tile)
         # This is like a $color tile was removed at the goal_loc
         remove!(board, action.goal_loc; color=color)
     end
+    place!(board, action.goal_loc)
 end
 
 function post_action_bb_update(board, pass::Pass) end
@@ -727,9 +723,11 @@ end
 function inverse_post_action_bb_update(board, action::Move)
     # This assumes the color is already back at the color that made the change!!
     goal_loc = action.goal_loc
-    remove!(board, goal_loc)
     moving_loc = action.moving_loc
-    place!(board, moving_loc)
+    color = get_tile_color(get_tile_on_board(board, moving_loc))
+
+    remove!(board, goal_loc; color=color)
+    place!(board, moving_loc; color=color)
     return nothing
 end
 
@@ -745,13 +743,13 @@ function inverse_post_action_bb_update(board, action::Climb)
         place!(board, action.goal_loc; color=color)
     end
 
-    place!(board, action.moving_loc)
     if get_tile_height_unsafe(moved_tile) > 0x01
         covered_tile = first(board.underworld[action.moving_loc])
         color = get_tile_color(covered_tile)
         # This is like a $color tile was removed at the moving_loc
         remove!(board, action.moving_loc; color=color)
     end
+    place!(board, action.moving_loc)
     return nothing
 end
 
@@ -903,7 +901,8 @@ const CLIMB_INDEX_OFFSET = MAX_MOVEMENT_INDEX + MAX_PLACEMENT_INDEX + 1
     return @fastmath CLIMB_INDEX_OFFSET + moving_loc * GRID_SIZE + goal_loc
 end
 
-const PASS_INDEX_OFFSET = MAX_MOVEMENT_INDEX + MAX_PLACEMENT_INDEX + MAX_PLACEMENT_INDEX + 1
+const PASS_INDEX_OFFSET = MAX_MOVEMENT_INDEX + MAX_PLACEMENT_INDEX + MAX_CLIMB_INDEX + 1
+
 @inline function pass_index()
     return PASS_INDEX_OFFSET
 end

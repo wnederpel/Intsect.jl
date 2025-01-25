@@ -45,7 +45,6 @@ end
 
     do_action(board, "wA1 -wP")
     do_action(board, "bA1 bP-")
-
     do_action(board, "wQ -wA1")
 
     actions = validactions(board)

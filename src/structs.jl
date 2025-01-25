@@ -77,7 +77,6 @@ mutable struct Board
     validactions::MVector{VALID_BUFFER_SIZE,Int}
     action_index::Int
     placeable_tiles::SVector{2,MVector{8,UInt8}}
-    placement_locs::SVector{2,BitSet}
     ispinned::MVector{GRID_SIZE,Bool}
     white_pieces::BitBoard
     black_pieces::BitBoard
@@ -110,7 +109,6 @@ function Board(tiles, tile_locs)
                 get_tile_from_string.(["wA1", "wG1", "wB1", "wS1", "wQ", "wL", "wM", "wP"])
             ),
         ),
-        SVector{2,Set}(BitSet(), BitSet()),
         MVector{GRID_SIZE,Bool}(fill(false, GRID_SIZE)),
         BitBoard(),
         BitBoard(),
