@@ -33,7 +33,8 @@ end
 
     @test_throws ErrorException action_from_move_string(board, "wB1 bP/")
     @test_throws ErrorException action_from_move_string(board, "wP bP/")
-    @test action_from_move_string(board, "wQ bP/") in valid_actions
+    # The wq just moved
+    @test_throws ErrorException action_from_move_string(board, "wQ bP/")
 end
 
 @testitem "The Pillbug CANNOT move a piece if it splits the hive (violating the One Hive Rule)." begin

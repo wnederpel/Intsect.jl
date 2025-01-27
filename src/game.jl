@@ -19,9 +19,7 @@ function direction_from_string(tile_string::AbstractString)
             return Direction.NE
         end
     end
-    return error(
-        "char '$direction' in '$tile_string' is not a valid direction indicator, should be one of \\ - /",
-    )
+    return nothing
 end
 
 function apply_direction(loc::Int, direction)::Int
@@ -244,7 +242,10 @@ function action_from_move_string(board::Board, move_string)
             )
         end
 
-        goal_loc = apply_direction(other_loc, direction)
+        goal_loc = other_loc
+        if !isnothing(direction)
+            goal_loc = apply_direction(other_loc, direction)
+        end
 
         if moving_loc != NOT_PLACED
             if get_tile_on_board(board, goal_loc) != EMPTY_TILE || get_tile_height(moving_tile) > 1
