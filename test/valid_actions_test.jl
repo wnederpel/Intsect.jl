@@ -121,8 +121,6 @@ end
     set_tile_on_board(board, bB1_loc, bB1)
     set_tile_on_board(board, bA1_loc, bA1)
 
-    board.moved_by_pillbug_loc = bA1_loc
-
     # Generate the moves
     actions = validactions(board)
 

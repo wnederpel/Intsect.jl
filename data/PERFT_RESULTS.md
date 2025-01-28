@@ -600,6 +600,48 @@ total time       = 0.61 seconds
 ### FIX / CHECK PILLBUG RULES
 https://boardgamegeek.com/boardgame/139666/hive-the-pillbug
 
+
+## Trying perft 7
+
+Perft(5) 	 = 5.427.108
+KN/S 		 = 241.079
+memory per node  = 0.14 bytes
+gc time 	 = 0.0%
+total time 	 = 0.02 seconds
+
+Perft(6) 	 = 192.353.904
+KN/S 		 = 335.204
+memory per node  = 0.0 bytes
+gc time 	 = 0.0%
+total time 	 = 0.57 seconds
+
+Perft(7) 	 = 3.149.629.068
+KN/S 		 = 118.606
+memory per node  = 0.0 bytes
+gc time 	 = 0.0%
+total time 	 = 26.56 seconds
+
+## Another try (more height in the ladybug calculation)
+
+erft(5) 	 = 5.427.108
+KN/S 		 = 529.843
+memory per node  = 0.01 bytes
+gc time 	 = 0.0%
+total time 	 = 0.01 seconds
+
+Perft(6) 	 = 192.353.904
+KN/S 		 = 330.585
+memory per node  = 0.0 bytes
+gc time 	 = 0.0%
+total time 	 = 0.58 seconds
+
+Perft(7) 	 = 3.151.582.332
+KN/S 		 = 112.800
+memory per node  = 0.0 bytes
+gc time 	 = 0.0%
+total time 	 = 27.94 seconds
+
+
 # Known solutions
 
 https://github.com/jonthysell/Mzinga/wiki/Perft

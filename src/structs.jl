@@ -64,7 +64,7 @@ mutable struct Board
     # TODO speed: Do not use the 36 entries with invalid locs, but instead use a predefined indexing of tiles
     tile_locs::MVector{36,Int}
     just_moved_loc::Int
-    moved_by_pillbug_loc::Int
+    # moved_by_pillbug_loc::Int
     current_color::UInt8
     queen_placed::MVector{2,Bool}
     ply::Int
@@ -88,7 +88,6 @@ function Board(tiles, tile_locs)
     return Board(
         tiles,
         tile_locs,
-        INVALID_LOC,
         INVALID_LOC,
         WHITE,
         MVector{2,Bool}(false, false),

@@ -240,6 +240,10 @@ function action_from_move_string(board::Board, move_string)
             error(
                 "Processing movestring $move_string: the goal piece $other_string is not placed on the board",
             )
+        elseif moving_loc == UNDERGROUND
+            error(
+                "Processing movestring $move_string: the moving piece is underground and cannot move.",
+            )
         end
 
         goal_loc = other_loc
@@ -640,7 +644,6 @@ function inverse_post_action_pillbug_update(board::Board)
         do_for_action(action_as_index, action -> post_action_pillbug_update(board, action))
     else
         board.just_moved_loc = INVALID_LOC
-        board.moved_by_pillbug_loc = INVALID_LOC
     end
     return nothing
 end
@@ -654,20 +657,8 @@ function post_action_update(board::Board, action::Action)
     return nothing
 end
 
-function post_action_pillbug_update(board::Board, move::Move)
-    board.just_moved_loc = move.goal_loc
-    # When the moving piece is of a different color then the current color, the pillbug has moved it
-    if get_tile_color(get_tile_on_board(board, move.goal_loc)) != board.current_color
-        board.moved_by_pillbug_loc = move.goal_loc
-    else
-        board.moved_by_pillbug_loc = INVALID_LOC
-    end
-    return nothing
-end
-
 function post_action_pillbug_update(board::Board, move::Action)
     board.just_moved_loc = move.goal_loc
-    board.moved_by_pillbug_loc = INVALID_LOC
     return nothing
 end
 

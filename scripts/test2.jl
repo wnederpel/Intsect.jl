@@ -6,18 +6,24 @@ using Profile
 
 board = handle_newgame_command(Gametype.MLP)
 
-do_action(board, "wL")
-do_action(board, "bL wL-")
+movestrings = [
+    raw"wP",
+    raw"bP wP-",
+    raw"wQ \wP",
+    raw"bQ bP\\",
+    raw"wB1 /wP",
+    raw"bB1 bQ-",
+    raw"wB1 wP",
+    raw"bM bB1-",
+    raw"wQ \bP",
+]
 
-do_action(board, "wP -wL")
-do_action(board, "bP bL-")
+for movestring in movestrings
+    do_action(board, movestring)
+end
 
-do_action(board, "wA1 -wP")
-do_action(board, "bA1 bP-")
 show(board)
-show(board.white_pieces)
-show(board.black_pieces)
-show(extract_valid_actions(board))
-adj = get_adjacent_bb(board.white_pieces)
-show(adj)
-do_action(board, "wQ -wA1")
+
+show_valid_actions(board)
+
+action_from_move_string(board, raw"wP bP/") |> println

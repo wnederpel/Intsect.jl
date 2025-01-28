@@ -125,7 +125,7 @@ function add_moves(board, ispinned, move_buffer)
 
                 if loc != NOT_PLACED
                     if loc != UNDERGROUND
-                        if loc != board.moved_by_pillbug_loc
+                        if loc != board.just_moved_loc
                             # Generate moves for placed tiles
                             tile = get_tile_on_board(board, loc)
                             bugmoves(
@@ -196,10 +196,13 @@ end
 @inline function bugmoves(board, loc, bug, height, ispinned, move_buffer; avoid_duplicates=false)
     # Pill bug can yield special moves, even when pinned
     # Moquito can yield pill bug moves, even when pinned
+    # Beetle can move on top op hive, even when pinned
     if bug == Integer(Bug.PILLBUG)
         pillbugmoves(board, loc, ispinned, move_buffer; avoid_duplicates)
     elseif bug == Integer(Bug.MOSQUITO)
         mosquitomoves(board, loc, height, ispinned, move_buffer)
+    elseif bug == Integer(Bug.BEETLE) && (!ispinned[loc + 1] || height != 1)
+        beetlemoves(board, loc, height, move_buffer; avoid_duplicates)
     elseif !ispinned[loc + 1]
         if bug == Integer(Bug.ANT)
             antmoves(board, loc, move_buffer; avoid_duplicates)
@@ -207,8 +210,6 @@ end
             spidermoves(board, loc, move_buffer; avoid_duplicates)
         elseif bug == Integer(Bug.QUEEN)
             queenmoves(board, loc, move_buffer; avoid_duplicates)
-        elseif bug == Integer(Bug.BEETLE)
-            beetlemoves(board, loc, height, move_buffer; avoid_duplicates)
         elseif bug == Integer(Bug.GRASSHOPPER)
             grasshoppermoves(board, loc, move_buffer; avoid_duplicates)
         elseif bug == Integer(Bug.LADYBUG)
@@ -221,15 +222,14 @@ end
 function mosquitomoves(board, loc, height, ispinned, move_buffer)
     if height != 1
         beetlemoves(board, loc, height, move_buffer)
+        return nothing
     end
 
     for neigh in allneighs(loc)
         tile = get_tile_on_board(board, neigh)
         bug = get_tile_bug(tile)
         if tile != EMPTY_TILE && bug != Integer(Bug.MOSQUITO)
-            # TODO:
-            # This avoid duplicates can probably be false, duplicate moves are only added by pretending to be the pillbug
-            # In fact it is probably unnecessary to pass this avoid dupicates around all the time, only set to true for pillbug special moves!
+            # Needs to avoid duplicates bc multiple of the same bugs can touch the mosquito
             bugmoves(board, loc, bug, height, ispinned, move_buffer; avoid_duplicates=true)
         end
     end
@@ -267,9 +267,8 @@ function pillbugmoves(board, startloc, ispinned, move_buffer; avoid_duplicates=f
                 loc != board.just_moved_loc &&
                 get_tile_height(tile) == 1 &&
                 canslidepillbug(i, board, neighlocs)
-                for k in 1:(j - 1)
-                    slideloc = slidelocs[k]
-                    if get_tile_on_board(board, slideloc) == EMPTY_TILE
+                for slideloc in slidelocs
+                    if slideloc != loc && get_tile_on_board(board, slideloc) == EMPTY_TILE
                         move = Move(loc, slideloc)
                         add_action(board, move, move_buffer; avoid_duplicates=true)
                     end
@@ -303,17 +302,20 @@ function moves_to_depth_ladybug!(board, startloc, depth, move_buffer; cur_loc=st
     neighlocs = allneighs(cur_loc)
     for i in 1:6
         height = get_tile_height(get_tile_on_board(board, cur_loc))
-        if depth == 3 && (
+        if (
+                depth == 3 &&
                 get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
-                canslidehigh(i, board, neighlocs, 0)
+                canslidehigh(i, board, neighlocs, 1)
             ) ||
-            depth == 2 && (
+            (
+                depth == 2 &&
                 get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
-                canslidehigh(i, board, neighlocs, height)
+                canslidehigh(i, board, neighlocs, height + 1)
             ) ||
-            depth == 1 && (
+            (
+                depth == 1 &&
                 get_tile_on_board(board, neighlocs[i]) == EMPTY_TILE &&
-                canslidehigh(i, board, neighlocs, height)
+                canslidehigh(i, board, neighlocs, height + 1)
             )
             moves_to_depth_ladybug!(board, startloc, depth - 1, move_buffer; cur_loc=neighlocs[i])
         end
@@ -322,7 +324,7 @@ function moves_to_depth_ladybug!(board, startloc, depth, move_buffer; cur_loc=st
     return nothing
 end
 
-function grasshoppermoves(board, startloc, move_buffer; avoid_duplicates=true)
+function grasshoppermoves(board, startloc, move_buffer; avoid_duplicates=false)
     for dir in instances(Direction.T)
         if get_tile_on_board(board, apply_direction(startloc, dir)) != EMPTY_TILE
             loc = startloc
@@ -355,15 +357,11 @@ function beetlemoves(board, startloc, height, move_buffer; avoid_duplicates=fals
     set_tile_on_board(board, startloc, EMPTY_TILE)
 
     for i in 1:6
-        if (
-            get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
+        if get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
             canslidehigh(i, board, neighlocs, 1)
-        ) || canslide(i, board, neighlocs)
-            if get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE
-                add_action(board, Climb(startloc, neighlocs[i]), move_buffer; avoid_duplicates)
-            else
-                add_action(board, Move(startloc, neighlocs[i]), move_buffer; avoid_duplicates)
-            end
+            add_action(board, Climb(startloc, neighlocs[i]), move_buffer; avoid_duplicates)
+        elseif get_tile_on_board(board, neighlocs[i]) == EMPTY_TILE && canslide(i, board, neighlocs)
+            add_action(board, Move(startloc, neighlocs[i]), move_buffer; avoid_duplicates)
         end
     end
 
@@ -379,7 +377,6 @@ end
 end
 
 @inline function canslidehigh(i, board, neighlocs, height)
-    # TODO FIX: this might be in correct? 
     neighleft = get_tile_on_board(board, neighlocs[i == 1 ? 6 : i - 1])
     neighright = get_tile_on_board(board, neighlocs[i == 6 ? 1 : i + 1])
     goalheight = get_tile_height(get_tile_on_board(board, neighlocs[i]))
@@ -489,7 +486,7 @@ From the current position, one can travel in a direcion when:
  2. one of the two neighbouring directions is filled
 """
 @inline function canslide(i, board, neighlocs)
-    return @fastmath get_tile_on_board(board, @inbounds neighlocs[i]) == EMPTY_TILE && (
+    return get_tile_on_board(board, @inbounds neighlocs[i]) == EMPTY_TILE && (
         (@inbounds get_tile_on_board(board, neighlocs[i == 1 ? 6 : i - 1]) == EMPTY_TILE) ⊻
         (@inbounds get_tile_on_board(board, neighlocs[i == 6 ? 1 : i + 1]) == EMPTY_TILE)
     )

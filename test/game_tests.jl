@@ -10,7 +10,6 @@
         @test board.turn == turn
         @test board.queen_placed == queen_placed
         @test board.just_moved_loc == just_moved_loc
-        @test board.moved_by_pillbug_loc == moved_by_pillbug_loc
     end
 
     # Define all pieces
@@ -112,7 +111,6 @@ end
         @test board.turn == turn
         @test board.queen_placed == queen_placed
         @test board.just_moved_loc == just_moved_loc
-        @test board.moved_by_pillbug_loc == moved_by_pillbug_loc
     end
 
     # Define all pieces

@@ -127,6 +127,34 @@ end
     # wB1 still cammot move to bB1_loc as it needs to be two higher
     @test !(Climb(wB1_loc, apply_direction(wB1_loc, Direction.E)) in moves)
 
+    # If wB1 is one lvl higher, this does not work as the other pieces still block the sliding
+    wB1 = get_tile_from_string("wB1") + 0b00000001
+    bB1 = get_tile_from_string("bB1")
+    wB2 = get_tile_from_string("wB2")
+    bB2 = get_tile_from_string("bB2") + 0b00000001
+
+    # Define their locs
+    wB1_loc = MID - 1
+    bB1_loc = apply_direction(wB1_loc, Direction.E)
+    wB2_loc = apply_direction(wB1_loc, Direction.NE)
+    bB2_loc = apply_direction(wB1_loc, Direction.SE)
+
+    # Create the board
+    board = handle_newgame_command(Gametype.MLP)
+
+    set_tile_on_board(board, wB1_loc, wB1)
+    set_tile_on_board(board, bB1_loc, bB1)
+    set_tile_on_board(board, wB2_loc, wB2)
+    set_tile_on_board(board, bB2_loc, bB2)
+
+    # Generate the moves
+    beetlemoves(board, wB1_loc, get_tile_height(wB1), board.validactions)
+    moves = extract_valid_actions(board)
+
+    # Check the moves
+    # wB1 now can slide to bB1
+    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.E)) in moves
+
     # If wB1 is two lvls higher, this does work as it can slide
     wB1 = get_tile_from_string("wB1") + 0b00000010
     bB1 = get_tile_from_string("bB1")
