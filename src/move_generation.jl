@@ -123,19 +123,15 @@ function add_moves(board, ispinned, move_buffer)
                 semi_tile = tile_from_info_as_index_odd(color_odd, bug, num)
                 @inbounds loc = board.tile_locs[semi_tile]
 
-                if loc != NOT_PLACED
-                    if loc != UNDERGROUND
-                        if loc != board.just_moved_loc
-                            # Generate moves for placed tiles
-                            tile = get_tile_on_board(board, loc)
-                            bugmoves(
-                                board, loc, bug, get_tile_height_unsafe(tile), ispinned, move_buffer
-                            )
-                        end
-                    end
-                else
+                if loc == NOT_PLACED
                     break
                 end
+                if loc == UNDERGROUND || loc == board.just_moved_loc
+                    continue
+                end
+                # Generate moves for placed tiles
+                tile = get_tile_on_board(board, loc)
+                bugmoves(board, loc, bug, get_tile_height_unsafe(tile), ispinned, move_buffer)
             end
         end
     end
