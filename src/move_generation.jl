@@ -119,14 +119,33 @@ function add_moves(board, ispinned, move_buffer)
     color_odd = board.current_color + 0x01
     for bug in 0x01:0x08
         if get_tile_bug_num(board.placeable_tiles[color_odd][bug]) != 0
-            for num in @inbounds 0x00:MAX_NUMS[bug]
+            println("for some reason the placeable num is higher then the max num???")
+            println()
+            println(MAX_NUMS[bug])
+            println(get_tile_bug_num(board.placeable_tiles[color_odd][bug]))
+            println(get_tile_bug_num(board.placeable_tiles[color_odd][bug]) - 0x01)
+            println()
+            for num in
+                0x00:min(
+                MAX_NUMS[bug], get_tile_bug_num(board.placeable_tiles[color_odd][bug]) - 0x01
+            )
+                println(num)
                 semi_tile = tile_from_info_as_index_odd(color_odd, bug, num)
+                tile = (semi_tile - 1) << INDEX_SHIFT
+                println(get_tile_name(tile))
                 @inbounds loc = board.tile_locs[semi_tile]
+                println(loc)
 
                 if loc == NOT_PLACED
+                    println((
+                        collect(0x00:num),
+                        collect(
+                            0x00:(get_tile_bug_num(board.placeable_tiles[color_odd][bug]) - 0x01)
+                        ),
+                    ))
                     break
                 end
-                if loc == UNDERGROUND || loc == board.just_moved_loc
+                if loc == UNDERGROUND || loc == board.just_moved_loc || loc == INVALID_LOC
                     continue
                 end
                 # Generate moves for placed tiles

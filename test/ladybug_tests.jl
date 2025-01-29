@@ -57,7 +57,6 @@ end
     end
     valid_actions = validactions(board)
 
-    show(board)
     @test_throws ErrorException action_from_move_string(board, raw"wM bA1-")
     @test_throws ErrorException action_from_move_string(board, raw"wM bQ")
     @test action_from_move_string(board, raw"wM wM-") in valid_actions
