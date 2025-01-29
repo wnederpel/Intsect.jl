@@ -88,7 +88,6 @@ function validactions_general(board::Board, move_buffer)
     end
 
     if board.action_index == 1
-        println("adding pass")
         add_action(board, Pass(), move_buffer; avoid_duplicates=false)
     end
 
@@ -100,16 +99,18 @@ function add_placements(board, move_buffer)
     placement_locs_bb = BitBoard(0, 0)
     fill_placement_locs_bb!(placement_locs_bb, board, color)
 
-    placeable_tiles = @inbounds board.placeable_tiles[color + 1]
     prev_loc = -1
-    while true
-        loc = get_and_remove_first_loc!(placement_locs_bb)
-        prev_loc = loc
-        if loc == INVALID_LOC
-            break
+    for tile in filter_bugs(board.placeable_tiles[board.current_color + 1], board.gametype)
+        if tile != EMPTY_TILE
+            continue
         end
-        for tile in placeable_tiles
-            tile != EMPTY_TILE && add_action(board, Placement(loc, tile), move_buffer)
+        while true
+            loc = get_and_remove_first_loc!(placement_locs_bb)
+            prev_loc = loc
+            if loc == INVALID_LOC
+                break
+            end
+            add_action(board, Placement(loc, tile), move_buffer)
         end
     end
     return nothing
@@ -118,40 +119,22 @@ end
 function add_moves(board, ispinned, move_buffer)
     color_odd = board.current_color + 0x01
     for bug in 0x01:0x08
-        if get_tile_bug_num(board.placeable_tiles[color_odd][bug]) != 0
-            println("for some reason the placeable num is higher then the max num???")
-            println()
-            println(MAX_NUMS[bug])
-            println(get_tile_bug_num(board.placeable_tiles[color_odd][bug]))
-            println(get_tile_bug_num(board.placeable_tiles[color_odd][bug]) - 0x01)
-            println()
-            for num in
-                0x00:min(
-                MAX_NUMS[bug], get_tile_bug_num(board.placeable_tiles[color_odd][bug]) - 0x01
-            )
-                println(num)
-                semi_tile = tile_from_info_as_index_odd(color_odd, bug, num)
-                tile = (semi_tile - 1) << INDEX_SHIFT
-                println(get_tile_name(tile))
-                @inbounds loc = board.tile_locs[semi_tile]
-                println(loc)
+        if get_tile_bug_num(board.placeable_tiles[color_odd][bug]) == 0
+            continue
+        end
+        for num in 0x00:MAX_NUMS[bug]
+            semi_tile = tile_from_info_as_index_odd(color_odd, bug, num)
+            @inbounds loc = board.tile_locs[semi_tile]
 
-                if loc == NOT_PLACED
-                    println((
-                        collect(0x00:num),
-                        collect(
-                            0x00:(get_tile_bug_num(board.placeable_tiles[color_odd][bug]) - 0x01)
-                        ),
-                    ))
-                    break
-                end
-                if loc == UNDERGROUND || loc == board.just_moved_loc || loc == INVALID_LOC
-                    continue
-                end
-                # Generate moves for placed tiles
-                tile = get_tile_on_board(board, loc)
-                bugmoves(board, loc, bug, get_tile_height_unsafe(tile), ispinned, move_buffer)
+            if loc == NOT_PLACED
+                break
             end
+            if loc == UNDERGROUND || loc == board.just_moved_loc || loc == INVALID_LOC
+                continue
+            end
+            # Generate moves for placed tiles
+            tile = get_tile_on_board(board, loc)
+            bugmoves(board, loc, bug, get_tile_height_unsafe(tile), ispinned, move_buffer)
         end
     end
 end
@@ -186,7 +169,7 @@ end
 valid actions for when the first move is made
 """
 function firstplacements(board, move_buffer)
-    for tile in board.placeable_tiles[board.current_color + 1]
+    for tile in filter_bugs(board.placeable_tiles[board.current_color + 1], board.gametype)
         if tile != EMPTY_TILE && get_tile_bug(tile) != Integer(Bug.QUEEN)
             add_action(board, Placement(MID, tile), move_buffer)
         end
@@ -199,7 +182,7 @@ valid actions for second placement (first placement by black)
 """
 function secondplacements(board, move_buffer)
     for loc in allneighs(MID)
-        for tile in board.placeable_tiles[board.current_color + 1]
+        for tile in filter_bugs(board.placeable_tiles[board.current_color + 1], board.gametype)
             if tile != EMPTY_TILE && get_tile_bug(tile) != Integer(Bug.QUEEN)
                 add_action(board, Placement(loc, tile), move_buffer)
             end
@@ -235,17 +218,20 @@ end
 end
 
 function mosquitomoves(board, loc, height, ispinned, move_buffer)
-    if height != 1
+    if height > 1
         beetlemoves(board, loc, height, move_buffer)
         return nothing
     end
 
     for neigh in allneighs(loc)
         tile = get_tile_on_board(board, neigh)
-        bug = get_tile_bug(tile)
-        if tile != EMPTY_TILE && bug != Integer(Bug.MOSQUITO)
-            # Needs to avoid duplicates bc multiple of the same bugs can touch the mosquito
-            bugmoves(board, loc, bug, height, ispinned, move_buffer; avoid_duplicates=true)
+
+        if tile != EMPTY_TILE
+            bug = get_tile_bug(tile)
+            if bug != Integer(Bug.MOSQUITO)
+                # Needs to avoid duplicates bc multiple of the same bugs can touch the mosquito
+                bugmoves(board, loc, bug, height, ispinned, move_buffer; avoid_duplicates=true)
+            end
         end
     end
 

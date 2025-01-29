@@ -63,6 +63,7 @@ mutable struct Board
     tiles::MVector{GRID_SIZE,UInt8}
     # TODO speed: Do not use the 36 entries with invalid locs, but instead use a predefined indexing of tiles
     tile_locs::MVector{36,Int}
+    gametype::Gametype.T
     just_moved_loc::Int
     # moved_by_pillbug_loc::Int
     current_color::UInt8
@@ -84,10 +85,11 @@ mutable struct Board
     last_moves_index::Int
 end
 
-function Board(tiles, tile_locs)
+function Board(tiles, tile_locs, gametype::Gametype.T)
     return Board(
         tiles,
         tile_locs,
+        gametype,
         INVALID_LOC,
         WHITE,
         MVector{2,Bool}(false, false),

@@ -100,7 +100,7 @@ end
     ) + 0x01
 end
 
-@inline function tile_from_info_as_index_odd(color, bug::UInt8, bug_num::UInt8)
+@inline function tile_from_info_as_index_odd(color, bug, bug_num)
     return (
         color * (0b00000001 << (COLOR_SHIFT - INDEX_SHIFT)) +
         (bug - 0x01) * (0b00000001 << (BUG_SHIFT - INDEX_SHIFT)) +
@@ -136,22 +136,18 @@ function set_loc(board::Board, tile::UInt8, loc::Int)
 end
 
 function handle_newgame_command(game_type)
-    if game_type == Gametype.MLP
-        tiles = ones(UInt8, GRID_SIZE) .* EMPTY_TILE
-        # initialize tile_locs at index NOT_PLACED, indication they are not placed
-        # indexed by tiles without height INVALID_LOC(UInt8 >>> 2) so size is 64, not all indices might be used.
-        tile_locs = ones(Int, 36) .* NOT_PLACED
-        for index_from_tile in 1:36
-            shifted_tile = index_from_tile - 1
-            if !isvalid_shifted_tile(shifted_tile)
-                tile_locs[index_from_tile] = INVALID_LOC
-            end
+    tiles = ones(UInt8, GRID_SIZE) .* EMPTY_TILE
+    # initialize tile_locs at index NOT_PLACED, indication they are not placed
+    # indexed by tiles without height INVALID_LOC(UInt8 >>> 2) so size is 64, not all indices might be used.
+    tile_locs = ones(Int, 36) .* NOT_PLACED
+    for index_from_tile in 1:36
+        shifted_tile = index_from_tile - 1
+        if !isvalid_shifted_tile(shifted_tile)
+            tile_locs[index_from_tile] = INVALID_LOC
         end
-        newboard = Board(tiles, tile_locs)
-        return newboard
-    else
-        error("game type $game_type unknown")
     end
+    newboard = Board(tiles, tile_locs)
+    return newboard
 
     error("starting new game.. not implemented")
 end
