@@ -141,7 +141,7 @@ function start(board, gamestring)
 end
 
 function example()
-    gametype = Gametype.MLP
+    gametype = MLPGame
     board = handle_newgame_command(gametype)
     gamestring = GameString()
     show(gamestring)

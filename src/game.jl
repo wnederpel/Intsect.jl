@@ -135,7 +135,7 @@ function set_loc(board::Board, tile::UInt8, loc::Int)
     return nothing
 end
 
-function handle_newgame_command(game_type)
+function handle_newgame_command(gametype)
     tiles = ones(UInt8, GRID_SIZE) .* EMPTY_TILE
     # initialize tile_locs at index NOT_PLACED, indication they are not placed
     # indexed by tiles without height INVALID_LOC(UInt8 >>> 2) so size is 64, not all indices might be used.
@@ -146,10 +146,43 @@ function handle_newgame_command(game_type)
             tile_locs[index_from_tile] = INVALID_LOC
         end
     end
-    newboard = Board(tiles, tile_locs)
+    gametype_filter = get_gametype_filter(gametype)
+    newboard = Board(tiles, tile_locs, gametype_filter)
     return newboard
 
     error("starting new game.. not implemented")
+end
+
+function get_gametype_filter(gametype::Type{Gametype})
+    println("unknown game type $gametype")
+end
+
+myfilter(tile_list, exclude_list) = filter(tile -> get_tile_bug(tile) ∉ exclude_list, tile_list)
+
+function get_gametype_filter(::Type{MLPGame})
+    return (tile_list) -> myfilter(tile_list, ())
+end
+function get_gametype_filter(::Type{LPGame})
+    return (tile_list) -> myfilter(tile_list, (Integer(Bug.MOSQUITO)))
+end
+function get_gametype_filter(::Type{MPGame})
+    return (tile_list) -> myfilter(tile_list, (Integer(Bug.LADYBUG)))
+end
+function get_gametype_filter(::Type{MLGame})
+    return (tile_list) -> myfilter(tile_list, (Integer(Bug.PILLBUG)))
+end
+function get_gametype_filter(::Type{MGame})
+    return (tile_list) -> myfilter(tile_list, (Integer(Bug.PILLBUG), Integer(Bug.LADYBUG)))
+end
+function get_gametype_filter(::Type{LGame})
+    return (tile_list) -> myfilter(tile_list, (Integer(Bug.MOSQUITO), Integer(Bug.PILLBUG)))
+end
+function get_gametype_filter(::Type{PGame})
+    return (tile_list) -> myfilter(tile_list, (Integer(Bug.MOSQUITO), Integer(Bug.LADYBUG)))
+end
+function get_gametype_filter(::Type{BaseGame})
+    return (tile_list) ->
+        myfilter(tile_list, (Integer(Bug.MOSQUITO), Integer(Bug.PILLBUG), Integer(Bug.LADYBUG)))
 end
 
 function isvalid_shifted_tile(shifted_tile)
@@ -819,7 +852,21 @@ end
 
 function gametype_from_string(gametype_string)
     if gametype_string == "Base+MLP"
-        return Gametype.MLP
+        return MLPGame
+    elseif gametype_string == "Base+M"
+        return MGame
+    elseif gametype_string == "Base+P"
+        return PGame
+    elseif gametype_string == "Base+L"
+        return LGame
+    elseif gametype_string == "Base+ML"
+        return MLGame
+    elseif gametype_string == "Base+MP"
+        return MPGame
+    elseif gametype_string == "Base+LP"
+        return LPGame
+    elseif gametype_string == "Base+MLP"
+        return MLPGame
     end
     error("game type '$gametype_string' not yet supported")
 end

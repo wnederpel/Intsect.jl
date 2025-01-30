@@ -49,7 +49,6 @@ const NO_COLOR::UInt8 = 3
 # For now these are global constants, later make this configurable if that's interesting
 const BUGS_IN_PLAY::Int = 8
 const TOTAL_NUM_BUGS::Int = 14
-const GAMETYPE::Gametype.T = Gametype.MLP
 
 const BUG_NAMES = ["A", "G", "B", "S", "Q", "L", "M", "P"]
 const NUMMED_BUG_NAMES = [

@@ -8,37 +8,32 @@ struct val_a <: MyVals end
 struct val_b <: MyVals end
 struct val_c <: MyVals end
 
+my_filter(lst, filters) = filter(val -> val ∉ filters, lst)
+
 # Generated function returning a filtered list (fully pure)
 @generated function filter_by_enum(::Type{T}, lst) where {T<:MyVals}
     if T === val_a
-        return :(filter(x -> x in (1, 2, 3), lst))
+        return :(my_filter(lst, (1, 2, 3)))
     elseif T === val_b
-        return :(filter(x -> x in (4, 5, 6), lst))
+        return :(my_filter(lst, (4, 5, 6)))
     elseif T === val_c
-        return :(filter(x -> x in (7, 8, 9), lst))
+        return :(my_filter(lst, (7, 8, 9)))
     else
         throw(ArgumentError("Unsupported type"))
     end
 end
 
-my_filter(x, lst) = filter(val -> val == x, lst)
+# Example Usage
+data = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-@generated function foo(x, lst)
-    Core.println(x)
-    return :(my_filter(x, lst))
+function f(val::Type{T}) where {T<:MyVals}
+    println(val)
 end
 
-foo(2, [1, 2]) |> println
-foo(2, [1, 2]) |> println
-
-# Example Usage
-data = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-
-# Example Usage
-data = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+f(val_b)
 
 # Iterate lazily over the generator (no allocations)
-result = filter_by_enum(val_a, data)
+result = filter_by_enum(val_b, data)
 for x in result
     println(x)  # Output: 1, 2, 3
 end

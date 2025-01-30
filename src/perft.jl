@@ -3,12 +3,12 @@ function perft(; output=true)
     return nothing
 end
 
-function perft(n; output=true)
+function perft(n; output=true, type=MLPGame)
     # https://github.com/jonthysell/Mzinga/wiki/Perft
     # TODO speed: look into bump allocations for the whole board maybe? would be cool. 
     for depth in 1:n
         nodes, time_taken, memory_allocated, gc_time, _ = @timed perft(
-            depth, handle_newgame_command(Gametype.MLP)
+            depth, handle_newgame_command(type)
         )
         if output
             println("Perft($depth) \t = $(format_with_dots(nodes))")

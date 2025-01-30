@@ -12,6 +12,9 @@ function get_tile_name_padded(tile, show_locs)
 end
 
 function get_tile_name(tile)
+    if tile == EMPTY_TILE
+        return "empty"
+    end
     white, bug, bug_num, _ = get_tile_info(tile)
     name = ""
     if white == 1
