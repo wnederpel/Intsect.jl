@@ -135,7 +135,7 @@ function set_loc(board::Board, tile::UInt8, loc::Int)
     return nothing
 end
 
-function handle_newgame_command(gametype)
+function handle_newgame_command(gametype::Type{Gametype})
     tiles = ones(UInt8, GRID_SIZE) .* EMPTY_TILE
     # initialize tile_locs at index NOT_PLACED, indication they are not placed
     # indexed by tiles without height INVALID_LOC(UInt8 >>> 2) so size is 64, not all indices might be used.
@@ -146,43 +146,47 @@ function handle_newgame_command(gametype)
             tile_locs[index_from_tile] = INVALID_LOC
         end
     end
-    gametype_filter = get_gametype_filter(gametype)
-    newboard = Board(tiles, tile_locs, gametype_filter)
+    newboard = Board(tiles, tile_locs, gametype)
     return newboard
 
     error("starting new game.. not implemented")
 end
 
-function get_gametype_filter(gametype::Type{Gametype})
-    println("unknown game type $gametype")
+function placement_filter(tile_list, exclude_list)
+    map(tile -> begin
+        if get_tile_bug(tile) ∉ exclude_list
+            return tile
+        else
+            return EMPTY_TILE
+        end
+    end, tile_list)
 end
 
-myfilter(tile_list, exclude_list) = filter(tile -> get_tile_bug(tile) ∉ exclude_list, tile_list)
-
-function get_gametype_filter(::Type{MLPGame})
-    return (tile_list) -> myfilter(tile_list, ())
+function gametype_placeable_tiles_filter(::Type{MLPGame}, tile_list)
+    return placement_filter(tile_list, ())
 end
-function get_gametype_filter(::Type{LPGame})
-    return (tile_list) -> myfilter(tile_list, (Integer(Bug.MOSQUITO)))
+function gametype_placeable_tiles_filter(::Type{LPGame}, tile_list)
+    return placement_filter(tile_list, (Integer(Bug.MOSQUITO)))
 end
-function get_gametype_filter(::Type{MPGame})
-    return (tile_list) -> myfilter(tile_list, (Integer(Bug.LADYBUG)))
+function gametype_placeable_tiles_filter(::Type{MPGame}, tile_list)
+    return placement_filter(tile_list, (Integer(Bug.LADYBUG)))
 end
-function get_gametype_filter(::Type{MLGame})
-    return (tile_list) -> myfilter(tile_list, (Integer(Bug.PILLBUG)))
+function gametype_placeable_tiles_filter(::Type{MLGame}, tile_list)
+    return placement_filter(tile_list, (Integer(Bug.PILLBUG)))
 end
-function get_gametype_filter(::Type{MGame})
-    return (tile_list) -> myfilter(tile_list, (Integer(Bug.PILLBUG), Integer(Bug.LADYBUG)))
+function gametype_placeable_tiles_filter(::Type{MGame}, tile_list)
+    return placement_filter(tile_list, (Integer(Bug.PILLBUG), Integer(Bug.LADYBUG)))
 end
-function get_gametype_filter(::Type{LGame})
-    return (tile_list) -> myfilter(tile_list, (Integer(Bug.MOSQUITO), Integer(Bug.PILLBUG)))
+function gametype_placeable_tiles_filter(::Type{LGame}, tile_list)
+    return placement_filter(tile_list, (Integer(Bug.MOSQUITO), Integer(Bug.PILLBUG)))
 end
-function get_gametype_filter(::Type{PGame})
-    return (tile_list) -> myfilter(tile_list, (Integer(Bug.MOSQUITO), Integer(Bug.LADYBUG)))
+function gametype_placeable_tiles_filter(::Type{PGame}, tile_list)
+    return placement_filter(tile_list, (Integer(Bug.MOSQUITO), Integer(Bug.LADYBUG)))
 end
-function get_gametype_filter(::Type{BaseGame})
-    return (tile_list) ->
-        myfilter(tile_list, (Integer(Bug.MOSQUITO), Integer(Bug.PILLBUG), Integer(Bug.LADYBUG)))
+function gametype_placeable_tiles_filter(::Type{BaseGame}, tile_list)
+    return placement_filter(
+        tile_list, (Integer(Bug.MOSQUITO), Integer(Bug.PILLBUG), Integer(Bug.LADYBUG))
+    )
 end
 
 function isvalid_shifted_tile(shifted_tile)
@@ -212,6 +216,9 @@ function get_tile_from_string(board::Board, tile_string)
 end
 
 function get_tile_from_string(tile_string)
+    if tile_string == "empty"
+        return EMPTY_TILE
+    end
     white = tile_string[1] == 'w'
     if tile_string[2] == 'A'
         bug = Integer(Bug.ANT)

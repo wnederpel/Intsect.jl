@@ -92,6 +92,15 @@ export place!
 export first_loc
 export get_adjacent_bb
 
+export BaseGame
+export LGame
+export PGame
+export MGame
+export MPGame
+export MLGame
+export LPGame
+export MLPGame
+
 # Files
 include("enums.jl")
 include("constants.jl")

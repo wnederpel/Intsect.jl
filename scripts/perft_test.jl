@@ -3,7 +3,7 @@ using BenchmarkTools
 using PProf
 using Profile
 
-depth = 6
+depth = 5
 perft(depth; output=true)
 # (@benchmark perft(5; output=false)) |> display
 

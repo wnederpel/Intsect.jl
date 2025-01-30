@@ -63,7 +63,6 @@ mutable struct Board
     tiles::MVector{GRID_SIZE,UInt8}
     # TODO speed: Do not use the 36 entries with invalid locs, but instead use a predefined indexing of tiles
     tile_locs::MVector{36,Int}
-    gametype_filter::Function
     just_moved_loc::Int
     # moved_by_pillbug_loc::Int
     current_color::UInt8
@@ -85,11 +84,10 @@ mutable struct Board
     last_moves_index::Int
 end
 
-function Board(tiles, tile_locs, gametype_filter)
+function Board(tiles, tile_locs, gametype)
     return Board(
         tiles,
         tile_locs,
-        gametype_filter,
         INVALID_LOC,
         WHITE,
         MVector{2,Bool}(false, false),
@@ -104,10 +102,16 @@ function Board(tiles, tile_locs, gametype_filter)
         1,
         SVector{2,MVector{8,UInt8}}(
             MVector{8,UInt8}(
-                get_tile_from_string.(["bA1", "bG1", "bB1", "bS1", "bQ", "bL", "bM", "bP"])
+                gametype_placeable_tiles_filter(
+                    gametype,
+                    get_tile_from_string.(["bA1", "bG1", "bB1", "bS1", "bQ", "bL", "bM", "bP"]),
+                ),
             ),
             MVector{8,UInt8}(
-                get_tile_from_string.(["wA1", "wG1", "wB1", "wS1", "wQ", "wL", "wM", "wP"])
+                gametype_placeable_tiles_filter(
+                    gametype,
+                    get_tile_from_string.(["wA1", "wG1", "wB1", "wS1", "wQ", "wL", "wM", "wP"]),
+                ),
             ),
         ),
         MVector{GRID_SIZE,Bool}(fill(false, GRID_SIZE)),

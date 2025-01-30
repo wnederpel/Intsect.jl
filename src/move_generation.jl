@@ -100,23 +100,17 @@ function add_placements(board, move_buffer)
     fill_placement_locs_bb!(placement_locs_bb, board, color)
 
     prev_loc = -1
-    if board.placeable_tiles[board.current_color + 1] !=
-        board.gametype_filter(board.placeable_tiles[board.current_color + 1])
-        println("hey")
-    end
-    # println(board.placeable_tiles[board.current_color + 1] .|> get_tile_name)
-    # println(board.gametype_filter(board.placeable_tiles[board.current_color + 1]) .|> get_tile_name)
-    for tile in board.gametype_filter(board.placeable_tiles[board.current_color + 1])
-        if tile != EMPTY_TILE
-            continue
+
+    while true
+        loc = get_and_remove_first_loc!(placement_locs_bb)
+        prev_loc = loc
+        if loc == INVALID_LOC
+            break
         end
-        while true
-            loc = get_and_remove_first_loc!(placement_locs_bb)
-            prev_loc = loc
-            if loc == INVALID_LOC
-                break
+        for tile in board.placeable_tiles[board.current_color + 1]
+            if tile != EMPTY_TILE
+                add_action(board, Placement(loc, tile), move_buffer)
             end
-            add_action(board, Placement(loc, tile), move_buffer)
         end
     end
     return nothing
@@ -175,7 +169,7 @@ end
 valid actions for when the first move is made
 """
 function firstplacements(board, move_buffer)
-    for tile in board.gametype_filter(board.placeable_tiles[board.current_color + 1])
+    for tile in board.placeable_tiles[board.current_color + 1]
         if tile != EMPTY_TILE && get_tile_bug(tile) != Integer(Bug.QUEEN)
             add_action(board, Placement(MID, tile), move_buffer)
         end
@@ -188,7 +182,7 @@ valid actions for second placement (first placement by black)
 """
 function secondplacements(board, move_buffer)
     for loc in allneighs(MID)
-        for tile in board.gametype_filter(board.placeable_tiles[board.current_color + 1])
+        for tile in board.placeable_tiles[board.current_color + 1]
             if tile != EMPTY_TILE && get_tile_bug(tile) != Integer(Bug.QUEEN)
                 add_action(board, Placement(loc, tile), move_buffer)
             end
