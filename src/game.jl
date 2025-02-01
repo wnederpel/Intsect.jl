@@ -803,15 +803,11 @@ function check_gameover(board::Board)
     wQ_loc = get_loc(board, wQ)
     bQ_loc = get_loc(board, bQ)
 
-    if wQ_loc <= 0 || bQ_loc <= 0
-        return nothing
-    end
-
-    if all(loc -> get_tile_on_board(board, loc) != EMPTY_TILE, allneighs(wQ_loc))
+    if wQ_loc >= 0 && all(loc -> get_tile_on_board(board, loc) != EMPTY_TILE, allneighs(wQ_loc))
         board.gameover = true
         board.victor = BLACK
     end
-    if all(loc -> get_tile_on_board(board, loc) != EMPTY_TILE, allneighs(bQ_loc))
+    if bQ_loc >= 0 && all(loc -> get_tile_on_board(board, loc) != EMPTY_TILE, allneighs(bQ_loc))
         if board.gameover
             board.victor = DRAW
         else

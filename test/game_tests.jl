@@ -35,7 +35,7 @@
     wS2_loc = apply_direction(wQ_loc, Direction.W)
 
     # Create the board
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     # Do the actions and check the board state 
     action1 = Placement(wS1_loc, wS1)
@@ -100,6 +100,30 @@
     test_board_state(board, 10, BLACK, 5, MVector{2,Bool}(true, true), wS2_loc, INVALID_LOC)
 end
 
+@testitem "game end is detected" begin
+    board = handle_newgame_command(MLPGame)
+
+    movestrings = [
+        raw"wG1",
+        raw"bP wG1-",
+        raw"wQ /wG1",
+        raw"bA1 bP\\",
+        raw"wA1 \wQ",
+        raw"bQ bA1/",
+        raw"wA2 /wA1",
+        raw"bQ wG1\\",
+        raw"wA3 wA2\\",
+        raw"bA1 wQ\\",
+    ]
+
+    for movestring in movestrings
+        do_action(board, movestring)
+    end
+
+    @test board.gameover = true
+    @test board.victor = BLACK
+end
+
 @testitem "Test undo action" begin
     using StaticArrays
 
@@ -136,7 +160,7 @@ end
     wS2_loc = apply_direction(wQ_loc, Direction.W)
 
     # Create the board
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     # Do the actions and check the board state 
     action1 = Placement(wS1_loc, wS1)
@@ -265,7 +289,7 @@ end
     bA2_loc = apply_direction(apply_direction(bQ_loc, Direction.NW), Direction.NW)
 
     # Create the board
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     # Do the actions and check the board state 
     action1 = Placement(wS1_loc, wS1)
@@ -356,7 +380,7 @@ end
     bG3 = get_tile_from_string("bG3")
     bS1 = get_tile_from_string("bS1")
 
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     do_action(board, action_from_move_string(board, "wA1"))
     do_action(board, action_from_move_string(board, "bG1 wA1\\"))
@@ -387,7 +411,7 @@ end
 end
 
 @testitem "Pillbug special moves are valid, even when the pillbug is stuck" begin
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     do_action(board, action_from_move_string(board, "wP"))
     do_action(board, action_from_move_string(board, "bS1 wP-"))
@@ -400,7 +424,7 @@ end
 end
 
 @testitem "Pillbug special moves for mosquito are valid, even when the pillbug and mosquito are stuck" begin
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     do_action(board, action_from_move_string(board, "wM"))
     do_action(board, action_from_move_string(board, "bP wM-"))
