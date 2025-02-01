@@ -642,7 +642,13 @@ gc time 	 = 0.0%
 total time 	 = 27.94 seconds
 
 
-# Known solutions
+# Failing perfts 
+others are good. 
+MPGame 7 deep fails, should be 1,363,837,116
+There is a problem with pillbug mosquito interaction. 
+Even if the 
+
+# Known solutions (MLPGame)
 
 https://github.com/jonthysell/Mzinga/wiki/Perft
 

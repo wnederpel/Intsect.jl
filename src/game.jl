@@ -135,7 +135,7 @@ function set_loc(board::Board, tile::UInt8, loc::Int)
     return nothing
 end
 
-function handle_newgame_command(gametype::Type{Gametype})
+function handle_newgame_command(gametype::Type{T}) where {T<:Gametype}
     tiles = ones(UInt8, GRID_SIZE) .* EMPTY_TILE
     # initialize tile_locs at index NOT_PLACED, indication they are not placed
     # indexed by tiles without height INVALID_LOC(UInt8 >>> 2) so size is 64, not all indices might be used.

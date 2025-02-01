@@ -196,8 +196,10 @@ end
     # Moquito can yield pill bug moves, even when pinned
     # Beetle can move on top op hive, even when pinned
     if bug == Integer(Bug.PILLBUG)
+        println("looking at pillbug moves at $loc")
         pillbugmoves(board, loc, ispinned, move_buffer; avoid_duplicates)
     elseif bug == Integer(Bug.MOSQUITO)
+        println("looking at mosquito moves at $loc")
         mosquitomoves(board, loc, height, ispinned, move_buffer)
     elseif bug == Integer(Bug.BEETLE) && (!ispinned[loc + 1] || height != 1)
         beetlemoves(board, loc, height, move_buffer; avoid_duplicates)
@@ -222,6 +224,7 @@ function mosquitomoves(board, loc, height, ispinned, move_buffer)
         beetlemoves(board, loc, height, move_buffer)
         return nothing
     end
+    println("mosquito not high")
 
     for neigh in allneighs(loc)
         tile = get_tile_on_board(board, neigh)
@@ -229,6 +232,7 @@ function mosquitomoves(board, loc, height, ispinned, move_buffer)
         if tile != EMPTY_TILE
             bug = get_tile_bug(tile)
             if bug != Integer(Bug.MOSQUITO)
+                println("mosquito found bug $bug")
                 # Needs to avoid duplicates bc multiple of the same bugs can touch the mosquito
                 bugmoves(board, loc, bug, height, ispinned, move_buffer; avoid_duplicates=true)
             end
@@ -241,6 +245,7 @@ end
 function pillbugmoves(board, startloc, ispinned, move_buffer; avoid_duplicates=false)
     maxdepth = 1
     if !ispinned[startloc + 1]
+        println("not stuck")
         moves_to_depth(board, startloc, maxdepth, move_buffer; avoid_duplicates)
     end
     # pillbug also has special moves
@@ -259,6 +264,7 @@ function pillbugmoves(board, startloc, ispinned, move_buffer; avoid_duplicates=f
                 j += 1
             end
         end
+        println("can slide to $slidelocs")
 
         for i in 1:6
             loc = neighlocs[i]
