@@ -22,13 +22,13 @@ end
 
 show(board)
 
-Intsect.perft(1, board) |> println
-Intsect.perft(2, board) |> println
-Intsect.perft(3, board) |> println
-Intsect.perft(4, board) |> println
-Intsect.perft(5, board) |> println
-# @assert Intsect.perft(1, board) == 37
-# @assert Intsect.perft(2, board) == 1358
-# @assert Intsect.perft(3, board) == 57612
-# @assert Intsect.perft(4, board) == 2417137
-# @assert Intsect.perft(5, board) == 114983055
+perft(1, board) |> println
+perft(2, board) |> println
+perft(3, board) |> println
+perft(4, board) |> println
+perft(5, board) |> println
+# @assert perft(1, board) == 37
+# @assert perft(2, board) == 1358
+# @assert perft(3, board) == 57612
+# @assert perft(4, board) == 2417137
+# @assert perft(5, board) == 114983055

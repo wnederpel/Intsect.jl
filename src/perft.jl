@@ -44,20 +44,21 @@ function perft(depth::Int, board)::Int
             action_as_index = move_buffer[action_i]
 
             do_action(board, action_as_index)
+            # action = ALL_ACTIONS[action_as_index]
 
-            # check_board(board, "after do")
+            # check_board(board, "after do $(typeof(action))", action, depth)
 
             nodes += perft(depth - 1, board)
             undo(board)
 
-            # check_board(board, "after undo")
+            # check_board(board, "after undo $(typeof(action))", action, depth)
         end
     end
 
     return nodes
 end
 
-function check_board(board, name)
+function check_board(board, name, action, depth)
     if count_color_on_board(board; color=BLACK) != count_ones(board.black_pieces) ||
         count_color_on_board(board; color=WHITE) != count_ones(board.white_pieces)
         println("---------------------------------------")
@@ -71,9 +72,9 @@ function check_board(board, name)
         # )
 
         show(board.white_pieces)
-        print(count_color_on_board(board; color=WHITE, show=true))
+        println(count_color_on_board(board; color=WHITE, show=true))
         show(board.black_pieces)
-        print(count_color_on_board(board; color=BLACK, show=true))
+        println(count_color_on_board(board; color=BLACK, show=true))
 
         # println("looking back some moves")
         # for i in 0:0
@@ -88,8 +89,10 @@ function check_board(board, name)
         #     end
         # end
         # show(board)
-
-        error("This is wrong in undo")
+        println("last done / undone action:")
+        show(action, board)
+        println("perft depth $depth")
+        error("This is wrong: $name")
     end
 end
 

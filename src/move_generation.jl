@@ -241,7 +241,6 @@ end
 function pillbugmoves(board, startloc, ispinned, move_buffer; avoid_duplicates=false)
     maxdepth = 1
     if !ispinned[startloc + 1]
-        println("not stuck")
         moves_to_depth(board, startloc, maxdepth, move_buffer; avoid_duplicates)
     end
     # pillbug also has special moves
@@ -260,7 +259,6 @@ function pillbugmoves(board, startloc, ispinned, move_buffer; avoid_duplicates=f
                 j += 1
             end
         end
-        println("can slide to $slidelocs")
 
         for i in 1:6
             loc = neighlocs[i]

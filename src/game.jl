@@ -549,12 +549,14 @@ function count_color_on_board(board; color=BLACK, show=false)
                 semi_tile = tile_from_info_as_index_odd(color_odd, bug, num)
                 @inbounds loc = board.tile_locs[semi_tile]
 
-                if loc != NOT_PLACED && loc != UNDERGROUND
-                    show && println("found (semi) piece $semi_tile at $loc")
-                    count += 1
-                else
+                if loc == NOT_PLACED
                     break
                 end
+                if loc == UNDERGROUND || loc == INVALID_LOC
+                    continue
+                end
+                show && println("found (semi) piece $semi_tile at $loc")
+                count += 1
             end
         end
     end
@@ -583,13 +585,13 @@ function undo_action(board::Board, action::Placement)
     end
 
     set_loc(board, action.tile, NOT_PLACED)
-    if get_tile_bug(action.tile) == Integer(Bug.QUEEN)
+    bug = get_tile_bug(action.tile)
+    if bug == Integer(Bug.QUEEN)
         board.queen_placed[board.current_color == WHITE ? (BLACK + 1) : (WHITE + 1)] = false
     end
 
     inverse_post_action_update(board, action)
 
-    bug = get_tile_bug(action.tile)
     board.placeable_tiles[board.current_color + 1][bug] = action.tile
 
     # inverse_update_placement_locs_goal(board, action.goal_loc)
@@ -744,7 +746,7 @@ function post_action_bb_update(board, pass::Pass) end
 function inverse_post_action_bb_update(board, placement::Placement)
     # This assumes the color is already back at the color that made the change!!
     goal_loc = placement.goal_loc
-    remove!(board, goal_loc)
+    remove!(board, placement.goal_loc)
     return nothing
 end
 
@@ -785,14 +787,12 @@ function inverse_post_action_bb_update(board, pass::Pass) end
 
 function post_action_general_update(board::Board, action)
     check_gameover(board)
-    if !board.gameover
-        board.ply += 1
-        if board.current_color == WHITE
-            board.current_color = BLACK
-        else
-            board.turn += 1
-            board.current_color = WHITE
-        end
+    board.ply += 1
+    if board.current_color == WHITE
+        board.current_color = BLACK
+    else
+        board.turn += 1
+        board.current_color = WHITE
     end
     return nothing
 end
