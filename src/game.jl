@@ -656,7 +656,8 @@ function inverse_post_action_update(board::Board, action)
     goal_loc_normal, moving_loc_normal = get_last_changed_locs(action)
     # since we are trying to undo this move pas it as a move from goal -> moving loc
     # nothing looks strange but get pinned tiles expect goal loc first then moving loc
-    get_pinned_tiles!(board, moving_loc_normal, goal_loc_normal; inverse=true)
+
+    # get_pinned_tiles!(board, moving_loc_normal, goal_loc_normal; inverse=true)
     return nothing
 end
 
@@ -691,7 +692,7 @@ function post_action_update(board::Board, action::Action)
     post_action_pillbug_update(board, action)
     post_action_general_update(board, action)
     goal_loc, moving_loc = get_last_changed_locs(action)
-    get_pinned_tiles!(board, goal_loc, moving_loc)
+    # get_pinned_tiles!(board, goal_loc, moving_loc)
     return nothing
 end
 

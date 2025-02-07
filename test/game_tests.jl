@@ -120,8 +120,12 @@ end
         do_action(board, movestring)
     end
 
-    @test board.gameover = true
-    @test board.victor = BLACK
+    show(board)
+    @test board.gameover == true
+    @test board.victor == BLACK
+
+    valid_actions = validactions(board)
+    @test length(valid_actions) == 0
 end
 
 @testitem "Test undo action" begin

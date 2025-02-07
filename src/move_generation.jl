@@ -51,6 +51,9 @@ end
 
 function validactions!(board::Board, move_buffer)
     board.action_index = 1
+    if board.gameover
+        return nothing
+    end
 
     need_to_place_queen = !board.queen_placed[board.current_color + 1] && board.turn == 4
     first_placement = board.ply == 1
@@ -73,13 +76,7 @@ end
 Valid actions for the default case
 """
 function validactions_general(board::Board, move_buffer)
-    # TODO speed: ispinned does not need to be recomputed after every move
-    # when an elbow is filled, or when a tile is simply pinnned, the dict only changes locally.
-    if board.gameover
-        return nothing
-    end
-
-    # get_pinned_tiles!(board)
+    update_ispinned_general!(board)
 
     add_placements(board, move_buffer)
 
@@ -95,9 +92,8 @@ function validactions_general(board::Board, move_buffer)
 end
 
 function add_placements(board, move_buffer)
-    color = board.current_color
     placement_locs_bb = BitBoard(0, 0)
-    fill_placement_locs_bb!(placement_locs_bb, board, color)
+    fill_placement_locs_bb!(placement_locs_bb, board)
 
     prev_loc = -1
 
@@ -147,9 +143,8 @@ function queenplacements(board, move_buffer)
         board.current_color == WHITE ? get_tile_from_string(board, "wQ") :
         get_tile_from_string(board, "bQ")
 
-    color = board.current_color
     placement_locs_bb = BitBoard(0, 0)
-    fill_placement_locs_bb!(placement_locs_bb, board, color)
+    fill_placement_locs_bb!(placement_locs_bb, board)
 
     prev_loc = -1
     while true
@@ -636,14 +631,16 @@ GetArticulationPoints(i, d)
 
         for loc in board.tile_locs
             if loc >= 0
-                get_pinned_tiles!(board, visited_dict, depth_dict, low_dict, parent_dict, loc, 0)
+                get_pinned_tiles_general!(
+                    board, visited_dict, depth_dict, low_dict, parent_dict, loc, 0
+                )
                 break
             end
         end
     end
 end
 
-@inline function get_pinned_tiles!(
+@inline function get_pinned_tiles_general!(
     board, visited_dict, depth_dict, low_dict, parent_dict, loc, depth
 )
     if loc < 0
@@ -665,7 +662,7 @@ end
         nloc_p1 = nloc + 1
         if @inbounds !visited_dict[nloc_p1]
             @inbounds parent_dict[nloc_p1] = loc
-            get_pinned_tiles!(
+            get_pinned_tiles_general!(
                 board, visited_dict, depth_dict, low_dict, parent_dict, nloc, depth + 1
             )
             child_count += 1

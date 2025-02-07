@@ -47,6 +47,7 @@ export start
 export perft
 export direction_from_string
 export show
+export fill_placement_locs_bb!
 export show_valid_actions
 export show_pinned
 export get_tile_from_string

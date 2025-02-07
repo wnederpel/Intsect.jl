@@ -47,10 +47,10 @@ function get_adjacent_bb(bb::BitBoard)
            bitrotate(bb, -ROW_SIZE - 1)
 end
 
-@inline function fill_placement_locs_bb!(placement_locs_bb, board, color)
+@inline function fill_placement_locs_bb!(placement_locs_bb, board)
     white_adjacent = get_adjacent_bb(board.white_pieces)
     black_adjacent = get_adjacent_bb(board.black_pieces)
-    if color == WHITE
+    if board.current_color == WHITE
         placement_locs_bb.first |= white_adjacent.first
         placement_locs_bb.second |= white_adjacent.second
         placement_locs_bb.first &=
