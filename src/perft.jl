@@ -3,13 +3,15 @@ function perft(; output=true)
     return nothing
 end
 
-function perft(n; output=true, type=MLPGame)
+function perft(n; output=true, type=MLPGame, start_board=nothing)
     # https://github.com/jonthysell/Mzinga/wiki/Perft
     # TODO speed: look into bump allocations for the whole board maybe? would be cool. 
+    if start_board === nothing
+        start_board = handle_newgame_command(type)
+    end
     for depth in 1:n
-        nodes, time_taken, memory_allocated, gc_time, _ = @timed perft(
-            depth, handle_newgame_command(type)
-        )
+        board = deepcopy(start_board)
+        nodes, time_taken, memory_allocated, gc_time, _ = @timed perft(depth, board)
         if output
             println("Perft($depth) \t = $(format_with_dots(nodes))")
             kilo_nodes = nodes / 1000
@@ -44,8 +46,8 @@ function perft(depth::Int, board)::Int
             action_as_index = move_buffer[action_i]
 
             do_action(board, action_as_index)
-            # action = ALL_ACTIONS[action_as_index]
 
+            # action = ALL_ACTIONS[action_as_index]
             # check_board(board, "after do $(typeof(action))", action, depth)
 
             nodes += perft(depth - 1, board)

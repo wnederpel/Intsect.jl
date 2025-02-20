@@ -76,11 +76,13 @@ end
 Valid actions for the default case
 """
 function validactions_general(board::Board, move_buffer)
-    update_ispinned_general!(board)
-
     add_placements(board, move_buffer)
 
     if board.queen_placed[board.current_color + 1]
+        if board.general_pinned_update_required
+            update_ispinned_general!(board)
+            board.general_pinned_update_required = false
+        end
         add_moves(board, board.ispinned, move_buffer)
     end
 
@@ -200,7 +202,7 @@ end
         if bug == Integer(Bug.ANT)
             antmoves(board, loc, move_buffer; avoid_duplicates)
         elseif bug == Integer(Bug.SPIDER)
-            spidermoves(board, loc, move_buffer; avoid_duplicates)
+            spidermoves(board, loc, move_buffer)
         elseif bug == Integer(Bug.QUEEN)
             queenmoves(board, loc, move_buffer; avoid_duplicates)
         elseif bug == Integer(Bug.GRASSHOPPER)
@@ -236,7 +238,7 @@ end
 function pillbugmoves(board, startloc, ispinned, move_buffer; avoid_duplicates=false)
     maxdepth = 1
     if !ispinned[startloc + 1]
-        moves_to_depth(board, startloc, maxdepth, move_buffer; avoid_duplicates)
+        moves_to_depth(board, startloc, maxdepth, move_buffer; avoid_duplicates=avoid_duplicates)
     end
     # pillbug also has special moves
     # For all surrounding tiles, if they are not pinned, and did not just move,
@@ -387,9 +389,9 @@ end
     return nothing
 end
 
-function spidermoves(board, startloc, move_buffer; avoid_duplicates=false)
+function spidermoves(board, startloc, move_buffer)
     maxdepth = 3
-    moves_to_depth(board, startloc, maxdepth, move_buffer; avoid_duplicates)
+    moves_to_depth(board, startloc, maxdepth, move_buffer; avoid_duplicates=true)
     return nothing
 end
 
@@ -503,7 +505,7 @@ end
         #     update_ispinned_elbow!(board)
         #     return nothing
     end
-    update_ispinned_general!(board)
+    board.general_pinned_update_required = true
 end
 
 @inline function is_simple_last_goal_loc(board, last_goal_loc, inverse)

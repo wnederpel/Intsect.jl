@@ -50,9 +50,9 @@ const NO_COLOR::UInt8 = 3
 const BUGS_IN_PLAY::Int = 8
 const TOTAL_NUM_BUGS::Int = 14
 
-const BUG_NAMES = ["A", "G", "B", "S", "Q", "L", "M", "P"]
+const BUG_NAMES = ["A", "G", "B", "S", "Q", "L", "P", "M"]
 const NUMMED_BUG_NAMES = [
-    "A1", "A2", "A3", "G1", "G2", "G3", "B1", "B2", "S1", "S2", "Q", "L", "M", "P"
+    "A1", "A2", "A3", "G1", "G2", "G3", "B1", "B2", "S1", "S2", "Q", "L", "P", "M"
 ]
 
 const MAX_NUMS::SVector{8,UInt8} = [2, 2, 1, 1, 0, 0, 0, 0]

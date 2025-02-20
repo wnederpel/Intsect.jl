@@ -1,52 +1,12 @@
 using Intsect
 
-board = handle_newgame_command(BaseGame)
-# Place some pieces
-movestrings = [
-    raw"wA1",
-    raw"bA1 wA1-",
-    raw"wQ /wA1",
-    raw"bQ bA1/",
-    raw"wG1 \wQ",
-    raw"bG1 bQ\\",
-    raw"wB1 \wA1",
-    raw"bB1 bA1\\",
-    raw"wS1 wQ\\",
-    raw"bS1 \bQ",
-    raw"wB2 wS1\\",
-    raw"bB2 \bS1",
-    raw"wA2 \wB1",
-    raw"bA2 bB1\\",
-    raw"wS2 /wB2",
-    raw"bS2 bB2/",
-]
+board = handle_newgame_command(MLPGame)
 
-gamestring = raw"Base;InProgress;white[6];wA1;bA1 wA1-;wQ /wA1;bQ bA1/;wG1 \wQ;bG1 bQ\;wB1 \wA1;bB1 bA1\;wS1 wQ\;bS1 \bQ;wB2 wS1\;bB2 \bS1;wA2 \wB1;bA2 bB1\\;wS2 /wB2;bS2 bB2/"
+gamestring = raw"Base+MLP;InProgress;white[11];wB1;bS1 wB1-;wQ /wB1;bQ bS1/;wG1 -wB1;bG1 bS1-;wM -wQ;bM bQ-;wP /wQ;bP bQ/;wL -wG1;bL bG1-;wA1 wQ\;bB1 \bQ;wS1 wA1-;bA1 -bB1;wA2 -wP;bA2 bP-;wA2 wS1/;bA2 /bA1"
 
+movestrings = split(gamestring, ";")[(begin + 3):end]
 for movestring in movestrings
     do_action(board, movestring)
 end
 
-show(board)
-# show(board.white_pieces)
-# show(board.black_pieces)
-# white_adj = get_adjacent_bb(board.white_pieces)
-# black_adj = get_adjacent_bb(board.black_pieces)
-# show(white_adj)
-# show(black_adj)
-
-# placement_locs_bb = BitBoard(0, 0)
-# fill_placement_locs_bb!(placement_locs_bb, board)
-# show(placement_locs_bb)
-
-perft(1, board) |> println
-perft(2, board) |> println
-perft(3, board) |> println
-perft(4, board) |> println
-perft(5, board) |> println
-println("test simple loop maybe?")
-# @assert perft(1, board) == 37
-# @assert perft(2, board) == 1358
-# @assert perft(3, board) == 57612
-# @assert perft(4, board) == 2417137
-# @assert perft(5, board) == 114983055
+perft(4; start_board=board)

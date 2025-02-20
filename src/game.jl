@@ -255,6 +255,7 @@ function action_from_move_string(board::Board, move_string)
     if move_string == "pass"
         return Pass()
     end
+    move_string = strip(move_string)
     validate_move_string(move_string)
 
     if ' ' in move_string
@@ -262,6 +263,8 @@ function action_from_move_string(board::Board, move_string)
         # parse input to be some actual action that can be executed
         moving_string, placement = split(move_string, " ")
         other_string = filter(char -> isletter(char) || isdigit(char), placement)
+        moving_string = strip(moving_string)
+        other_string = strip(other_string)
 
         direction = direction_from_string(placement)
 
@@ -657,7 +660,7 @@ function inverse_post_action_update(board::Board, action)
     # since we are trying to undo this move pas it as a move from goal -> moving loc
     # nothing looks strange but get pinned tiles expect goal loc first then moving loc
 
-    # get_pinned_tiles!(board, moving_loc_normal, goal_loc_normal; inverse=true)
+    get_pinned_tiles!(board, moving_loc_normal, goal_loc_normal; inverse=true)
     return nothing
 end
 
@@ -692,7 +695,7 @@ function post_action_update(board::Board, action::Action)
     post_action_pillbug_update(board, action)
     post_action_general_update(board, action)
     goal_loc, moving_loc = get_last_changed_locs(action)
-    # get_pinned_tiles!(board, goal_loc, moving_loc)
+    get_pinned_tiles!(board, goal_loc, moving_loc)
     return nothing
 end
 
@@ -803,6 +806,13 @@ function check_gameover(board::Board)
     bQ = 0x20 # get_tile_from_string(board, "bQ")
     wQ_loc = get_loc(board, wQ)
     bQ_loc = get_loc(board, bQ)
+    # Piece might be underground
+    if wQ_loc == UNDERGROUND
+        wQ_loc = find_underground_tile(board, wQ)
+    end
+    if bQ_loc == UNDERGROUND
+        bQ_loc = find_underground_tile(board, bQ)
+    end
 
     if wQ_loc >= 0 && all(loc -> get_tile_on_board(board, loc) != EMPTY_TILE, allneighs(wQ_loc))
         board.gameover = true
@@ -817,6 +827,17 @@ function check_gameover(board::Board)
         end
     end
     return nothing
+end
+
+function find_underground_tile(board, tile)
+    for (loc, stack) in board.underworld
+        for other_tile in stack
+            if other_tile >> INDEX_SHIFT == tile >> INDEX_SHIFT
+                return loc
+            end
+        end
+    end
+    return -3
 end
 
 """

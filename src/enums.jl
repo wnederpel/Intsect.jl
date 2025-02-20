@@ -9,7 +9,8 @@ struct MPGame <: Gametype end
 struct LPGame <: Gametype end
 struct MLPGame <: Gametype end
 
-# TODO speed: maybe replace with a named tuple
+# NOTE: the order here is important. Add mosquito bc it may add duplicate moves
+# This order is also in the board struct def and in constants
 @enumx Bug::UInt8 begin
     ANT = 1         # 3
     GRASSHOPPER = 2 # 3
@@ -17,8 +18,8 @@ struct MLPGame <: Gametype end
     SPIDER = 4      # 2
     QUEEN = 5       # 1
     LADYBUG = 6     # 1
-    MOSQUITO = 7    # 1
-    PILLBUG = 8     # 1
+    PILLBUG = 7     # 1
+    MOSQUITO = 8    # 1
 end
 
 # TODO speed: maybe replace with a named tuple

@@ -82,6 +82,7 @@ mutable struct Board
     black_pieces::BitBoard
     last_moves::Vector
     last_moves_index::Int
+    general_pinned_update_required::Bool
 end
 
 function Board(tiles, tile_locs, gametype)
@@ -104,13 +105,13 @@ function Board(tiles, tile_locs, gametype)
             MVector{8,UInt8}(
                 gametype_placeable_tiles_filter(
                     gametype,
-                    get_tile_from_string.(["bA1", "bG1", "bB1", "bS1", "bQ", "bL", "bM", "bP"]),
+                    get_tile_from_string.(["bA1", "bG1", "bB1", "bS1", "bQ", "bL", "bP", "bM"]),
                 ),
             ),
             MVector{8,UInt8}(
                 gametype_placeable_tiles_filter(
                     gametype,
-                    get_tile_from_string.(["wA1", "wG1", "wB1", "wS1", "wQ", "wL", "wM", "wP"]),
+                    get_tile_from_string.(["wA1", "wG1", "wB1", "wS1", "wQ", "wL", "wP", "wM"]),
                 ),
             ),
         ),
@@ -119,6 +120,7 @@ function Board(tiles, tile_locs, gametype)
         BitBoard(),
         repeat([(-1, :pass)], 1000),
         0,
+        false,
     )
 end
 
