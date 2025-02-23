@@ -54,17 +54,10 @@ Arguments
 except we know that the highest number reached is by a wG3 (num comes first so is most Important) e.g. 0b100011 = 35 (+1 for zero), this is still higher then the true number of tiles, which is 28.
 The 36 array is zero indexed, so again use get_loc / set_loc.
 """
-# TODO speed: maybe the locs can be UInt8's too, although julia indexing works with integers
-# TODO speed: custom types can be used for tiles for clarity and maybe speed? at least avoids type instability
-# TODO speed: Only keep 1 instance of board, and update it in place, this will avoid a lot of allocations
 mutable struct Board
-    # TODO speed: Think about making 2 seperate structs, the tiles & tile_locs vectors struct can be static 
-    # TODO speed: Make these MVectors
     tiles::MVector{GRID_SIZE,UInt8}
-    # TODO speed: Do not use the 36 entries with invalid locs, but instead use a predefined indexing of tiles
     tile_locs::MVector{36,Int}
     just_moved_loc::Int
-    # moved_by_pillbug_loc::Int
     current_color::UInt8
     queen_placed::MVector{2,Bool}
     ply::Int
@@ -83,6 +76,8 @@ mutable struct Board
     last_moves::Vector
     last_moves_index::Int
     general_pinned_update_required::Bool
+    queen_pos_white::Int
+    queen_pos_black::Int
 end
 
 function Board(tiles, tile_locs, gametype)
@@ -121,6 +116,8 @@ function Board(tiles, tile_locs, gametype)
         repeat([(-1, :pass)], 1000),
         0,
         false,
+        -1,
+        -1,
     )
 end
 

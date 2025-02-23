@@ -22,7 +22,6 @@ struct MLPGame <: Gametype end
     MOSQUITO = 8    # 1
 end
 
-# TODO speed: maybe replace with a named tuple
 @enumx Direction::UInt8 begin
     NW
     NE

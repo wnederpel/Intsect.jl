@@ -806,12 +806,16 @@ function check_gameover(board::Board)
     bQ = 0x20 # get_tile_from_string(board, "bQ")
     wQ_loc = get_loc(board, wQ)
     bQ_loc = get_loc(board, bQ)
-    # Piece might be underground
+    # Piece might be underground, otherwise update the queen loc
     if wQ_loc == UNDERGROUND
-        wQ_loc = find_underground_tile(board, wQ)
+        wQ_loc = board.queen_pos_white
+    else
+        board.queen_pos_white = wQ_loc
     end
     if bQ_loc == UNDERGROUND
-        bQ_loc = find_underground_tile(board, bQ)
+        bQ_loc = board.queen_pos_black
+    else
+        board.queen_pos_black = bQ_loc
     end
 
     if wQ_loc >= 0 && all(loc -> get_tile_on_board(board, loc) != EMPTY_TILE, allneighs(wQ_loc))
@@ -827,17 +831,6 @@ function check_gameover(board::Board)
         end
     end
     return nothing
-end
-
-function find_underground_tile(board, tile)
-    for (loc, stack) in board.underworld
-        for other_tile in stack
-            if other_tile >> INDEX_SHIFT == tile >> INDEX_SHIFT
-                return loc
-            end
-        end
-    end
-    return -3
 end
 
 """
@@ -902,6 +895,7 @@ Check if a move is not already in the valid actions
 to avoid the pillbug adding duplicate moves
 """
 function move_not_duplicate(board::Board, move, move_buffer)
+    # TODO speed: this is slow!
     move_index = action_index(move)
     @inbounds buffer_view = view(move_buffer, 1:(board.action_index - 1))
     for action_index in buffer_view
@@ -923,9 +917,6 @@ so we can use 32 bit integers as indices
 when we save moves with goal index and tile we can get
 256 * 36 + 256 * 36 + 256 * 36 = 27648 < 2^16 !
 """
-# TODO speed: change to 16 bit ints. 
-# TODO speed: when we separate placements, moves and climbs, we can use 16 bit integers as indices
-# TODO func: the pass action is no longer handled probably. Fix this.
 const MAX_PLACEMENT_INDEX = GRID_SIZE * 36
 const MAX_MOVEMENT_INDEX = GRID_SIZE * GRID_SIZE
 const MAX_CLIMB_INDEX = GRID_SIZE * GRID_SIZE

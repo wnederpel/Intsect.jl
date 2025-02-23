@@ -704,7 +704,7 @@ goal:
 8:   50,945,151,390
 9:   2,784,830,280,25
 
-# the above results are, to my knowledge, the best of any hive bot at the start of the game. Further down in the search tree, the bot performs worse. From now on, perft results are shown from the following start state:
+# the above results are sufficient. Further down in the search tree, the bot performs worse. From now on, perft results are shown from the following start state:
 Base+MLP;InProgress;white[11];wB1;bS1 wB1-;wQ /wB1;bQ bS1/;wG1 -wB1;bG1 bS1-;wM -wQ;bM bQ-;wP /wQ;bP bQ/;wL -wG1;bL bG1-;wA1 wQ\;bB1 \bQ;wS1 wA1-;bA1 -bB1;wA2 -wP;bA2 bP-;wA2 wS1/;bA2 /bA1
 
 As of right now the intsect resuls are:
@@ -721,6 +721,5 @@ memory per node  = 0.14 bytes
 gc time          = 0.0%
 total time       = 5.86 seconds
 
-although nokamute finds 151458582 nodes at 4 deep.  <- investigate..
-nokamute also finds lvl3 and 4 with ~42 KN/s        <- get close to this time! 
+at 5 deep nokamute finds 15.431.526.868 intsect first needs to speed up
 

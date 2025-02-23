@@ -3,14 +3,18 @@ function perft(; output=true)
     return nothing
 end
 
-function perft(n; output=true, type=MLPGame, start_board=nothing)
+function perft(n; output=true, type=MLPGame, game_string="Base+MLP;InProgress;white[11]")
     # https://github.com/jonthysell/Mzinga/wiki/Perft
-    # TODO speed: look into bump allocations for the whole board maybe? would be cool. 
-    if start_board === nothing
-        start_board = handle_newgame_command(type)
+    board = handle_newgame_command(type)
+    movestrings = split(game_string, ";")
+    if length(movestrings) > 3
+        movestrings = movestrings[(begin + 3):end]
+        for movestring in movestrings
+            do_action(board, movestring)
+        end
     end
+
     for depth in 1:n
-        board = deepcopy(start_board)
         nodes, time_taken, memory_allocated, gc_time, _ = @timed perft(depth, board)
         if output
             println("Perft($depth) \t = $(format_with_dots(nodes))")
