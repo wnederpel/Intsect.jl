@@ -9,7 +9,7 @@ struct MPGame <: Gametype end
 struct LPGame <: Gametype end
 struct MLPGame <: Gametype end
 
-# NOTE: the order here is important. Add mosquito bc it may add duplicate moves
+# NOTE: the order here is important. Add mosquito last bc it may add duplicate moves
 # This order is also in the board struct def and in constants
 @enumx Bug::UInt8 begin
     ANT = 1         # 3

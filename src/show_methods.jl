@@ -163,7 +163,8 @@ end
 
 function Base.show(actions::Vector{Action}, board)
     println(string(length(actions)) * " valid actions:")
-    for action in actions
+    for (i, action) in enumerate(actions)
+        print("$i: ")
         show(action, board)
     end
     println("End")
