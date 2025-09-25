@@ -78,6 +78,7 @@ mutable struct Board
     general_pinned_update_required::Bool
     queen_pos_white::Int
     queen_pos_black::Int
+    # hash_value::Int
 end
 
 function Board(tiles, tile_locs, gametype)

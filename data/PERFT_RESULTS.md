@@ -471,7 +471,7 @@ memory per node  = 46.7 bytes
 gc time          = 989.0%
 total time       = 113.97 seconds
 
-## lots of bumper noescape buffers 
+## lots of bumper noescape buffers
 
 Perft(4)         = 151.686
 KN/S             = 30.510
@@ -642,11 +642,11 @@ gc time 	 = 0.0%
 total time 	 = 27.94 seconds
 
 
-##  Failing perfts 
-others are good. 
+##  Failing perfts
+others are good.
 MPGame 7 deep fails, should be 1,363,837,116
-There is a problem with pillbug mosquito interaction. 
-Even if the 
+There is a problem with pillbug mosquito interaction.
+Even if the
 
 ## Spider duplicate fix, mosquito duplicate fix, game end with covered queen fix
 
@@ -721,5 +721,22 @@ memory per node  = 0.14 bytes
 gc time          = 0.0%
 total time       = 5.86 seconds
 
+### nokamute
 at 5 deep nokamute finds 15.431.526.868 intsect first needs to speed up
+
+speeds of nokamute at this level are ~90k KN/s at level 4
+
+## Ran it again with a julia minor version bump after ~6 months of no work, faster somehow haha
+
+Perft(3)         = 1.356.195
+KN/S             = 52.711
+memory per node  = 0.0 bytes
+gc time          = 0.0%
+total time       = 0.03 seconds
+
+Perft(4)         = 151.460.537
+KN/S             = 49.559
+memory per node  = 0.0 bytes
+gc time          = 0.0%
+total time       = 3.06 seconds
 

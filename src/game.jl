@@ -301,7 +301,7 @@ function action_from_move_string(board::Board, move_string)
             action = Placement(goal_loc, moving_tile)
         end
     else
-        # First move, place in middle 
+        # First move, place in middle
         goal_loc = MID
         moving_tile = get_tile_from_string(board, move_string)
         action = Placement(goal_loc, moving_tile)
@@ -525,7 +525,7 @@ function do_action(board::Board, climb::Climb)
 
     # This assumes the doing has already happened
     old_height = get_tile_height_unsafe(moving_tile) - 0x01
-    moving_tile += UInt8(length(board.underworld[climb.goal_loc])) - old_height
+    moving_tile += max(UInt8(length(board.underworld[climb.goal_loc])) - old_height, 0x04)
 
     set_tile_on_board(board, climb.goal_loc, moving_tile)
     set_loc(board, moving_tile, climb.goal_loc)
@@ -654,7 +654,7 @@ function inverse_post_action_update(board::Board, action)
     inverse_post_action_general_update(board)
 
     # This assumes the color is already back at the color that made the change!!
-    inverse_post_action_bb_update(board, action)
+    inverse_post_action_bb_hash_update(board, action)
 
     goal_loc_normal, moving_loc_normal = get_last_changed_locs(action)
     # since we are trying to undo this move pas it as a move from goal -> moving loc
@@ -731,8 +731,8 @@ function post_action_bb_update(board, action::Climb)
 
     remove!(board, action.moving_loc)
     if opened_tile != EMPTY_TILE
-        color = get_tile_color(opened_tile)
-        # This is like a $color tile was placed at the moving_loc
+        # color = get_tile_color(opened_tile)
+        # This is like a $color tile was placed at the goal_loc, but this is always the current color, as that color just moved
         place!(board, action.moving_loc; color=color)
     end
 
@@ -747,34 +747,39 @@ end
 
 function post_action_bb_update(board, pass::Pass) end
 
-function inverse_post_action_bb_update(board, placement::Placement)
+function inverse_post_action_bb_hash_update(board, placement::Placement)
     # This assumes the color is already back at the color that made the change!!
-    goal_loc = placement.goal_loc
     remove!(board, placement.goal_loc)
+
+    ## TODO: continue here, think about climbs and how to handle them
+    # With a normal bb update, we only care about the color of the top bug, now we also care about the bugs underneath.
+    # So The height should be an element of the hash table, and bugs should only be removed if they're actually moved.
+
+    # hash_value = get_hash_value(bug, board.current_color, placement.loc)
+
     return nothing
 end
 
-function inverse_post_action_bb_update(board, action::Move)
+function inverse_post_action_bb_hash_update(board, action::Move)
     # This assumes the color is already back at the color that made the change!!
     goal_loc = action.goal_loc
     moving_loc = action.moving_loc
-    color = get_tile_color(get_tile_on_board(board, moving_loc))
 
-    remove!(board, goal_loc; color=color)
-    place!(board, moving_loc; color=color)
+    remove!(board, goal_loc)
+    place!(board, moving_loc)
     return nothing
 end
 
-function inverse_post_action_bb_update(board, action::Climb)
+function inverse_post_action_bb_hash_update(board, action::Climb)
     # This assumes the color is already back at the color that made the change!!
     opened_tile = get_tile_on_board(board, action.goal_loc)
     moved_tile = get_tile_on_board(board, action.moving_loc)
 
     remove!(board, action.goal_loc)
     if opened_tile != EMPTY_TILE
-        color = get_tile_color(opened_tile)
-        # This is like a $color tile was placed at the goal_loc
-        place!(board, action.goal_loc; color=color)
+        # color = get_tile_color(opened_tile)
+        # This is like a $color tile was placed at the goal_loc, but this is always the current color, as that color just moved
+        place!(board, action.goal_loc; color=board.current_color)
     end
 
     if get_tile_height_unsafe(moved_tile) > 0x01
@@ -787,7 +792,7 @@ function inverse_post_action_bb_update(board, action::Climb)
     return nothing
 end
 
-function inverse_post_action_bb_update(board, pass::Pass) end
+function inverse_post_action_bb_hash_update(board, pass::Pass) end
 
 function post_action_general_update(board::Board, action)
     check_gameover(board)
@@ -891,7 +896,7 @@ end
 
 """
 Check if a move is not already in the valid actions
-    
+
 to avoid the pillbug adding duplicate moves
 """
 function move_not_duplicate(board::Board, move, move_buffer, search_from)

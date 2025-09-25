@@ -94,13 +94,13 @@ end
     if bb.first != UInt128(0)
         # First loc is in first
         only_first_loc = bb.first & (~bb.first + 1)
-        # Now remove this first loc from the bb and return 
+        # Now remove this first loc from the bb and return
         bb.first &= ~only_first_loc
         return true
     elseif bb.second != UInt128(0)
         # First loc is in second
         only_first_loc = bb.second & (~bb.second + 1)
-        # Now remove this first loc from the bb and return 
+        # Now remove this first loc from the bb and return
         bb.second &= ~only_first_loc
         return true
     end
@@ -180,7 +180,11 @@ end
 end
 
 @inline function place!(bb::BitBoard, loc::Int64)
-    inplace_or!(bb, get_bb(loc))
+    if loc < 128
+        bb.first ⊻= get_bb_val(loc)
+    else
+        bb.second ⊻= get_bb_val(loc)
+    end
     return nothing
 end
 
