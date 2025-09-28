@@ -3,7 +3,7 @@ function perft(; output=true)
     return nothing
 end
 
-function perft(n; output=true, type=MLPGame, game_string="Base+MLP;InProgress;white[11]")
+function perft(n; output=true, type=MLPGame, game_string="Base+MLP;InProgress;white[1]")
     # https://github.com/jonthysell/Mzinga/wiki/Perft
     board = handle_newgame_command(type)
     movestrings = split(game_string, ";")
@@ -42,9 +42,8 @@ function perft(depth::Int, board)::Int
     nodes = 0
 
     @no_escape PERFT_BUFFER[depth] begin
-        # TODO eff: have a buffer for each movement type to have more concrete types in code
-
         move_buffer = @alloc(eltype(Int), VALID_BUFFER_SIZE)
+
         validactions!(board, move_buffer)
         for action_i in 1:(board.action_index - 1)
             action_as_index = move_buffer[action_i]

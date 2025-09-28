@@ -691,7 +691,7 @@ function inverse_post_action_pillbug_update(board::Board)
 end
 
 function post_action_update(board::Board, action::Action)
-    post_action_bb_update(board, action)
+    post_action_bb_hash_update(board, action)
     post_action_pillbug_update(board, action)
     post_action_general_update(board, action)
     goal_loc, moving_loc = get_last_changed_locs(action)
@@ -710,21 +710,29 @@ function pre_action_update(board::Board, action)
     return nothing
 end
 
-function post_action_bb_update(board, placement::Placement)
+function post_action_bb_hash_update(board, placement::Placement)
     # This assumes the color is not yet changed!!
     goal_loc = placement.goal_loc
     place!(board, goal_loc)
+
+    board.hash ⊻= get_hash_value(placement.tile, placement.goal_loc)
+    board.location_hash ⊻= get_location_hash_value(placement.goal_loc)
 end
 
-function post_action_bb_update(board, action::Move)
-    goal_loc = action.goal_loc
-    color = get_tile_color(get_tile_on_board(board, goal_loc))
-    place!(board, goal_loc; color=color)
-    moving_loc = action.moving_loc
-    remove!(board, moving_loc; color=color)
+function post_action_bb_hash_update(board, action::Move)
+    # This assumes the color is not yet changed!!
+    place!(board, action.goal_loc)
+    remove!(board, action.moving_loc)
+
+    tile = get_tile_on_board(board, action.moving_loc)
+    board.hash ⊻= get_hash_value(tile, action.goal_loc)
+    board.hash ⊻= get_hash_value(tile, action.moving_loc)
+
+    board.location_hash ⊻= get_location_hash_value(action.goal_loc)
+    board.location_hash ⊻= get_location_hash_value(action.moving_loc)
 end
 
-function post_action_bb_update(board, action::Climb)
+function post_action_bb_hash_update(board, action::Climb)
     # This assumes the color is not yet changed!!
     opened_tile = get_tile_on_board(board, action.moving_loc)
     moved_tile = get_tile_on_board(board, action.goal_loc)
@@ -733,7 +741,10 @@ function post_action_bb_update(board, action::Climb)
     if opened_tile != EMPTY_TILE
         # color = get_tile_color(opened_tile)
         # This is like a $color tile was placed at the goal_loc, but this is always the current color, as that color just moved
-        place!(board, action.moving_loc; color=color)
+        place!(board, action.moving_loc; color=board.current_color)
+    else
+        # The opened tile is empty so the location has to be removed from the location hash
+        board.location_hash ⊻= get_location_hash_value(action.moving_loc)
     end
 
     if get_tile_height_unsafe(moved_tile) > 0x01
@@ -741,22 +752,29 @@ function post_action_bb_update(board, action::Climb)
         color = get_tile_color(covered_tile)
         # This is like a $color tile was removed at the goal_loc
         remove!(board, action.goal_loc; color=color)
+    else
+        # The height is zero, so there was no tile at the goal loc, add it to the location hash
+        board.location_hash ⊻= get_location_hash_value(action.goal_loc)
     end
     place!(board, action.goal_loc)
+
+    tile = get_tile_on_board(board, action.moving_loc)
+    board.hash ⊻= get_hash_value(
+        tile, action.goal_loc; height=length(board.underworld[action.goal_loc])
+    )
+    board.hash ⊻= get_hash_value(
+        tile, action.moving_loc; height=length(board.underworld[action.moving_loc])
+    )
 end
 
-function post_action_bb_update(board, pass::Pass) end
+function post_action_bb_hash_update(board, pass::Pass) end
 
 function inverse_post_action_bb_hash_update(board, placement::Placement)
     # This assumes the color is already back at the color that made the change!!
     remove!(board, placement.goal_loc)
 
-    ## TODO: continue here, think about climbs and how to handle them
-    # With a normal bb update, we only care about the color of the top bug, now we also care about the bugs underneath.
-    # So The height should be an element of the hash table, and bugs should only be removed if they're actually moved.
-
-    # hash_value = get_hash_value(bug, board.current_color, placement.loc)
-
+    board.hash ⊻= get_hash_value(placement.tile, placement.goal_loc)
+    board.location_hash ⊻= get_location_hash_value(placement.goal_loc)
     return nothing
 end
 
@@ -767,6 +785,15 @@ function inverse_post_action_bb_hash_update(board, action::Move)
 
     remove!(board, goal_loc)
     place!(board, moving_loc)
+
+    # the moved tile is now back at the moving loc
+    tile = get_tile_on_board(board, action.moving_loc)
+    board.hash ⊻= get_hash_value(tile, action.goal_loc)
+    board.hash ⊻= get_hash_value(tile, action.moving_loc)
+
+    board.location_hash ⊻= get_location_hash_value(action.goal_loc)
+    board.location_hash ⊻= get_location_hash_value(action.moving_loc)
+
     return nothing
 end
 
@@ -780,6 +807,9 @@ function inverse_post_action_bb_hash_update(board, action::Climb)
         # color = get_tile_color(opened_tile)
         # This is like a $color tile was placed at the goal_loc, but this is always the current color, as that color just moved
         place!(board, action.goal_loc; color=board.current_color)
+    else
+        # There is nothing at the goal loc anymore, remove it from the location hash
+        board.location_hash ⊻= get_location_hash_value(action.goal_loc)
     end
 
     if get_tile_height_unsafe(moved_tile) > 0x01
@@ -787,8 +817,19 @@ function inverse_post_action_bb_hash_update(board, action::Climb)
         color = get_tile_color(covered_tile)
         # This is like a $color tile was removed at the moving_loc
         remove!(board, action.moving_loc; color=color)
+    else
+        # The tile was new at the goal loc, add it to the location hash
+        board.location_hash ⊻= get_location_hash_value(action.moving_loc)
     end
     place!(board, action.moving_loc)
+
+    tile = get_tile_on_board(board, action.moving_loc)
+    board.hash ⊻= get_hash_value(
+        tile, action.goal_loc; height=length(board.underworld[action.goal_loc])
+    )
+    board.hash ⊻= get_hash_value(
+        tile, action.moving_loc; height=length(board.underworld[action.moving_loc])
+    )
     return nothing
 end
 

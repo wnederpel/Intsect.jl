@@ -2,9 +2,7 @@
 @testitem "Doing a move updates ply, current color, turn, queens placed and just moved loc" begin
     using StaticArrays
 
-    function test_board_state(
-        board, ply, current_color, turn, queen_placed, just_moved_loc, moved_by_pillbug_loc
-    )
+    function test_board_state(board, ply, current_color, turn, queen_placed, just_moved_loc)
         @test board.ply == ply
         @test board.current_color == current_color
         @test board.turn == turn
@@ -37,7 +35,7 @@
     # Create the board
     board = handle_newgame_command(MLPGame)
 
-    # Do the actions and check the board state 
+    # Do the actions and check the board state
     action1 = Placement(wS1_loc, wS1)
     @test action1 in validactions(board)
     do_action(board, action1)
@@ -132,13 +130,16 @@ end
     using StaticArrays
 
     function test_board_state(
-        board, ply, current_color, turn, queen_placed, just_moved_loc, moved_by_pillbug_loc
+        board, ply, current_color, turn, queen_placed, just_moved_loc; hash=-1
     )
         @test board.ply == ply
         @test board.current_color == current_color
         @test board.turn == turn
         @test board.queen_placed == queen_placed
         @test board.just_moved_loc == just_moved_loc
+        if hash != -1
+            @test board.hash == hash
+        end
     end
 
     # Define all pieces
@@ -166,7 +167,7 @@ end
     # Create the board
     board = handle_newgame_command(MLPGame)
 
-    # Do the actions and check the board state 
+    # Do the actions and check the board state
     action1 = Placement(wS1_loc, wS1)
     @test action1 in validactions(board)
     do_action(board, action1)
@@ -174,46 +175,52 @@ end
 
     action2 = Placement(bS1_loc, bS1)
     @test action2 in validactions(board)
+    hash = board.hash
     do_action(board, action2)
     test_board_state(board, 3, WHITE, 2, MVector{2,Bool}(false, false), bS1_loc, INVALID_LOC)
     undo(board)
-    test_board_state(board, 2, BLACK, 1, MVector{2,Bool}(false, false), wS1_loc, INVALID_LOC)
+    test_board_state(board, 2, BLACK, 1, MVector{2,Bool}(false, false), wS1_loc, INVALID_LOC, hash)
     do_action(board, action2)
 
     action3 = Placement(wQ_loc, wQ)
     @test action3 in validactions(board)
+    hash = board.hash
     do_action(board, action3)
     test_board_state(board, 4, BLACK, 2, MVector{2,Bool}(false, true), wQ_loc, INVALID_LOC)
     undo(board)
-    test_board_state(board, 3, WHITE, 2, MVector{2,Bool}(false, false), bS1_loc, INVALID_LOC)
+    test_board_state(board, 3, WHITE, 2, MVector{2,Bool}(false, false), bS1_loc, INVALID_LOC, hash)
     do_action(board, action3)
 
     action4 = Placement(bQ_loc, bQ)
     @test action4 in validactions(board)
+    hash = board.hash
     do_action(board, action4)
     test_board_state(board, 5, WHITE, 3, MVector{2,Bool}(true, true), bQ_loc, INVALID_LOC)
     undo(board)
-    test_board_state(board, 4, BLACK, 2, MVector{2,Bool}(false, true), wQ_loc, INVALID_LOC)
+    test_board_state(board, 4, BLACK, 2, MVector{2,Bool}(false, true), wQ_loc, INVALID_LOC, hash)
     do_action(board, action4)
 
     action5 = Placement(wA1_loc, wA1)
     @test action5 in validactions(board)
+    hash = board.hash
     do_action(board, action5)
     test_board_state(board, 6, BLACK, 3, MVector{2,Bool}(true, true), wA1_loc, INVALID_LOC)
     undo(board)
-    test_board_state(board, 5, WHITE, 3, MVector{2,Bool}(true, true), bQ_loc, INVALID_LOC)
+    test_board_state(board, 5, WHITE, 3, MVector{2,Bool}(true, true), bQ_loc, INVALID_LOC, hash)
     do_action(board, action5)
 
     action6 = Placement(bA1_loc, bA1)
     @test action6 in validactions(board)
+    hash = board.hash
     do_action(board, action6)
     test_board_state(board, 7, WHITE, 4, MVector{2,Bool}(true, true), bA1_loc, INVALID_LOC)
     undo(board)
-    test_board_state(board, 6, BLACK, 3, MVector{2,Bool}(true, true), wA1_loc, INVALID_LOC)
+    test_board_state(board, 6, BLACK, 3, MVector{2,Bool}(true, true), wA1_loc, INVALID_LOC, hash)
     do_action(board, action6)
 
     action7 = Move(wA1_loc, apply_direction(wS1_loc, Direction.NW))
     @test action7 in validactions(board)
+    hash = board.hash
     do_action(board, action7)
     test_board_state(
         board,
@@ -223,6 +230,7 @@ end
         MVector{2,Bool}(true, true),
         apply_direction(wS1_loc, Direction.NW),
         INVALID_LOC,
+        hash,
     )
     undo(board)
     test_board_state(board, 7, WHITE, 4, MVector{2,Bool}(true, true), bA1_loc, INVALID_LOC)
@@ -230,6 +238,7 @@ end
 
     action8 = Move(bA1_loc, apply_direction(bS1_loc, Direction.NE))
     @test action8 in validactions(board)
+    hash = board.hash
     do_action(board, action8)
     test_board_state(
         board,
@@ -249,11 +258,13 @@ end
         MVector{2,Bool}(true, true),
         apply_direction(wS1_loc, Direction.NW),
         INVALID_LOC,
+        hash,
     )
     do_action(board, action8)
 
     action9 = Placement(wS2_loc, wS2)
     @test action9 in validactions(board)
+    hash = board.hash
     do_action(board, action9)
     test_board_state(board, 10, BLACK, 5, MVector{2,Bool}(true, true), wS2_loc, INVALID_LOC)
     undo(board)
@@ -265,6 +276,7 @@ end
         MVector{2,Bool}(true, true),
         apply_direction(bS1_loc, Direction.NE),
         INVALID_LOC,
+        hash,
     )
     do_action(board, action9)
 end
@@ -295,7 +307,7 @@ end
     # Create the board
     board = handle_newgame_command(MLPGame)
 
-    # Do the actions and check the board state 
+    # Do the actions and check the board state
     action1 = Placement(wS1_loc, wS1)
     do_action(board, action1)
 

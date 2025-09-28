@@ -38,7 +38,7 @@ Contains all information of the current board state
 
 Tiles are represented by a UInt8:\n
 bits 6-7: bug num (e.g. the 3 in 3rd ant, num = 0 -> 1st, num = 1 -> 2nd; to save on tile_loc size) \n
-bits 3-5: Bug (folows enum) \n
+bits 3-5: Bug (follows enum) \n
 bit 2: Color (1 is white) \n
 bits 0-1: tile height; capped at 3, so 0 (floor), 1, 2, >= 3 \n\n
 note: at lvl 3 there are at least 3 beetles (2 under + 1 on top), since there are 6 beetles in total, there cannot be 2 other towers to limit motion. For exact height the underworld can be checked.
@@ -78,7 +78,8 @@ mutable struct Board
     general_pinned_update_required::Bool
     queen_pos_white::Int
     queen_pos_black::Int
-    # hash_value::Int
+    hash::UInt64
+    location_hash::UInt64
 end
 
 function Board(tiles, tile_locs, gametype)
@@ -119,6 +120,8 @@ function Board(tiles, tile_locs, gametype)
         false,
         -1,
         -1,
+        0,
+        0,
     )
 end
 

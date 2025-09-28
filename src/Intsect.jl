@@ -6,6 +6,7 @@ using DataStructures
 using Memoize
 using Bumper
 using InteractiveUtils
+using Revise
 
 # structs
 export Board
@@ -111,5 +112,6 @@ include("main.jl")
 include("show_methods.jl")
 include("move_generation.jl")
 include("perft.jl")
+include("hash_values.jl")
 
 end # module Intsect
