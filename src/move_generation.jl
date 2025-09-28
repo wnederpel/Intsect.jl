@@ -90,7 +90,10 @@ function validactions_general(board::Board, move_buffer)
     end
 
     if board.action_index == 1
-        add_action(board, Pass(), move_buffer; avoid_duplicates=false)
+        show(board; simple=false)
+        show(board.white_pieces)
+        show(board.black_pieces)
+        add_action(board, Pass(), move_buffer)
     end
 
     return nothing
@@ -218,7 +221,7 @@ end
     # Beetle can move on top op hive, even when pinned
     if bug == Integer(Bug.PILLBUG)
         actions_before_throw_moves = pillbugmoves(
-            board, loc, ispinned, move_buffer, num_placements; avoid_duplicates, start_search
+            board, loc, ispinned, move_buffer; num_placements, avoid_duplicates, start_search
         )
     elseif bug == Integer(Bug.MOSQUITO)
         mosquitomoves(
@@ -280,8 +283,8 @@ function pillbugmoves(
     board,
     startloc,
     ispinned,
-    move_buffer,
-    num_placements;
+    move_buffer;
+    num_placements=0,
     avoid_duplicates=false,
     start_search=board.action_index,
 )
@@ -327,7 +330,7 @@ function pillbugmoves(
                             move,
                             move_buffer;
                             avoid_duplicates=true,
-                            start_search=num_placements,
+                            start_search=num_placements + 1,
                         )
                     end
                 end
@@ -494,7 +497,7 @@ function antmoves(board, startloc, move_buffer; avoid_duplicates=false, start_se
         stack_ptr += 1
 
         while stack_ptr != 1
-            # pop 
+            # pop
             loc = stack_arr[stack_ptr - 1]
             stack_ptr -= 1
 
@@ -630,7 +633,7 @@ end
     end
 
     # If it is now empty and it had one neigh and that neigh is now free
-    # make sure to avoid the last_goal_loc in the neigh check as that is the tile that just moved away from the movingloc 
+    # make sure to avoid the last_goal_loc in the neigh check as that is the tile that just moved away from the movingloc
     # only avoid the last_goal_loc if it is not on top of some other tile and it exists
     skip_loc = INVALID_LOC
     if last_goal_loc >= 0 && get_tile_height_unsafe(get_tile_on_board(board, last_goal_loc)) == 0x01
@@ -664,7 +667,7 @@ end
         @inbounds board.ispinned[moving_neigh + 1] = false
     end
 
-    # If the goal_loc exists, 
+    # If the goal_loc exists,
     # Then, at the goal loc, the neigh becomes stuck and you are unstuck
     if last_goal_loc >= 0
         @inbounds board.ispinned[last_goal_loc + 1] = false

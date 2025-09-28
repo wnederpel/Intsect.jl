@@ -1,5 +1,5 @@
 @testitem "Add test items, check for moving throught gates etc. on top of the hive. See screen shot for example" begin
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     movestrings = [
         raw"wG1",
@@ -38,7 +38,7 @@
 end
 
 @testitem "Mosquito can ONLY do beetle moves while on top" begin
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     movestrings = [
         raw"wB1",
@@ -68,7 +68,7 @@ end
 end
 
 @testitem "Game can handle moves by multiples of the same piece" begin
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     movestrings = [
         raw"wB1",
@@ -88,7 +88,7 @@ end
 end
 
 @testitem "the above with a new piece" begin
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     movestrings = [
         raw"wB1",

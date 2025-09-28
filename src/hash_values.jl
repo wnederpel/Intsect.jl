@@ -7,7 +7,6 @@ function get_hash_value(tile, loc; height=0)
     # TODO, more info should be added here, like the piece that was moved last, the color to play, etc.
     # It's also better to make this a table of 7 * 36 * 256 = ~65k entries
     # Look into transposition tables -> Make a vector of ~ 256 mb entries, and use the hash % size as index.
-
     return HASH_VALUES[1 + (tile >> INDEX_SHIFT) + height * 36 + loc * 36 * 7]
 end
 

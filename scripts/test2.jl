@@ -5,10 +5,25 @@ using PProf
 using Profile
 
 board = handle_newgame_command(MLPGame)
+actions = [
+    Placement(136, 0x04),
+    Placement(120, 0x38),
+    Placement(135, 0x24),
+    Placement(103, 0x20),
+    Move(135, 119),
+    Move(136, 104),
+]
 
-movestrings = [raw"wP", raw"bP wP-", raw"wQ \wP", raw"bQ bP\\", raw"wB1 /wP"]
-
-for movestring in movestrings
-    do_action(board, movestring)
-    println(board.hash)
+for action in actions
+    do_action(board, action)
 end
+
+show(board)
+show(board.white_pieces)
+show(board.black_pieces)
+
+undo(board)
+
+show(board)
+show(board.white_pieces)
+show(board.black_pieces)

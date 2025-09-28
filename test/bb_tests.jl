@@ -1,10 +1,10 @@
 @testitem "Correctly update pillbug specials moves do and undo bb update" begin
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
     actions = [
-        Placement(136, 0x04),
-        Placement(120, 0x38),
-        Placement(135, 0x24),
-        Placement(103, 0x20),
+        Placement(136, get_tile_from_string("wA1")),
+        Placement(120, get_tile_from_string("bP")),
+        Placement(135, get_tile_from_string("wQ")),
+        Placement(103, get_tile_from_string("bQ")),
         Move(135, 119),
         Move(136, 104),
     ]
@@ -23,7 +23,7 @@
 end
 
 @testitem "undo pillbug special is the same as do climb" begin
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     actions = [
         Placement(136, 0x04),
@@ -50,7 +50,7 @@ end
 end
 
 @testitem "Correctly update climb do and undo bb updates" begin
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     actions = [
         Placement(136, 0x14),
@@ -87,7 +87,7 @@ end
 end
 
 @testitem "undo climb is the same as do climb" begin
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     actions = [
         Placement(136, 0x14),

@@ -20,7 +20,7 @@
     bG1_loc = apply_direction(wG1_loc, Direction.NW)
 
     # Create the board
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     set_tile_on_board(board, bQ_loc, bQ)
     set_tile_on_board(board, bA1_loc, bA1)
@@ -72,8 +72,8 @@ end
     wS2_loc = apply_direction(bS1_loc, Direction.W)
     bS2_loc = apply_direction(wS1_loc, Direction.NW)
 
-    # Create the board 
-    board = handle_newgame_command(Gametype.MLP)
+    # Create the board
+    board = handle_newgame_command(MLPGame)
 
     set_tile_on_board(board, bQ_loc, bQ)
     set_tile_on_board(board, bA1_loc, bA1)
@@ -125,7 +125,7 @@ end
     bS1_loc = apply_direction(wS1_loc, Direction.NW)
 
     # Create the board
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     set_tile_on_board(board, bQ_loc, bQ)
     set_tile_on_board(board, bA1_loc, bA1)
@@ -168,7 +168,7 @@ end
     wQ_loc = apply_direction(bB1_loc, Direction.NE)
 
     # Create the board
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     set_tile_on_board(board, bQ_loc, bQ)
     set_tile_on_board(board, wQ_loc, wQ)
@@ -214,7 +214,7 @@ end
     bG1_loc = apply_direction(bQ_loc, Direction.E)
 
     # Create the board
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     set_tile_on_board(board, bQ_loc, bQ)
     set_tile_on_board(board, wQ_loc, wQ)
@@ -267,7 +267,7 @@ end
     wQ_loc = apply_direction(bB1_loc, Direction.NE)
 
     # Create the board
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     set_tile_on_board(board, bQ_loc, bQ)
     set_tile_on_board(board, wQ_loc, wQ)
@@ -311,7 +311,7 @@ end
     bS1_loc = apply_direction(wM_loc, Direction.NW)
 
     # Create the board
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     set_tile_on_board(board, bQ_loc, bQ)
     set_tile_on_board(board, wQ_loc, wQ)
@@ -353,7 +353,7 @@ end
     bB1_loc = apply_direction(wS1_loc, Direction.NE)
 
     # Create the board
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     set_tile_on_board(board, bQ_loc, bQ)
     set_tile_on_board(board, wQ_loc, wQ)

@@ -180,11 +180,12 @@ end
 end
 
 @inline function place!(bb::BitBoard, loc::Int64)
-    if loc < 128
-        bb.first ⊻= get_bb_val(loc)
-    else
-        bb.second ⊻= get_bb_val(loc)
-    end
+    inplace_or!(bb, get_bb(loc))
+    # if loc < 128
+    #     bb.first ⊻= get_bb_val(loc)
+    # else
+    #     bb.second ⊻= get_bb_val(loc)
+    # end
     return nothing
 end
 

@@ -3,7 +3,7 @@
 
     wQ_loc = MID
 
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
     set_tile_on_board(board, wQ_loc, wQ)
     set_loc(board, wQ, wQ_loc)
     board.ply += 1
@@ -16,7 +16,7 @@ end
 @testitem "The white queen must be placed on the fourth move at the latest" begin
     wQ = get_tile_from_string("wQ")
 
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     do_action(board, "wL")
     do_action(board, "bL wL-")
@@ -35,7 +35,7 @@ end
 @testitem "The black queen must be placed on the fourth move at the latest" begin
     bQ = get_tile_from_string("bQ")
 
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     do_action(board, "wL")
     do_action(board, "bL wL-")
@@ -58,7 +58,7 @@ end
 
     wQ_loc = MID
 
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     actions = validactions(board)
     @test length(actions) == 7
@@ -86,7 +86,7 @@ end
     bL_loc = apply_direction(wL_loc, Direction.E)
     wQ_loc = apply_direction(wL_loc, Direction.W)
 
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     do_action(board, action_from_move_string(board, "wL"))
     do_action(board, action_from_move_string(board, "bL wL-"))
@@ -112,7 +112,7 @@ end
     wQ_loc = apply_direction(bB1_loc, Direction.NE)
 
     # Create the board
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     set_tile_on_board(board, bQ_loc, bQ)
     set_tile_on_board(board, wQ_loc, wQ)
@@ -149,7 +149,7 @@ end
     bB1_loc = apply_direction(wS1_loc, Direction.NE)
 
     # Create the board
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     set_tile_on_board(board, bQ_loc, bQ)
     set_tile_on_board(board, wQ_loc, wQ)

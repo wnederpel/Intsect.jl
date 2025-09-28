@@ -9,7 +9,7 @@ actions = [
     Move(103, 104),
 ]
 
-board = handle_newgame_command(Gametype.MLP)
+board = handle_newgame_command(MLPGame)
 
 for action in actions
     do_action(board, action)

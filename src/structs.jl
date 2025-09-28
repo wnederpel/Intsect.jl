@@ -120,8 +120,8 @@ function Board(tiles, tile_locs, gametype)
         false,
         -1,
         -1,
-        0,
-        0,
+        UInt64(0),
+        UInt64(0),
     )
 end
 

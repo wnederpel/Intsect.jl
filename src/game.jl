@@ -525,7 +525,8 @@ function do_action(board::Board, climb::Climb)
 
     # This assumes the doing has already happened
     old_height = get_tile_height_unsafe(moving_tile) - 0x01
-    moving_tile += max(UInt8(length(board.underworld[climb.goal_loc])) - old_height, 0x04)
+    # moving_tile += min(UInt8(length(board.underworld[climb.goal_loc])) - old_height, 0x04)
+    moving_tile += UInt8(length(board.underworld[climb.goal_loc])) - old_height
 
     set_tile_on_board(board, climb.goal_loc, moving_tile)
     set_loc(board, moving_tile, climb.goal_loc)
@@ -720,9 +721,10 @@ function post_action_bb_hash_update(board, placement::Placement)
 end
 
 function post_action_bb_hash_update(board, action::Move)
-    # This assumes the color is not yet changed!!
-    place!(board, action.goal_loc)
-    remove!(board, action.moving_loc)
+    # This is not necessarily the current color, because the pillbug can move other pieces
+    moved_color = get_tile_color(get_tile_on_board(board, action.goal_loc))
+    place!(board, action.goal_loc; color=moved_color)
+    remove!(board, action.moving_loc; color=moved_color)
 
     tile = get_tile_on_board(board, action.moving_loc)
     board.hash ⊻= get_hash_value(tile, action.goal_loc)
@@ -733,15 +735,17 @@ function post_action_bb_hash_update(board, action::Move)
 end
 
 function post_action_bb_hash_update(board, action::Climb)
-    # This assumes the color is not yet changed!!
     opened_tile = get_tile_on_board(board, action.moving_loc)
     moved_tile = get_tile_on_board(board, action.goal_loc)
 
-    remove!(board, action.moving_loc)
+    # This is not necessarily the current color, because the pillbug can move other pieces
+    moved_color = get_tile_color(get_tile_on_board(board, action.goal_loc))
+
+    remove!(board, action.moving_loc; color=moved_color)
     if opened_tile != EMPTY_TILE
-        # color = get_tile_color(opened_tile)
-        # This is like a $color tile was placed at the goal_loc, but this is always the current color, as that color just moved
-        place!(board, action.moving_loc; color=board.current_color)
+        color = get_tile_color(opened_tile)
+        # This is like a $color tile was placed at the moving loc
+        place!(board, action.moving_loc; color=color)
     else
         # The opened tile is empty so the location has to be removed from the location hash
         board.location_hash ⊻= get_location_hash_value(action.moving_loc)
@@ -756,7 +760,7 @@ function post_action_bb_hash_update(board, action::Climb)
         # The height is zero, so there was no tile at the goal loc, add it to the location hash
         board.location_hash ⊻= get_location_hash_value(action.goal_loc)
     end
-    place!(board, action.goal_loc)
+    place!(board, action.goal_loc; color=moved_color)
 
     tile = get_tile_on_board(board, action.moving_loc)
     board.hash ⊻= get_hash_value(
@@ -779,12 +783,14 @@ function inverse_post_action_bb_hash_update(board, placement::Placement)
 end
 
 function inverse_post_action_bb_hash_update(board, action::Move)
-    # This assumes the color is already back at the color that made the change!!
     goal_loc = action.goal_loc
     moving_loc = action.moving_loc
 
-    remove!(board, goal_loc)
-    place!(board, moving_loc)
+    # This is not necessarily the current color, because the pillbug can move other pieces
+    moved_color = get_tile_color(get_tile_on_board(board, action.moving_loc))
+
+    remove!(board, goal_loc; color=moved_color)
+    place!(board, moving_loc; color=moved_color)
 
     # the moved tile is now back at the moving loc
     tile = get_tile_on_board(board, action.moving_loc)
@@ -802,11 +808,13 @@ function inverse_post_action_bb_hash_update(board, action::Climb)
     opened_tile = get_tile_on_board(board, action.goal_loc)
     moved_tile = get_tile_on_board(board, action.moving_loc)
 
-    remove!(board, action.goal_loc)
+    # This is not necessarily the current color, because the pillbug can move other pieces
+    moved_color = get_tile_color(get_tile_on_board(board, action.moving_loc))
+    remove!(board, action.goal_loc; color=moved_color)
     if opened_tile != EMPTY_TILE
-        # color = get_tile_color(opened_tile)
-        # This is like a $color tile was placed at the goal_loc, but this is always the current color, as that color just moved
-        place!(board, action.goal_loc; color=board.current_color)
+        color = get_tile_color(opened_tile)
+        # This is like a $color tile was placed at the goal_loc
+        place!(board, action.goal_loc; color=color)
     else
         # There is nothing at the goal loc anymore, remove it from the location hash
         board.location_hash ⊻= get_location_hash_value(action.goal_loc)
@@ -821,7 +829,7 @@ function inverse_post_action_bb_hash_update(board, action::Climb)
         # The tile was new at the goal loc, add it to the location hash
         board.location_hash ⊻= get_location_hash_value(action.moving_loc)
     end
-    place!(board, action.moving_loc)
+    place!(board, action.moving_loc; color=moved_color)
 
     tile = get_tile_on_board(board, action.moving_loc)
     board.hash ⊻= get_hash_value(
@@ -959,9 +967,6 @@ Some functionality for pre defining all actions to reduce allocations
 """
 The total number of idices = 256 ^ 2 + 256 ^ 2 + 256 * 36 = 140288 < 2^32
 so we can use 32 bit integers as indices
-
-when we save moves with goal index and tile we can get
-256 * 36 + 256 * 36 + 256 * 36 = 27648 < 2^16 !
 """
 const MAX_PLACEMENT_INDEX = GRID_SIZE * 36
 const MAX_MOVEMENT_INDEX = GRID_SIZE * GRID_SIZE

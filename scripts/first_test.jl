@@ -10,7 +10,7 @@ game2 = raw"wA1;bA1 \wA1;wA2 wA1-;bA2 bA1/;wP wA2/"
 movestrings1 = split(game1, ';')
 movestrings2 = split(game2, ';')
 
-board = handle_newgame_command(Gametype.MLP)
+board = handle_newgame_command(MLPGame)
 
 const actions1 = map(
     movestring -> begin

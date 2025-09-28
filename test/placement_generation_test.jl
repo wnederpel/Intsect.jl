@@ -1,5 +1,5 @@
 @testitem "Placement location generation after undo ply 2" begin
-    board = handle_newgame_command(Gametype.MLP)
+    board = handle_newgame_command(MLPGame)
 
     do_action(board, action_from_move_string(board, "wP"))
     do_action(board, action_from_move_string(board, "bP wP-"))
