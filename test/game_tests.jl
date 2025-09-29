@@ -116,10 +116,6 @@ end
 @testitem "Test undo action" begin
     using StaticArrays
 
-    ## TODO: add test for location hash, the hash computation is likely broken with climbs:
-    # When moving back a different height is used then when going forward.
-    @test false
-
     function test_board_state(
         board, ply, current_color, turn, queen_placed, just_moved_loc; hash::UInt64=UInt64(0)
     )
@@ -131,7 +127,6 @@ end
         if hash != UInt64(0)
             @test board.hash == hash
         end
-        print("test good")
     end
 
     # Define all pieces

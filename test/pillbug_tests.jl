@@ -30,8 +30,6 @@ end
         do_action(board, movestring)
     end
 
-    show_valid_actions(board)
-
     @test_throws ErrorException action_from_move_string(board, raw"wB1 bP/")
     @test_throws ErrorException action_from_move_string(board, raw"wP bP/")
     # The wq just moved
@@ -303,7 +301,6 @@ end
     ]
 
     for movestring in movestrings
-        show(board)
         do_action(board, movestring)
     end
     undo(board)

@@ -206,7 +206,7 @@ end
     set_tile_on_board(board, bM_loc, bM)
 
     # Generate the moves
-    mosquitomoves(board, bM_loc, get_tile_height(bM), nothing, board.validactions)
+    mosquitomoves(board, bM_loc, get_tile_height(bM), nothing, board.validactions, 0, 0)
     moves = extract_valid_actions(board)
 
     # Check the moves

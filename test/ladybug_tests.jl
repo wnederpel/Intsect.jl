@@ -107,7 +107,3 @@ end
         do_action(board, movestring)
     end
 end
-
-@testitem "What happens when a mosquito is on top and only touches another mosquito?" begin
-    @test false
-end

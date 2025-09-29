@@ -90,9 +90,6 @@ function validactions_general(board::Board, move_buffer)
     end
 
     if board.action_index == 1
-        show(board; simple=false)
-        show(board.white_pieces)
-        show(board.black_pieces)
         add_action(board, Pass(), move_buffer)
     end
 
@@ -467,7 +464,7 @@ end
 end
 
 @inline function queenmoves(
-    board, startloc, move_buffer; avoid_duplicates=false, start_search=board.action_as_index
+    board, startloc, move_buffer; avoid_duplicates=false, start_search=board.action_index
 )
     maxdepth = 1
     moves_to_depth(board, startloc, maxdepth, move_buffer; avoid_duplicates, start_search)
@@ -480,7 +477,9 @@ function spidermoves(board, startloc, move_buffer; start_search=board.action_ind
     return nothing
 end
 
-function antmoves(board, startloc, move_buffer; avoid_duplicates=false, start_search)
+function antmoves(
+    board, startloc, move_buffer; avoid_duplicates=false, start_search=board.action_index
+)
     # todo speed: bitboards might be able to help here?
     tmp_tile = get_tile_on_board(board, startloc)
     # Temporarily remove the tile to find where it can move to

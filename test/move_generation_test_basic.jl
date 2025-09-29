@@ -320,7 +320,7 @@ end
     set_tile_on_board(board, wM_loc, wM)
 
     # Generate the moves
-    mosquitomoves(board, wM_loc, 1, DefaultDict(false), board.validactions)
+    mosquitomoves(board, wM_loc, 1, DefaultDict(false), board.validactions, 1, 1)
     moves = extract_valid_actions(board)
 
     # Check the moves

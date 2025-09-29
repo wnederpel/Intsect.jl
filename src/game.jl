@@ -726,7 +726,7 @@ function post_action_bb_hash_update(board, action::Move)
     place!(board, action.goal_loc; color=moved_color)
     remove!(board, action.moving_loc; color=moved_color)
 
-    tile = get_tile_on_board(board, action.moving_loc)
+    tile = get_tile_on_board(board, action.goal_loc)
     board.hash ⊻= get_hash_value(tile, action.goal_loc)
     board.hash ⊻= get_hash_value(tile, action.moving_loc)
 
@@ -762,7 +762,7 @@ function post_action_bb_hash_update(board, action::Climb)
     end
     place!(board, action.goal_loc; color=moved_color)
 
-    tile = get_tile_on_board(board, action.moving_loc)
+    tile = get_tile_on_board(board, action.goal_loc)
     board.hash ⊻= get_hash_value(
         tile, action.goal_loc; height=length(board.underworld[action.goal_loc])
     )
@@ -831,13 +831,12 @@ function inverse_post_action_bb_hash_update(board, action::Climb)
     end
     place!(board, action.moving_loc; color=moved_color)
 
+    # To correctly undo the hash change, we need to use the heights as they were before the undo took place
+    old_goal_loc_height = length(board.underworld[action.goal_loc]) + opened_tile != EMPTY_TILE
+    old_moving_loc_height = max(length(board.underworld[action.goal_loc]) - 1, 0)
     tile = get_tile_on_board(board, action.moving_loc)
-    board.hash ⊻= get_hash_value(
-        tile, action.goal_loc; height=length(board.underworld[action.goal_loc])
-    )
-    board.hash ⊻= get_hash_value(
-        tile, action.moving_loc; height=length(board.underworld[action.moving_loc])
-    )
+    board.hash ⊻= get_hash_value(tile, action.goal_loc; height=old_goal_loc_height)
+    board.hash ⊻= get_hash_value(tile, action.moving_loc; height=old_moving_loc_height)
     return nothing
 end
 
@@ -949,7 +948,6 @@ Check if a move is not already in the valid actions
 to avoid the pillbug adding duplicate moves
 """
 function move_not_duplicate(board::Board, move, move_buffer, search_from)
-    # TODO speed: this is slow!
     move_index = action_index(move)
     @inbounds buffer_view = view(move_buffer, search_from:(board.action_index - 1))
     for action_index in buffer_view
