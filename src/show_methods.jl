@@ -8,7 +8,7 @@ function get_tile_name_padded(tile, show_locs)
     if length(name) == 2
         name = name * " "
     end
-    return "\e[1m" * name * "\e[0m"
+    return name
 end
 
 function get_tile_name(tile)
@@ -100,7 +100,13 @@ function Base.show(board::Board; show_locs::Bool=true, simple::Bool=true)
         show(GameString(board))
     else
         for i in 1:(board.last_history_index)
-            println(i, " ", ALL_ACTIONS[board.history[i]])
+            action = ALL_ACTIONS[board.history[i]]
+            print(i, " ", ALL_ACTIONS[board.history[i]])
+            if action isa Placement
+                tile_name = get_tile_name(action.tile)
+                print(" ", tile_name)
+            end
+            println()
         end
     end
     println("-----------------")

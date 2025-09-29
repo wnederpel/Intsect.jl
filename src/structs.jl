@@ -33,6 +33,26 @@ function BitBoard()
     return BitBoard(0, 0)
 end
 
+struct MoveStoreEntry
+    location_hash::UInt64
+    ant_reachable_bb::BitBoard
+end
+
+function MoveStoreEntry()
+    return MoveStoreEntry(NO_HASH, BitBoard())
+end
+
+function get_move_store_size(move_store_size_mb)
+    entry_size = sizeof(MoveStoreEntry)
+    n = (move_store_size_mb * 1024 * 1024) ÷ entry_size
+    n_pow2 = 1 << (floor(Int, log2(n)))
+    return n_pow2
+end
+
+move_store_size_mb = 256
+const MOVE_STORE_SIZE::Int = get_move_store_size(move_store_size_mb)
+const MOVE_STORE_MASK::Int = MOVE_STORE_SIZE - 1
+
 """
 Contains all information of the current board state
 
@@ -80,6 +100,7 @@ mutable struct Board
     queen_pos_black::Int
     hash::UInt64
     location_hash::UInt64
+    move_store::Vector{MoveStoreEntry}
 end
 
 function Board(tiles, tile_locs, gametype)
@@ -122,6 +143,7 @@ function Board(tiles, tile_locs, gametype)
         -1,
         UInt64(0),
         UInt64(0),
+        Vector{MoveStoreEntry}(fill(MoveStoreEntry(), MOVE_STORE_SIZE)),
     )
 end
 

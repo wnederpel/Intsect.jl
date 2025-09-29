@@ -100,11 +100,8 @@ function add_placements(board, move_buffer)
     placement_locs_bb = BitBoard(0, 0)
     fill_placement_locs_bb!(placement_locs_bb, board)
 
-    prev_loc = -1
-
     while true
         loc = get_and_remove_first_loc!(placement_locs_bb)
-        prev_loc = loc
         if loc == INVALID_LOC
             break
         end
@@ -161,10 +158,8 @@ function queenplacements(board, move_buffer)
     placement_locs_bb = BitBoard(0, 0)
     fill_placement_locs_bb!(placement_locs_bb, board)
 
-    prev_loc = -1
     while true
         loc = get_and_remove_first_loc!(placement_locs_bb)
-        prev_loc = loc
         if loc == INVALID_LOC
             break
         end
@@ -480,14 +475,12 @@ end
 function antmoves(
     board, startloc, move_buffer; avoid_duplicates=false, start_search=board.action_index
 )
-    # todo speed: bitboards might be able to help here?
+    reachable_bb = BitBoard()
+
     tmp_tile = get_tile_on_board(board, startloc)
     # Temporarily remove the tile to find where it can move to
     set_tile_on_board(board, startloc, EMPTY_TILE)
     @no_escape begin
-        discovered_dict = @alloc(eltype(false), GRID_SIZE)
-        discovered_dict .= false
-
         stack_arr = @alloc(Int, GRID_SIZE)
         stack_ptr = 1
 
@@ -500,32 +493,30 @@ function antmoves(
             loc = stack_arr[stack_ptr - 1]
             stack_ptr -= 1
 
-            stack_ptr = push_slidelocs!(board, stack_arr, stack_ptr, loc, discovered_dict)
+            stack_ptr = push_slidelocs!(board, stack_arr, stack_ptr, loc, reachable_bb)
         end
         set_tile_on_board(board, startloc, tmp_tile)
 
-        for entry in eachindex(discovered_dict)
-            goalloc = entry - 1
-            if discovered_dict[entry] && goalloc != startloc
-                add_action(
-                    board, Move(startloc, goalloc), move_buffer; avoid_duplicates, start_search
-                )
-            end
+        # Remove the starting loc
+        inplace_and!(reachable_bb, ~get_bb(startloc))
+        while true
+            goalloc = get_and_remove_first_loc!(reachable_bb)
+            goalloc == INVALID_LOC && break
+            add_action(board, Move(startloc, goalloc), move_buffer; avoid_duplicates, start_search)
         end
     end
     return nothing
 end
 
-function push_slidelocs!(board::Board, stack_arr, stack_ptr, loc, discovered_dict)
+function push_slidelocs!(board::Board, stack_arr, stack_ptr, loc, reachable_bb::BitBoard)
     neighlocs = allneighs(loc)
     for i in 1:6
         if canslide(i, board, neighlocs)
-            if @inbounds !discovered_dict[neighlocs[i] + 1]
-                # push
+            if !tile_at_loc(reachable_bb, neighlocs[i])
                 @inbounds stack_arr[stack_ptr] = neighlocs[i]
                 stack_ptr += 1
 
-                @inbounds discovered_dict[neighlocs[i] + 1] = true
+                toggle!(reachable_bb, neighlocs[i])
             end
         end
     end

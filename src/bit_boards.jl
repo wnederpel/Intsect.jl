@@ -1,4 +1,7 @@
 
+## Move to 3x3 grid of UInt64's, use immutable struct, with unwound methods.
+@assert false
+
 @inline function Base.:&(bb1::BitBoard, bb2::BitBoard)
     return BitBoard(bb1.first & bb2.first, bb1.second & bb2.second)
 end
@@ -154,55 +157,18 @@ function tile_at_loc(bb::BitBoard, loc)::Bool
 end
 
 # Note: place and remove should both be doable with just an xor
-@inline function place!(board::Board, loc::Int64; color::Number=2)
+@inline function toggle!(board::Board, loc::Int64; color::Number=2)
     if color == 2
         color = board.current_color
     end
-    if color == WHITE
-        place!(board.white_pieces, loc)
-    else
-        place!(board.black_pieces, loc)
-    end
+    loc_bb = get_bb(loc)
+    color == WHITE && inplace_xor!(board.white_pieces, loc_bb)
+    color != WHITE && inplace_xor!(board.black_pieces, loc_bb)
     return nothing
 end
 
-# Note: place and remove should both be doable with just an xor
-@inline function remove!(board::Board, loc::Int64; color::Number=2)
-    if color == 2
-        color = board.current_color
-    end
-    if color == WHITE
-        remove!(board.white_pieces, loc)
-    else
-        remove!(board.black_pieces, loc)
-    end
-    return nothing
-end
-
-@inline function place!(bb::BitBoard, loc::Int64)
-    inplace_or!(bb, get_bb(loc))
-    # if loc < 128
-    #     bb.first ⊻= get_bb_val(loc)
-    # else
-    #     bb.second ⊻= get_bb_val(loc)
-    # end
-    return nothing
-end
-
-@inline function remove!(bb::BitBoard, loc::Int64)
-    if loc < 128
-        bb.first ⊻= get_bb_val(loc)
-    else
-        bb.second ⊻= get_bb_val(loc)
-    end
-    return nothing
-end
-
-@inline function remove_optional!(bb::BitBoard, loc::Int64, do_remove)
-    if do_remove
-        remove!(bb, loc)
-    end
-    return nothing
+@inline function toggle!(bb::BitBoard, loc::Int64)
+    inplace_xor!(bb, get_bb(loc))
 end
 
 function compute_neigh_bb(loc)

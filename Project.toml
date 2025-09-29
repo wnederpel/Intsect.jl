@@ -5,6 +5,7 @@ version = "0.1.0"
 
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+BitIntegers = "c3b6d118-76ef-56ca-8cc7-ebb389d030a1"
 Bumper = "8ce10254-0962-460f-a3d8-1f77fea1446e"
 Cthulhu = "f68482b8-f384-11e8-15f7-abe071a5a75f"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
@@ -16,6 +17,7 @@ Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
+BitIntegers = "0.3.5"
 Cthulhu = "2.15.2"
 InteractiveUtils = "1.11.0"
 Revise = "3.9.0"

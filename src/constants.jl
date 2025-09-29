@@ -16,7 +16,7 @@
 # 11 -12 -13 -14 -15 - 0
 #     / \ / \ / \ / \
 #    0   1   2   3   4
-# Even the 16 x 16 might be way too small. 
+# Even the 16 x 16 might be way too small.
 # Each side as 14 pieces, so everything in a straight line would require
 # 28 * 28 = 784 pieces.
 const ROW_SIZE::Int = 16
@@ -60,3 +60,5 @@ const MAX_NUMS::SVector{8,UInt8} = [2, 2, 1, 1, 0, 0, 0, 0]
 const PERFT_BUFFER::Vector = repeat([default_buffer(AllocBuffer)], 20)
 
 const PINNED_BUFFER::Vector = repeat([default_buffer(AllocBuffer)], 2)
+
+const NO_HASH::UInt64 = UInt64(0)
