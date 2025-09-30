@@ -97,11 +97,10 @@ function validactions_general(board::Board, move_buffer)
 end
 
 function add_placements(board, move_buffer)
-    placement_locs_bb = BitBoard(0, 0)
-    fill_placement_locs_bb!(placement_locs_bb, board)
+    placement_locs_bb = fill_placement_locs_bb(board)
 
     while true
-        loc = get_and_remove_first_loc!(placement_locs_bb)
+        loc, placement_locs_bb = get_and_remove_first_loc(placement_locs_bb)
         if loc == INVALID_LOC
             break
         end
@@ -155,11 +154,10 @@ function queenplacements(board, move_buffer)
         board.current_color == WHITE ? get_tile_from_string(board, "wQ") :
         get_tile_from_string(board, "bQ")
 
-    placement_locs_bb = BitBoard(0, 0)
-    fill_placement_locs_bb!(placement_locs_bb, board)
+    placement_locs_bb = fill_placement_locs_bb(board)
 
     while true
-        loc = get_and_remove_first_loc!(placement_locs_bb)
+        loc, placement_locs_bb = get_and_remove_first_loc(placement_locs_bb)
         if loc == INVALID_LOC
             break
         end
@@ -493,14 +491,16 @@ function antmoves(
             loc = stack_arr[stack_ptr - 1]
             stack_ptr -= 1
 
-            stack_ptr = push_slidelocs!(board, stack_arr, stack_ptr, loc, reachable_bb)
+            stack_ptr, reachable_bb = push_slidelocs!(
+                board, stack_arr, stack_ptr, loc, reachable_bb
+            )
         end
         set_tile_on_board(board, startloc, tmp_tile)
 
         # Remove the starting loc
-        inplace_and!(reachable_bb, ~get_bb(startloc))
+        reachable_bb &= ~get_bb(startloc)
         while true
-            goalloc = get_and_remove_first_loc!(reachable_bb)
+            goalloc, reachable_bb = get_and_remove_first_loc(reachable_bb)
             goalloc == INVALID_LOC && break
             add_action(board, Move(startloc, goalloc), move_buffer; avoid_duplicates, start_search)
         end
@@ -516,11 +516,11 @@ function push_slidelocs!(board::Board, stack_arr, stack_ptr, loc, reachable_bb::
                 @inbounds stack_arr[stack_ptr] = neighlocs[i]
                 stack_ptr += 1
 
-                toggle!(reachable_bb, neighlocs[i])
+                reachable_bb ⊻= get_bb(neighlocs[i])
             end
         end
     end
-    return stack_ptr
+    return stack_ptr, reachable_bb
 end
 
 @inline function moves_to_depth(

@@ -24,7 +24,7 @@ function Pass()
     return Pass(INVALID_LOC)
 end
 
-mutable struct BitBoard
+struct BitBoard
     first::UInt128
     second::UInt128
 end
