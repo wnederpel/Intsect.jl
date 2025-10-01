@@ -92,6 +92,8 @@ export get_all_placements
 export toggle!
 export first_loc
 export get_adjacent_bb
+export get_and_remove_first_loc
+export toggle
 
 export BaseGame
 export LGame

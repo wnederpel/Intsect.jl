@@ -25,12 +25,14 @@ function Pass()
 end
 
 struct BitBoard
-    first::UInt128
-    second::UInt128
+    x1::UInt64
+    x2::UInt64
+    x3::UInt64
+    x4::UInt64
 end
 
 function BitBoard()
-    return BitBoard(0, 0)
+    return BitBoard(0, 0, 0, 0)
 end
 
 struct MoveStoreEntry

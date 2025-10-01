@@ -740,3 +740,7 @@ memory per node  = 0.0 bytes
 gc time          = 0.0%
 total time       = 3.06 seconds
 
+
+## Did some tests with larger bit boards: See bigger_bb_benchmark.jl
+
+Slow downs of 2-3x were observed with larger bit boards
