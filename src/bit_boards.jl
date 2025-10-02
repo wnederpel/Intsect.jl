@@ -56,14 +56,7 @@ end
         return bb
     end
 
-    out = BitBoard(x1, x2, x3, x4)
-    if isempty(out)
-        println("rotating")
-        show(bb)
-        println("by $n, gives zero")
-    end
-
-    return out
+    return BitBoard(x1, x2, x3, x4)
 end
 
 @inline function get_adjacent_bb(bb::BitBoard)

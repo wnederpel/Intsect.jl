@@ -57,7 +57,7 @@ function validactions!(board::Board, move_buffer)
         return nothing
     end
 
-    need_to_place_queen = !board.queen_placed[board.current_color + 1] && board.turn == 4
+    need_to_place_queen = !board.queen_placed[board.current_color] && board.turn == 4
     first_placement = board.ply == 1
     second_placement = board.ply == 2
 
@@ -81,7 +81,7 @@ function validactions_general(board::Board, move_buffer)
     add_placements(board, move_buffer)
     num_placements = board.action_index - 1
 
-    if board.queen_placed[board.current_color + 1]
+    if board.queen_placed[board.current_color]
         if board.general_pinned_update_required
             update_ispinned_general!(board)
             board.general_pinned_update_required = false
@@ -97,16 +97,18 @@ function validactions_general(board::Board, move_buffer)
 end
 
 function add_placements(board, move_buffer)
-    placement_locs_bb = fill_placement_locs_bb(board)
+    my_area = board.area[board.current_color]
+    my_pieces = board.pieces[board.current_color]
+    their_area = board.area[other(board.current_color)]
 
-    while true
-        loc, placement_locs_bb = get_and_remove_first_loc(placement_locs_bb)
-        if loc == INVALID_LOC
-            break
-        end
-        for tile in board.placeable_tiles[board.current_color + 1]
-            if tile != EMPTY_TILE
-                add_action(board, Placement(loc, tile), move_buffer)
+    for_each_bit_set(my_area) do my_area_loc
+        if !get(their_area, my_area_loc) && !get(my_pieces, my_area_loc)
+
+            # If the loc in my area is not occupied by me and not in my enemies zone, I can place tiles there
+            for tile in board.placeable_tiles[board.current_color]
+                if tile != EMPTY_TILE
+                    add_action(board, Placement(my_area_loc, tile), move_buffer)
+                end
             end
         end
     end
@@ -114,15 +116,14 @@ function add_placements(board, move_buffer)
 end
 
 function add_moves(board, ispinned, move_buffer, num_placements)
-    color_odd = board.current_color + 0x01
     actions_before_throw_moves = num_placements
     for bug in 0x01:0x08
-        if get_tile_bug_num(board.placeable_tiles[color_odd][bug]) == 0
+        if get_tile_bug_num(board.placeable_tiles[board.current_color][bug]) == 0
             continue
         end
         for num in 0x00:MAX_NUMS[bug]
-            semi_tile = tile_from_info_as_index_odd(color_odd, bug, num)
-            @inbounds loc = board.tile_locs[semi_tile]
+            semi_tile = tile_from_info_as_index(board.current_color, bug, num)
+            @inbounds loc = board.tile_locs[semi_tile + 1]
 
             if loc == NOT_PLACED
                 break
@@ -154,14 +155,16 @@ function queenplacements(board, move_buffer)
         board.current_color == WHITE ? get_tile_from_string(board, "wQ") :
         get_tile_from_string(board, "bQ")
 
-    placement_locs_bb = fill_placement_locs_bb(board)
+    my_area = board.area[board.current_color]
+    my_pieces = board.pieces[board.current_color]
+    their_area = board.area[other(board.current_color)]
 
-    while true
-        loc, placement_locs_bb = get_and_remove_first_loc(placement_locs_bb)
-        if loc == INVALID_LOC
-            break
+    for_each_bit_set(my_area) do my_area_loc
+        if !get(their_area, my_area_loc) && !get(my_pieces, my_area_loc)
+
+            # If the loc in my area is not occupied by me and not in my enemies zone, I can place tiles there
+            add_action(board, Placement(my_area_loc, queen_tile), move_buffer)
         end
-        add_action(board, Placement(loc, queen_tile), move_buffer)
     end
     return nothing
 
@@ -172,7 +175,7 @@ end
 valid actions for when the first move is made
 """
 function firstplacements(board, move_buffer)
-    for tile in board.placeable_tiles[board.current_color + 1]
+    for tile in board.placeable_tiles[board.current_color]
         if tile != EMPTY_TILE && get_tile_bug(tile) != Integer(Bug.QUEEN)
             add_action(board, Placement(MID, tile), move_buffer)
         end
@@ -185,7 +188,7 @@ valid actions for second placement (first placement by black)
 """
 function secondplacements(board, move_buffer)
     for loc in allneighs(MID)
-        for tile in board.placeable_tiles[board.current_color + 1]
+        for tile in board.placeable_tiles[board.current_color]
             if tile != EMPTY_TILE && get_tile_bug(tile) != Integer(Bug.QUEEN)
                 add_action(board, Placement(loc, tile), move_buffer)
             end
@@ -473,7 +476,7 @@ end
 function antmoves(
     board, startloc, move_buffer; avoid_duplicates=false, start_search=board.action_index
 )
-    reachable_bb = BitBoard()
+    reachable_hs = HexSet()
 
     tmp_tile = get_tile_on_board(board, startloc)
     # Temporarily remove the tile to find where it can move to
@@ -491,36 +494,33 @@ function antmoves(
             loc = stack_arr[stack_ptr - 1]
             stack_ptr -= 1
 
-            stack_ptr, reachable_bb = push_slidelocs!(
-                board, stack_arr, stack_ptr, loc, reachable_bb
-            )
+            stack_ptr = push_slidelocs!(board, stack_arr, stack_ptr, loc, reachable_hs)
         end
         set_tile_on_board(board, startloc, tmp_tile)
 
         # Remove the starting loc
-        reachable_bb &= ~get_bb(startloc)
-        while true
-            goalloc, reachable_bb = get_and_remove_first_loc(reachable_bb)
-            goalloc == INVALID_LOC && break
+        remove!(reachable_hs, startloc)
+
+        for_each_bit_set(reachable_hs) do goalloc
             add_action(board, Move(startloc, goalloc), move_buffer; avoid_duplicates, start_search)
         end
     end
     return nothing
 end
 
-function push_slidelocs!(board::Board, stack_arr, stack_ptr, loc, reachable_bb::BitBoard)
+function push_slidelocs!(board::Board, stack_arr, stack_ptr, loc, reachable_hs::HexSet)
     neighlocs = allneighs(loc)
     for i in 1:6
         if canslide(i, board, neighlocs)
-            if !tile_at_loc(reachable_bb, neighlocs[i])
+            if !get(reachable_hs, neighlocs[i])
                 @inbounds stack_arr[stack_ptr] = neighlocs[i]
                 stack_ptr += 1
 
-                reachable_bb ⊻= get_bb(neighlocs[i])
+                set!(reachable_hs, neighlocs[i])
             end
         end
     end
-    return stack_ptr, reachable_bb
+    return stack_ptr
 end
 
 @inline function moves_to_depth(
@@ -598,7 +598,7 @@ end
         #     update_ispinned_elbow!(board)
         #     return nothing
     end
-    board.general_pinned_update_required = true
+    return board.general_pinned_update_required = true
 end
 
 @inline function is_simple_last_goal_loc(board, last_goal_loc, inverse)
@@ -634,20 +634,29 @@ end
 end
 
 @inline function has_one_neigh_and_get(board, loc; skip_loc=INVALID_LOC)
-    # TODO: DO WITH BIT BOARD? -> still have to find the actual neigh somehow
-    neigh_bb = get_neigh_bb(loc)
-    filled_neighs = neigh_bb & (board.white_pieces | board.black_pieces)
-    if skip_loc != INVALID_LOC
-        skip_bb = get_bb(skip_loc)
-        filled_neighs &= ~skip_bb
+    neighlocs = allneighs(loc)
+    neighs = 0
+    neigh = INVALID_LOC
+    for i in 1:6
+        if neighlocs[i] == skip_loc
+            continue
+        end
+        if get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE
+            neighs += 1
+            neigh = neighlocs[i]
+            if neighs > 1
+                return false, INVALID_LOC
+            end
+        end
     end
-    return count_ones(filled_neighs) == 1, get_first_loc(filled_neighs)
+    if neighs == 0
+        return false, INVALID_LOC
+    end
+    return true, neigh
 end
 
 @inline function has_one_neigh(board, loc)
-    neigh_bb = get_neigh_bb(loc)
-    filled_neighs = neigh_bb & (board.white_pieces | board.black_pieces)
-    return count_ones(filled_neighs) == 1
+    return has_one_neigh_and_get(board, loc)[1]
 end
 
 @inline function update_ispinned_simple!(

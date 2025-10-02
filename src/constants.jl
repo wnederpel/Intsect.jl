@@ -42,9 +42,17 @@ const VALID_BUFFER_SIZE::Int = 400
 const HISTORY_BUFFER_SIZE::Int = 400
 
 const WHITE::UInt8 = 1
-const BLACK::UInt8 = 0
-const DRAW::UInt8 = 2
-const NO_COLOR::UInt8 = 3
+const BLACK::UInt8 = 2
+const DRAW::UInt8 = 3
+const NO_COLOR::UInt8 = 4
+
+function other(color)
+    if color == WHITE
+        return BLACK
+    else
+        return WHITE
+    end
+end
 
 # For now these are global constants, later make this configurable if that's interesting
 const BUGS_IN_PLAY::Int = 8

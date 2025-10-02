@@ -22,7 +22,7 @@ function direction_from_string(tile_string::AbstractString)
     return nothing
 end
 
-function apply_direction(loc::Int, direction)::Int
+function apply_direction(loc::Integer, direction)::Integer
     if direction == Direction.E
         return (loc + 1) % GRID_SIZE
     elseif direction == Direction.W
@@ -40,7 +40,7 @@ function apply_direction(loc::Int, direction)::Int
 end
 
 function get_tile_color(tile)
-    return (tile & COLOR_MASK) >>> COLOR_SHIFT
+    return ((tile & COLOR_MASK) >>> COLOR_SHIFT) + 0x01
 end
 
 function get_tile_bug(tile)
@@ -83,53 +83,56 @@ function get_tile_info(tile)
     return color, bug, bug_num, height
 end
 
-@inline function tile_from_info(color, bug::UInt8, bug_num::UInt8; height::UInt8=0x00)
+@inline function tile_from_info(color, bug::Integer, bug_num::Integer; height::Integer=0x00)
     return (
-        color * (0b00000001 << COLOR_SHIFT) +
+        (color - 0x01) * (0b00000001 << COLOR_SHIFT) +
         (bug - 0x01) * (0b00000001 << BUG_SHIFT) +
         bug_num * (0b00000001 << BUG_NUM_SHIFT) +
         height * (0b00000001 << HEIGHT_SHIFT)
     )
 end
 
-@inline function tile_from_info_as_index(color, bug::UInt8, bug_num::UInt8)
+@inline function tile_from_info_as_index(color, bug::Integer, bug_num::Integer)
     return (
-        color * (0b00000001 << (COLOR_SHIFT - INDEX_SHIFT)) +
-        (bug - 0x01) * (0b00000001 << (BUG_SHIFT - INDEX_SHIFT)) +
-        bug_num * (0b00000001 << (BUG_NUM_SHIFT - INDEX_SHIFT))
-    ) + 0x01
-end
-
-@inline function tile_from_info_as_index_odd(color, bug, bug_num)
-    return (
-        color * (0b00000001 << (COLOR_SHIFT - INDEX_SHIFT)) +
+        (color - 0x01) * (0b00000001 << (COLOR_SHIFT - INDEX_SHIFT)) +
         (bug - 0x01) * (0b00000001 << (BUG_SHIFT - INDEX_SHIFT)) +
         bug_num * (0b00000001 << (BUG_NUM_SHIFT - INDEX_SHIFT))
     )
 end
 
-@inline function get_tile_unplaced(semi_tile::Int)
+@inline function tile_from_info_as_index_odd(color, bug, bug_num)
+    return (
+        (color - 0x01) * (0b00000001 << (COLOR_SHIFT - INDEX_SHIFT)) +
+        (bug - 0x01) * (0b00000001 << (BUG_SHIFT - INDEX_SHIFT)) +
+        bug_num * (0b00000001 << (BUG_NUM_SHIFT - INDEX_SHIFT))
+    )
+end
+
+@inline function get_tile_unplaced(semi_tile::Integer)
     tile_as_index = UInt8(semi_tile - 1)
     return tile_as_index << INDEX_SHIFT
 end
 
-@inline function get_tile_on_board(board::Board, loc::Int)
+@inline function get_tile_on_board(board::Board, loc::Integer)
     # Loc is zero indexed
-    return @fastmath @inbounds board.tiles[loc + 1]
+    if loc < 0
+        error("get tile on board called with invalid loc $loc")
+    end
+    return board.tiles[loc + 1]
 end
 
-@inline function set_tile_on_board(board::Board, loc::Int, tile::UInt8)
+@inline function set_tile_on_board(board::Board, loc::Integer, tile::Integer)
     # Loc is zero indexed
     @inbounds board.tiles[loc + 1] = tile
     return nothing
 end
 
-@inline function get_loc(board::Board, tile::UInt8)
+@inline function get_loc(board::Board, tile::Integer)
     # Indexed by UInt8 >>> 2 (so a normal tile, withouth height info), zero indexed
     return @inbounds board.tile_locs[(tile >>> INDEX_SHIFT) + 1]
 end
 
-function set_loc(board::Board, tile::UInt8, loc::Int)
+function set_loc(board::Board, tile::Integer, loc::Integer)
     # Indexed by UInt8 >>> 2 (so a normal tile, withouth height info), zero indexed
     @inbounds board.tile_locs[(tile >>> INDEX_SHIFT) + 1] = loc
     return nothing
@@ -149,7 +152,7 @@ function handle_newgame_command(gametype::Type{T}) where {T<:Gametype}
     newboard = Board(tiles, tile_locs, gametype)
     return newboard
 
-    error("starting new game.. not implemented")
+    return error("starting new game.. not implemented")
 end
 
 function placement_filter(tile_list, exclude_list)
@@ -219,7 +222,11 @@ function get_tile_from_string(tile_string)
     if tile_string == "empty"
         return EMPTY_TILE
     end
-    white = tile_string[1] == 'w'
+    if tile_string[1] == 'w'
+        color = WHITE
+    else
+        color = BLACK
+    end
     if tile_string[2] == 'A'
         bug = Integer(Bug.ANT)
         num = parse(UInt8, tile_string[3])
@@ -248,7 +255,7 @@ function get_tile_from_string(tile_string)
         error("Invalid tile string $tile_string")
     end
     num -= 0x01
-    return tile_from_info(white, bug, num)
+    return tile_from_info(color, bug, num)
 end
 
 function action_from_move_string(board::Board, move_string)
@@ -362,6 +369,7 @@ function move_string_goal(board::Board, goal_loc; moving_loc=INVALID_LOC)
     move_string = ""
     for dir in instances(Direction.T)
         loc = apply_direction(goal_loc, dir)
+        # println(loc)
         if get_tile_on_board(board, loc) != EMPTY_TILE && loc != moving_loc
             goal_tile = get_tile_on_board(board, loc)
             # note, the dir is the direction from the goal_loc to the occupied neighbor
@@ -450,7 +458,7 @@ function do_action(board::Board, string::AbstractString)
     return nothing
 end
 
-function do_action(board::Board, action_as_index::Int)
+function do_action(board::Board, action_as_index::Integer)
     # board.last_moves_index += 1
     # if board.last_moves_index == length(board.last_moves) + 1
     #     board.last_moves_index = 1
@@ -472,11 +480,11 @@ function do_action(board::Board, placement::Placement)
     set_tile_on_board(board, placement.goal_loc, placement.tile)
     set_loc(board, placement.tile, placement.goal_loc)
     if get_tile_bug(placement.tile) == Integer(Bug.QUEEN)
-        board.queen_placed[board.current_color + 1] = true
+        board.queen_placed[board.current_color] = true
     end
 
     bug = get_tile_bug(placement.tile)
-    board.placeable_tiles[board.current_color + 1][bug] = next_bug_num(placement.tile)
+    board.placeable_tiles[board.current_color][bug] = next_bug_num(placement.tile)
 
     post_action_update(board, placement)
     return nothing
@@ -541,39 +549,10 @@ function undo(board::Board)
     end
     last_action_index = board.history[board.last_history_index]
     board.last_history_index -= 1
-    undo_action(board, last_action_index)
-end
-
-function count_color_on_board(board; color=BLACK, show=false)
-    count = 0
-    color_odd = color + 0x01
-    for bug in 0x01:0x08
-        if get_tile_bug_num(board.placeable_tiles[color_odd][bug]) != 0
-            for num in @inbounds 0x00:MAX_NUMS[bug]
-                semi_tile = tile_from_info_as_index_odd(color_odd, bug, num)
-                @inbounds loc = board.tile_locs[semi_tile]
-
-                if loc == NOT_PLACED
-                    break
-                end
-                if loc == UNDERGROUND || loc == INVALID_LOC
-                    continue
-                end
-                show && println("found (semi) piece $semi_tile at $loc")
-                count += 1
-            end
-        end
-    end
-    return count
+    return undo_action(board, last_action_index)
 end
 
 function undo_action(board::Board, action_as_index::Integer)
-    # board.last_moves_index += 1
-    # if board.last_moves_index == length(board.last_moves) + 1
-    #     board.last_moves_index = 1
-    # end
-    # board.last_moves[board.last_moves_index] = (action_as_index, :undone)
-
     do_for_action(action_as_index, action -> undo_action(board, action))
     return nothing
 end
@@ -591,12 +570,12 @@ function undo_action(board::Board, action::Placement)
     set_loc(board, action.tile, NOT_PLACED)
     bug = get_tile_bug(action.tile)
     if bug == Integer(Bug.QUEEN)
-        board.queen_placed[board.current_color == WHITE ? (BLACK + 1) : (WHITE + 1)] = false
+        board.queen_placed[board.current_color == WHITE ? (BLACK) : (WHITE)] = false
     end
 
     inverse_post_action_update(board, action)
 
-    board.placeable_tiles[board.current_color + 1][bug] = action.tile
+    board.placeable_tiles[board.current_color][bug] = action.tile
 
     # inverse_update_placement_locs_goal(board, action.goal_loc)
     return nothing
@@ -655,13 +634,16 @@ function inverse_post_action_update(board::Board, action)
     inverse_post_action_general_update(board)
 
     # This assumes the color is already back at the color that made the change!!
-    inverse_post_action_bb_hash_update(board, action)
+    inverse_post_action_hs_hash_update(board, action)
 
-    goal_loc_normal, moving_loc_normal = get_last_changed_locs(action)
-    # since we are trying to undo this move pas it as a move from goal -> moving loc
-    # nothing looks strange but get pinned tiles expect goal loc first then moving loc
+    if !(action isa Pass)
+        goal_loc_normal, moving_loc_normal = get_last_changed_locs(action)
+        # since we are trying to undo this move pas it as a move from goal -> moving loc
+        # nothing looks strange but get pinned tiles expect goal loc first then moving loc
 
-    get_pinned_tiles!(board, moving_loc_normal, goal_loc_normal; inverse=true)
+        get_pinned_tiles!(board, moving_loc_normal, goal_loc_normal; inverse=true)
+    end
+
     return nothing
 end
 
@@ -692,11 +674,13 @@ function inverse_post_action_pillbug_update(board::Board)
 end
 
 function post_action_update(board::Board, action::Action)
-    post_action_bb_hash_update(board, action)
+    post_action_hs_hash_update(board, action)
     post_action_pillbug_update(board, action)
     post_action_general_update(board, action)
-    goal_loc, moving_loc = get_last_changed_locs(action)
-    get_pinned_tiles!(board, goal_loc, moving_loc)
+    if !(action isa Pass)
+        goal_loc, moving_loc = get_last_changed_locs(action)
+        get_pinned_tiles!(board, goal_loc, moving_loc)
+    end
     return nothing
 end
 
@@ -711,41 +695,41 @@ function pre_action_update(board::Board, action)
     return nothing
 end
 
-function post_action_bb_hash_update(board, placement::Placement)
+function post_action_hs_hash_update(board, placement::Placement)
     # This assumes the color is not yet changed!!
     goal_loc = placement.goal_loc
-    toggle!(board, goal_loc)
+    place_tile_on_board_hex_set(board, board.current_color, goal_loc)
 
     board.hash ⊻= get_hash_value(placement.tile, placement.goal_loc)
-    board.location_hash ⊻= get_location_hash_value(placement.goal_loc)
+    return board.location_hash ⊻= get_location_hash_value(placement.goal_loc)
 end
 
-function post_action_bb_hash_update(board, action::Move)
+function post_action_hs_hash_update(board, action::Move)
     # This is not necessarily the current color, because the pillbug can move other pieces
     moved_color = get_tile_color(get_tile_on_board(board, action.goal_loc))
-    toggle!(board, action.goal_loc; color=moved_color)
-    toggle!(board, action.moving_loc; color=moved_color)
+    place_tile_on_board_hex_set(board, moved_color, action.goal_loc)
+    remove_tile_on_board_hex_set(board, moved_color, action.moving_loc)
 
     tile = get_tile_on_board(board, action.goal_loc)
     board.hash ⊻= get_hash_value(tile, action.goal_loc)
     board.hash ⊻= get_hash_value(tile, action.moving_loc)
 
     board.location_hash ⊻= get_location_hash_value(action.goal_loc)
-    board.location_hash ⊻= get_location_hash_value(action.moving_loc)
+    return board.location_hash ⊻= get_location_hash_value(action.moving_loc)
 end
 
-function post_action_bb_hash_update(board, action::Climb)
+function post_action_hs_hash_update(board, action::Climb)
     opened_tile = get_tile_on_board(board, action.moving_loc)
     moved_tile = get_tile_on_board(board, action.goal_loc)
 
     # This is not necessarily the current color, because the pillbug can move other pieces
     moved_color = get_tile_color(get_tile_on_board(board, action.goal_loc))
 
-    toggle!(board, action.moving_loc; color=moved_color)
+    remove_tile_on_board_hex_set(board, moved_color, moving_loc)
     if opened_tile != EMPTY_TILE
         color = get_tile_color(opened_tile)
         # This is like a $color tile was placed at the moving loc
-        toggle!(board, action.moving_loc; color=color)
+        place_tile_on_board_hex_set(board, color, moving_loc)
     else
         # The opened tile is empty so the location has to be removed from the location hash
         board.location_hash ⊻= get_location_hash_value(action.moving_loc)
@@ -755,42 +739,42 @@ function post_action_bb_hash_update(board, action::Climb)
         covered_tile = first(board.underworld[action.goal_loc])
         color = get_tile_color(covered_tile)
         # This is like a $color tile was removed at the goal_loc
-        toggle!(board, action.goal_loc; color=color)
+        remove_tile_on_board_hex_set(board, color, goal_loc)
     else
         # The height is zero, so there was no tile at the goal loc, add it to the location hash
         board.location_hash ⊻= get_location_hash_value(action.goal_loc)
     end
-    toggle!(board, action.goal_loc; color=moved_color)
+    place_tile_on_board_hex_set(board, moved_color, goal_loc)
 
     tile = get_tile_on_board(board, action.goal_loc)
     board.hash ⊻= get_hash_value(
         tile, action.goal_loc; height=length(board.underworld[action.goal_loc])
     )
-    board.hash ⊻= get_hash_value(
+    return board.hash ⊻= get_hash_value(
         tile, action.moving_loc; height=length(board.underworld[action.moving_loc])
     )
 end
 
-function post_action_bb_hash_update(board, pass::Pass) end
+function post_action_hs_hash_update(board, pass::Pass) end
 
-function inverse_post_action_bb_hash_update(board, placement::Placement)
+function inverse_post_action_hs_hash_update(board, placement::Placement)
     # This assumes the color is already back at the color that made the change!!
-    toggle!(board, placement.goal_loc)
+    remove_tile_on_board_hex_set(board, board.current_color, placement.goal_loc)
 
     board.hash ⊻= get_hash_value(placement.tile, placement.goal_loc)
     board.location_hash ⊻= get_location_hash_value(placement.goal_loc)
     return nothing
 end
 
-function inverse_post_action_bb_hash_update(board, action::Move)
+function inverse_post_action_hs_hash_update(board, action::Move)
     goal_loc = action.goal_loc
     moving_loc = action.moving_loc
 
     # This is not necessarily the current color, because the pillbug can move other pieces
     moved_color = get_tile_color(get_tile_on_board(board, action.moving_loc))
 
-    toggle!(board, goal_loc; color=moved_color)
-    toggle!(board, moving_loc; color=moved_color)
+    remove_tile_on_board_hex_set(board, moved_color, goal_loc)
+    place_tile_on_board_hex_set(board, moved_color, moving_loc)
 
     # the moved tile is now back at the moving loc
     tile = get_tile_on_board(board, action.moving_loc)
@@ -803,18 +787,18 @@ function inverse_post_action_bb_hash_update(board, action::Move)
     return nothing
 end
 
-function inverse_post_action_bb_hash_update(board, action::Climb)
+function inverse_post_action_hs_hash_update(board, action::Climb)
     # This assumes the color is already back at the color that made the change!!
     opened_tile = get_tile_on_board(board, action.goal_loc)
     moved_tile = get_tile_on_board(board, action.moving_loc)
 
     # This is not necessarily the current color, because the pillbug can move other pieces
     moved_color = get_tile_color(get_tile_on_board(board, action.moving_loc))
-    toggle!(board, action.goal_loc; color=moved_color)
+    remove_tile_on_board_hex_set(board, moved_color, goal_loc)
     if opened_tile != EMPTY_TILE
         color = get_tile_color(opened_tile)
         # This is like a $color tile was placed at the goal_loc
-        toggle!(board, action.goal_loc; color=color)
+        place_tile_on_board_hex_set(board, color, goal_loc)
     else
         # There is nothing at the goal loc anymore, remove it from the location hash
         board.location_hash ⊻= get_location_hash_value(action.goal_loc)
@@ -824,12 +808,12 @@ function inverse_post_action_bb_hash_update(board, action::Climb)
         covered_tile = first(board.underworld[action.moving_loc])
         color = get_tile_color(covered_tile)
         # This is like a $color tile was removed at the moving_loc
-        toggle!(board, action.moving_loc; color=color)
+        remove_tile_on_board_hex_set(board, color, moving_loc)
     else
         # The tile was new at the goal loc, add it to the location hash
         board.location_hash ⊻= get_location_hash_value(action.moving_loc)
     end
-    toggle!(board, action.moving_loc; color=moved_color)
+    place_tile_on_board_hex_set(board, moved_color, moving_loc)
 
     # To correctly undo the hash change, we need to use the heights as they were before the undo took place
     old_goal_loc_height = length(board.underworld[action.goal_loc]) + opened_tile != EMPTY_TILE
@@ -840,7 +824,7 @@ function inverse_post_action_bb_hash_update(board, action::Climb)
     return nothing
 end
 
-function inverse_post_action_bb_hash_update(board, pass::Pass) end
+function inverse_post_action_hs_hash_update(board, pass::Pass) end
 
 function post_action_general_update(board::Board, action)
     check_gameover(board)
@@ -939,7 +923,7 @@ function gametype_from_string(gametype_string)
     elseif gametype_string == "Base+MLP"
         return MLPGame
     end
-    error("game type '$gametype_string' not yet supported")
+    return error("game type '$gametype_string' not yet supported")
 end
 
 """
@@ -987,17 +971,17 @@ end
     return pass_index()
 end
 
-@inline function placement_index(loc::Int, tile::UInt8)
+@inline function placement_index(loc::Integer, tile::Integer)
     return (tile >>> INDEX_SHIFT) * GRID_SIZE + loc + 1
 end
 
 const MOVEMENT_INDEX_OFFSET = MAX_PLACEMENT_INDEX + 1
-@inline function movement_index(moving_loc::Int, goal_loc::Int)
+@inline function movement_index(moving_loc::Integer, goal_loc::Integer)
     return @fastmath MOVEMENT_INDEX_OFFSET + moving_loc * GRID_SIZE + goal_loc
 end
 
 const CLIMB_INDEX_OFFSET = MAX_MOVEMENT_INDEX + MAX_PLACEMENT_INDEX + 1
-@inline function climb_index(moving_loc::Int, goal_loc::Int)
+@inline function climb_index(moving_loc::Integer, goal_loc::Integer)
     return @fastmath CLIMB_INDEX_OFFSET + moving_loc * GRID_SIZE + goal_loc
 end
 

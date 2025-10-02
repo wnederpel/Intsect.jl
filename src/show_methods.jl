@@ -34,14 +34,14 @@ function show_valid_actions(board)
     return nothing
 end
 
-function Base.show(bb::BitBoard, show_locs::Bool=true)
+function Base.show(hs::HexSet, show_locs::Bool=true)
     for row in 1:ROW_SIZE
         # Each name takes up 6 tokens
         # each new row should be 3 less indented
         print("  "^(ROW_SIZE - row))
         for col in 1:ROW_SIZE
             loc = (row - 1) * ROW_SIZE + col - 1
-            if bb[loc]
+            if hs[loc]
                 name = " ⬣ "
             else
                 name = ""

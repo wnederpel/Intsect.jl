@@ -24,24 +24,26 @@ function Pass()
     return Pass(INVALID_LOC)
 end
 
-struct BitBoard
-    x1::UInt64
-    x2::UInt64
-    x3::UInt64
-    x4::UInt64
+const HEX_SET_NUM_WORDS::Int = GRID_SIZE / 64 # (power of two)
+const HEX_SET_SHIFT::Int = trailing_zeros(GRID_SIZE) - trailing_zeros(HEX_SET_NUM_WORDS) # Use the last bits for the word index
+const HEX_SET_MASK::Int = 64 - 1 # use the first HEX_SET_SHIFT as index in the array
+const HEX_SET_TYPE::Type = UInt64
+
+struct HexSet
+    table::MVector{HEX_SET_NUM_WORDS,HEX_SET_TYPE}
 end
 
-function BitBoard()
-    return BitBoard(0, 0, 0, 0)
+function HexSet()
+    return HexSet(fill(0, HEX_SET_NUM_WORDS))
 end
 
 struct MoveStoreEntry
     location_hash::UInt64
-    ant_reachable_bb::BitBoard
+    ant_reachable_bb::HexSet
 end
 
 function MoveStoreEntry()
-    return MoveStoreEntry(NO_HASH, BitBoard())
+    return MoveStoreEntry(NO_HASH, HexSet())
 end
 
 function get_move_store_size(move_store_size_mb)
@@ -93,8 +95,8 @@ mutable struct Board
     action_index::Int
     placeable_tiles::SVector{2,MVector{8,UInt8}}
     ispinned::MVector{GRID_SIZE,Bool}
-    white_pieces::BitBoard
-    black_pieces::BitBoard
+    pieces::SVector{2,HexSet}
+    area::SVector{2,HexSet}
     last_moves::Vector
     last_moves_index::Int
     general_pinned_update_required::Bool
@@ -136,8 +138,8 @@ function Board(tiles, tile_locs, gametype)
             ),
         ),
         MVector{GRID_SIZE,Bool}(fill(false, GRID_SIZE)),
-        BitBoard(),
-        BitBoard(),
+        [HexSet(), HexSet()],
+        [HexSet(), HexSet()],
         repeat([(-1, :pass)], 1000),
         0,
         false,
