@@ -127,13 +127,13 @@ function Board(tiles, tile_locs, gametype)
             MVector{8,UInt8}(
                 gametype_placeable_tiles_filter(
                     gametype,
-                    get_tile_from_string.(["bA1", "bG1", "bB1", "bS1", "bQ", "bL", "bP", "bM"]),
+                    get_tile_from_string.(["wA1", "wG1", "wB1", "wS1", "wQ", "wL", "wP", "wM"]),
                 ),
             ),
             MVector{8,UInt8}(
                 gametype_placeable_tiles_filter(
                     gametype,
-                    get_tile_from_string.(["wA1", "wG1", "wB1", "wS1", "wQ", "wL", "wP", "wM"]),
+                    get_tile_from_string.(["bA1", "bG1", "bB1", "bS1", "bQ", "bL", "bP", "bM"]),
                 ),
             ),
         ),

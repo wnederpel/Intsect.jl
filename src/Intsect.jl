@@ -16,8 +16,7 @@ export Climb
 export Pass
 export GameString
 export Action
-export End
-export BitBoard
+export HexSet
 
 # constants
 export GRID_SIZE
@@ -88,12 +87,6 @@ export undo
 export get_pinned_tiles
 export format_with_dots
 export extract_valid_actions
-export get_all_placements
-export toggle!
-export first_loc
-export get_adjacent_bb
-export get_and_remove_first_loc
-export toggle
 
 export BaseGame
 export LGame

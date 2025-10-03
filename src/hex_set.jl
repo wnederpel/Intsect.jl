@@ -34,7 +34,7 @@ end
     return nothing
 end
 
-@inline function count_ones(hs::HexSet)
+@inline function Base.count_ones(hs::HexSet)
     s = 0
     for word in hs.table
         s += Base.count_ones(word)
@@ -44,6 +44,16 @@ end
 
 function Base.:getindex(hs::HexSet, loc)
     return get(hs, loc)
+end
+
+function Base.copy(hs::HexSet)
+    return HexSet(Base.copy(hs.table))
+end
+
+import Base.==
+
+function ==(hs1::HexSet, hs2::HexSet)
+    return hs1.table == hs2.table
 end
 
 function remove_tile_on_board_hex_set(board, color_of_tile, loc)

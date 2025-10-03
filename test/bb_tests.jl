@@ -13,23 +13,23 @@
         do_action(board, action)
     end
 
-    @test count_ones(board.white_pieces) == 2
-    @test count_ones(board.black_pieces) == 2
+    @test count_ones(board.pieces[WHITE]) == 2
+    @test count_ones(board.pieces[BLACK]) == 2
 
     undo(board)
 
-    @test count_ones(board.white_pieces) == 2
-    @test count_ones(board.black_pieces) == 2
+    @test count_ones(board.pieces[WHITE]) == 2
+    @test count_ones(board.pieces[BLACK]) == 2
 end
 
 @testitem "undo pillbug special is the same as do climb" begin
     board = handle_newgame_command(MLPGame)
 
     actions = [
-        Placement(136, 0x04),
-        Placement(120, 0x38),
-        Placement(135, 0x24),
-        Placement(103, 0x20),
+        Placement(136, get_tile_from_string("wA1")),
+        Placement(120, get_tile_from_string("bM")),
+        Placement(135, get_tile_from_string("wQ")),
+        Placement(103, get_tile_from_string("bQ")),
         Move(135, 119),
         Move(136, 104),
     ]
@@ -37,15 +37,16 @@ end
     do_bbs = []
 
     for action in actions
-        push!(do_bbs, (copy(board.white_pieces), copy(board.black_pieces)))
+        push!(do_bbs, (copy(board.pieces[WHITE]), copy(board.pieces[BLACK])))
         do_action(board, action)
+        show(board)
     end
 
     for i in reverse(eachindex(do_bbs))
         undo(board)
 
-        @test board.white_pieces == do_bbs[i][1]
-        @test board.black_pieces == do_bbs[i][2]
+        @test board.pieces[WHITE] == do_bbs[i][1]
+        @test board.pieces[BLACK] == do_bbs[i][2]
     end
 end
 
@@ -53,10 +54,10 @@ end
     board = handle_newgame_command(MLPGame)
 
     actions = [
-        Placement(136, 0x14),
-        Placement(120, 0x10),
-        Placement(135, 0x24),
-        Placement(103, 0x20),
+        Placement(136, get_tile_from_string("wB1")),
+        Placement(120, get_tile_from_string("bB1")),
+        Placement(135, get_tile_from_string("wQ")),
+        Placement(103, get_tile_from_string("bQ")),
         Move(135, 119),
         Climb(120, 103),
         Climb(136, 119),
@@ -67,33 +68,33 @@ end
         do_action(board, action)
     end
 
-    @test count_ones(board.white_pieces) == 2
-    @test count_ones(board.black_pieces) == 2
+    @test count_ones(board.pieces[WHITE]) == 2
+    @test count_ones(board.pieces[BLACK]) == 2
 
     do_action(board, actions[begin + 5])
 
-    @test count_ones(board.white_pieces) == 2
-    @test count_ones(board.black_pieces) == 1
+    @test count_ones(board.pieces[WHITE]) == 2
+    @test count_ones(board.pieces[BLACK]) == 1
 
     do_action(board, actions[begin + 6])
 
-    @test count_ones(board.white_pieces) == 1
-    @test count_ones(board.black_pieces) == 1
+    @test count_ones(board.pieces[WHITE]) == 1
+    @test count_ones(board.pieces[BLACK]) == 1
 
     do_action(board, actions[begin + 7])
 
-    @test count_ones(board.white_pieces) == 0
-    @test count_ones(board.black_pieces) == 2
+    @test count_ones(board.pieces[WHITE]) == 0
+    @test count_ones(board.pieces[BLACK]) == 2
 end
 
 @testitem "undo climb is the same as do climb" begin
     board = handle_newgame_command(MLPGame)
 
     actions = [
-        Placement(136, 0x14),
-        Placement(120, 0x10),
-        Placement(135, 0x24),
-        Placement(103, 0x20),
+        Placement(136, get_tile_from_string("wB1")),
+        Placement(120, get_tile_from_string("bB1")),
+        Placement(135, get_tile_from_string("wQ")),
+        Placement(103, get_tile_from_string("bQ")),
         Move(135, 119),
         Climb(120, 103),
         Climb(136, 119),
@@ -103,14 +104,14 @@ end
     do_bbs = []
 
     for action in actions
-        push!(do_bbs, (copy(board.white_pieces), copy(board.black_pieces)))
+        push!(do_bbs, (copy(board.pieces[WHITE]), copy(board.pieces[BLACK])))
         do_action(board, action)
     end
 
     for i in reverse(eachindex(do_bbs))
         undo(board)
 
-        @test board.white_pieces == do_bbs[i][1]
-        @test board.black_pieces == do_bbs[i][2]
+        @test board.pieces[WHITE] == do_bbs[i][1]
+        @test board.pieces[BLACK] == do_bbs[i][2]
     end
 end

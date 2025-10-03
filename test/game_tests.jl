@@ -49,7 +49,7 @@
     action3 = Placement(wQ_loc, wQ)
     @test action3 in validactions(board)
     do_action(board, action3)
-    test_board_state(board, 4, BLACK, 2, MVector{2,Bool}(false, true), wQ_loc)
+    test_board_state(board, 4, BLACK, 2, MVector{2,Bool}(true, false), wQ_loc)
 
     action4 = Placement(bQ_loc, bQ)
     @test action4 in validactions(board)
@@ -173,7 +173,7 @@ end
     @test action3 in validactions(board)
     hash = board.hash
     do_action(board, action3)
-    test_board_state(board, 4, BLACK, 2, MVector{2,Bool}(false, true), wQ_loc)
+    test_board_state(board, 4, BLACK, 2, MVector{2,Bool}(true, false), wQ_loc)
     undo(board)
     test_board_state(board, 3, WHITE, 2, MVector{2,Bool}(false, false), bS1_loc; hash)
     do_action(board, action3)
@@ -184,7 +184,7 @@ end
     do_action(board, action4)
     test_board_state(board, 5, WHITE, 3, MVector{2,Bool}(true, true), bQ_loc)
     undo(board)
-    test_board_state(board, 4, BLACK, 2, MVector{2,Bool}(false, true), wQ_loc; hash)
+    test_board_state(board, 4, BLACK, 2, MVector{2,Bool}(true, false), wQ_loc; hash)
     do_action(board, action4)
 
     action5 = Placement(wA1_loc, wA1)
