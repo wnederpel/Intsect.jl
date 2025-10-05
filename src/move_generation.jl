@@ -476,7 +476,8 @@ end
 function antmoves(
     board, startloc, move_buffer; avoid_duplicates=false, start_search=board.action_index
 )
-    reachable_hs = HexSet()
+    reachable_hs = board.workspaces.ant_reachable_hs
+    clear!(reachable_hs)
 
     tmp_tile = get_tile_on_board(board, startloc)
     # Temporarily remove the tile to find where it can move to

@@ -10,5 +10,5 @@
 
     actions = validactions(board)
 
-    @assert length(actions) == 7 * 3
+    @test length(actions) == 7 * 3
 end

@@ -33,9 +33,13 @@ struct HexSet
     table::MVector{HEX_SET_NUM_WORDS,HEX_SET_TYPE}
 end
 
-function HexSet()
-    return HexSet(fill(0, HEX_SET_NUM_WORDS))
+HexSet() = HexSet(zeros(MVector{HEX_SET_NUM_WORDS,HEX_SET_TYPE}))
+
+struct Workspaces
+    ant_reachable_hs::HexSet
 end
+
+make_ws() = Workspaces(HexSet())
 
 struct MoveStoreEntry
     location_hash::UInt64
@@ -105,6 +109,7 @@ mutable struct Board
     hash::UInt64
     location_hash::UInt64
     move_store::Vector{MoveStoreEntry}
+    workspaces::Workspaces
 end
 
 function Board(tiles, tile_locs, gametype)
@@ -148,6 +153,7 @@ function Board(tiles, tile_locs, gametype)
         UInt64(0),
         UInt64(0),
         Vector{MoveStoreEntry}(fill(MoveStoreEntry(), MOVE_STORE_SIZE)),
+        make_ws(),
     )
 end
 

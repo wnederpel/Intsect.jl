@@ -21,6 +21,10 @@ end
     @inbounds return (hs.table[idx] & bit) != 0
 end
 
+@inline function clear!(hs::HexSet)
+    return fill!(hs.table, zero(HEX_SET_TYPE))
+end
+
 @inline function for_each_bit_set(f::Function, hs::HexSet)
     for i in 1:HEX_SET_NUM_WORDS
         @inbounds word = hs.table[i]

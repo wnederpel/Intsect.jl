@@ -39,7 +39,6 @@ end
     for action in actions
         push!(do_bbs, (copy(board.pieces[WHITE]), copy(board.pieces[BLACK])))
         do_action(board, action)
-        show(board)
     end
 
     for i in reverse(eachindex(do_bbs))
