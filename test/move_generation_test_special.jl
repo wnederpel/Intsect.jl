@@ -403,10 +403,10 @@ end
     board = handle_newgame_command(MLPGame)
 
     actions = [
-        Placement(136, 0x14),
-        Placement(120, 0x10),
-        Placement(135, 0x24),
-        Placement(103, 0x20),
+        Placement(136, get_tile_from_string("wB1")),
+        Placement(120, get_tile_from_string("bB1")),
+        Placement(135, get_tile_from_string("wQ")),
+        Placement(103, get_tile_from_string("bQ")),
         Move(135, 119),
         Climb(120, 103),
         Climb(136, 119),
@@ -419,7 +419,6 @@ end
 
     moves = validactions(board)
 
-    println(moves)
     @test length(moves) == 1
     @test moves[begin] == Pass()
 end

@@ -838,9 +838,10 @@ function post_action_general_update(board::Board, action)
     return nothing
 end
 
+const wQ::UInt8 = get_tile_from_string("wQ")
+const bQ::UInt8 = get_tile_from_string("bQ")
+
 function check_gameover(board::Board)
-    wQ = 0x24 # get_tile_from_string(board, "wQ")
-    bQ = 0x20 # get_tile_from_string(board, "bQ")
     wQ_loc = get_loc(board, wQ)
     bQ_loc = get_loc(board, bQ)
     # Piece might be underground, otherwise update the queen loc

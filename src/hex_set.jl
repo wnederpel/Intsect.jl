@@ -60,7 +60,7 @@ function remove_tile_on_board_hex_set(board, color_of_tile, loc)
     pieces = board.pieces[color_of_tile]
     area = board.area[color_of_tile]
     # TODO remove the area update code and place it in the generate placement code. && run tests (fix pass in perft)  && toggle with xor over remove and place.
-    @assert false
+    # @assert false
     remove!(pieces, loc)
     remove!(area, loc)
     neighlocs = allneighs(loc)
