@@ -16,6 +16,12 @@ end
     return nothing
 end
 
+@inline function toggle!(hs::HexSet, loc::Integer)
+    idx, bit = loc_to_index_bit(loc)
+    @inbounds hs.table[idx] ⊻= bit
+    return nothing
+end
+
 @inline function get(hs::HexSet, loc::Integer)::Bool
     idx, bit = loc_to_index_bit(loc)
     @inbounds return (hs.table[idx] & bit) != 0
@@ -60,37 +66,17 @@ function ==(hs1::HexSet, hs2::HexSet)
     return hs1.table == hs2.table
 end
 
-function remove_tile_on_board_hex_set(board, color_of_tile, loc)
-    pieces = board.pieces[color_of_tile]
-    area = board.area[color_of_tile]
-    # TODO remove the area update code and place it in the generate placement code. && run tests (fix pass in perft)  && toggle with xor over remove and place.
-    # @assert false
-    remove!(pieces, loc)
-    remove!(area, loc)
-    neighlocs = allneighs(loc)
-    for i in 1:6
-        @inbounds remove!(area, neighlocs[i])
-    end
-    for_each_bit_set(pieces) do piece_loc
-        neighlocs_inner = allneighs(piece_loc)
-        for j in 1:6
-            @inbounds set!(area, neighlocs_inner[j])
-        end
-        return nothing
-    end
+function remove_tile_on_hex_set!(board, color_of_tile, loc)
+    remove!(board.pieces[color_of_tile], loc)
     return nothing
 end
 
-function place_tile_on_board_hex_set(board, color_of_tile, loc)
-    pieces = board.pieces[color_of_tile]
-    area = board.area[color_of_tile]
+function toggle_tile_on_hex_set!(board, color_of_tile, loc)
+    toggle!(board.pieces[color_of_tile], loc)
+    return nothing
+end
 
-    set!(pieces, loc)
-    set!(area, loc)
-    neighlocs = allneighs(loc)
-    for i in 1:6
-        neigh = neighlocs[i]
-        @inbounds set!(area, neigh)
-    end
+function place_tile_on_hex_set!(board, color_of_tile, loc)
+    set!(board.pieces[color_of_tile], loc)
     return nothing
 end

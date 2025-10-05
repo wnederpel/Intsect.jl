@@ -96,19 +96,43 @@ function validactions_general(board::Board, move_buffer)
     return nothing
 end
 
-function add_placements(board, move_buffer)
-    my_area = board.area[board.current_color]
+@inline function for_placement_locs(f::Function, board)
     my_pieces = board.pieces[board.current_color]
-    their_area = board.area[other(board.current_color)]
+    their_pieces = board.pieces[other(board.current_color)]
+    no_placement_hs = board.workspaces.no_placement_hs
+    clear!(no_placement_hs)
 
-    for_each_bit_set(my_area) do my_area_loc
-        if !get(their_area, my_area_loc) && !get(my_pieces, my_area_loc)
+    for_each_bit_set(their_pieces) do loc
+        neighs = allneighs(loc)
+        set!(no_placement_hs, loc)
+        for i in 1:6
+            set!(no_placement_hs, neighs[i])
+        end
+    end
 
-            # If the loc in my area is not occupied by me and not in my enemies zone, I can place tiles there
-            for tile in board.placeable_tiles[board.current_color]
-                if tile != EMPTY_TILE
-                    add_action(board, Placement(my_area_loc, tile), move_buffer)
-                end
+    for_each_bit_set(my_pieces) do loc
+        set!(no_placement_hs, loc)
+    end
+
+    for_each_bit_set(my_pieces) do loc
+        neighs = allneighs(loc)
+        for i in 1:6
+            neighloc = neighs[i]
+            if !no_placement_hs[neighloc]
+                placement_loc = neighloc
+                set!(no_placement_hs, placement_loc)
+                f(placement_loc)
+            end
+        end
+    end
+    return nothing
+end
+
+function add_placements(board, move_buffer)
+    for_placement_locs(board) do placement_loc
+        for tile in board.placeable_tiles[board.current_color]
+            if tile != EMPTY_TILE
+                add_action(board, Placement(placement_loc, tile), move_buffer)
             end
         end
     end
@@ -155,19 +179,9 @@ function queenplacements(board, move_buffer)
         board.current_color == WHITE ? get_tile_from_string(board, "wQ") :
         get_tile_from_string(board, "bQ")
 
-    my_area = board.area[board.current_color]
-    my_pieces = board.pieces[board.current_color]
-    their_area = board.area[other(board.current_color)]
-
-    for_each_bit_set(my_area) do my_area_loc
-        if !get(their_area, my_area_loc) && !get(my_pieces, my_area_loc)
-
-            # If the loc in my area is not occupied by me and not in my enemies zone, I can place tiles there
-            add_action(board, Placement(my_area_loc, queen_tile), move_buffer)
-        end
+    for_placement_locs(board) do placement_loc
+        add_action(board, Placement(placement_loc, queen_tile), move_buffer)
     end
-    return nothing
-
     return nothing
 end
 

@@ -37,9 +37,10 @@ HexSet() = HexSet(zeros(MVector{HEX_SET_NUM_WORDS,HEX_SET_TYPE}))
 
 struct Workspaces
     ant_reachable_hs::HexSet
+    no_placement_hs::HexSet
 end
 
-make_ws() = Workspaces(HexSet())
+make_ws() = Workspaces(HexSet(), HexSet())
 
 struct MoveStoreEntry
     location_hash::UInt64
@@ -100,7 +101,6 @@ mutable struct Board
     placeable_tiles::SVector{2,MVector{8,UInt8}}
     ispinned::MVector{GRID_SIZE,Bool}
     pieces::SVector{2,HexSet}
-    area::SVector{2,HexSet}
     last_moves::Vector
     last_moves_index::Int
     general_pinned_update_required::Bool
@@ -143,7 +143,6 @@ function Board(tiles, tile_locs, gametype)
             ),
         ),
         MVector{GRID_SIZE,Bool}(fill(false, GRID_SIZE)),
-        [HexSet(), HexSet()],
         [HexSet(), HexSet()],
         repeat([(-1, :pass)], 1000),
         0,

@@ -13,6 +13,4 @@ for action in actions
     show_valid_actions(board)
     # show(board.pieces[WHITE])
     # show(board.pieces[BLACK])
-    # show(board.area[WHITE])
-    # show(board.area[BLACK])
 end
