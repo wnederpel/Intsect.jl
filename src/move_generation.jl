@@ -490,8 +490,8 @@ end
 function antmoves(
     board, startloc, move_buffer; avoid_duplicates=false, start_search=board.action_index
 )
-    reachable_hs = board.workspaces.ant_reachable_hs
-    clear!(reachable_hs)
+    visited_hs = board.workspaces.ant_reachable_hs
+    clear!(visited_hs)
 
     tmp_tile = get_tile_on_board(board, startloc)
     # Temporarily remove the tile to find where it can move to
@@ -509,25 +509,38 @@ function antmoves(
             loc = stack_arr[stack_ptr - 1]
             stack_ptr -= 1
 
-            stack_ptr = push_slidelocs!(board, stack_arr, stack_ptr, loc, reachable_hs)
+            if visited_hs[loc]
+                continue
+            end
+
+            set!(visited_hs, loc)
+
+            if loc != startloc
+                add_action(board, Move(startloc, loc), move_buffer; avoid_duplicates, start_search)
+            end
+
+            neighlocs = allneighs(loc)
+            slide_neighs = get_slide_neighs(board, neighlocs)
+            # slide_neighs is a number with bits for the slidable neighbours
+            while slide_neighs != 0
+                slide_neigh_i = trailing_zeros(slide_neighs) + 1
+                slide_neighs &= slide_neighs - 1
+
+                @inbounds stack_arr[stack_ptr] = neighlocs[slide_neigh_i]
+                stack_ptr += 1
+            end
         end
         set_tile_on_board(board, startloc, tmp_tile)
-
-        # Remove the starting loc
-        remove!(reachable_hs, startloc)
-
-        for_each_bit_set(reachable_hs) do goalloc
-            add_action(board, Move(startloc, goalloc), move_buffer; avoid_duplicates, start_search)
-        end
     end
+    # The visited_hs is also documentation of what the ant can reach. This could be cached.
     return nothing
 end
 
 function push_slidelocs!(board::Board, stack_arr, stack_ptr, loc, reachable_hs::HexSet)
     neighlocs = allneighs(loc)
     for i in 1:6
-        if canslide(i, board, neighlocs)
-            if !get(reachable_hs, neighlocs[i])
+        if !get(reachable_hs, neighlocs[i])
+            if canslide(i, board, neighlocs)
                 @inbounds stack_arr[stack_ptr] = neighlocs[i]
                 stack_ptr += 1
 
@@ -590,12 +603,29 @@ From the current position, one can travel in a direcion when:
  2. one of the two neighbouring directions is filled
 """
 @inline function canslide(i, board, neighlocs)
-    left_neigh = neighlocs[i == 1 ? 6 : i - 1]
-    right_neigh = neighlocs[i == 6 ? 1 : i + 1]
+    @inbounds left_neigh = neighlocs[i == 1 ? 6 : i - 1]
+    @inbounds right_neigh = neighlocs[i == 6 ? 1 : i + 1]
     return get_tile_on_board(board, @inbounds neighlocs[i]) == EMPTY_TILE && (
         (@inbounds get_tile_on_board(board, left_neigh) == EMPTY_TILE) ⊻
         (@inbounds get_tile_on_board(board, right_neigh) == EMPTY_TILE)
     )
+end
+
+@inline function get_slide_neighs(board, all_neighbours)
+    # Number, the bits are used to indicate the presence of a piece
+    occupied = 0
+    for i in 6:-1:1
+        occupied = occupied << 1
+        @inbounds if get_tile_on_board(board, all_neighbours[i]) != EMPTY_TILE
+            occupied |= 1
+            # wrap around
+            occupied |= 1 << 6
+            occupied |= 1 << 12
+        end
+    end
+
+    slidable = ((~occupied & ((occupied << 1) ⊻ (occupied >>> 1))) >> 6) & (2^6 - 1)
+    return slidable
 end
 
 @inline function get_pinned_tiles!(board, last_goal_loc, last_moving_loc; inverse=false)
