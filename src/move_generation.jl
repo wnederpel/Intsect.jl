@@ -831,23 +831,10 @@ GetArticulationPoints(i, d)
             get_pinned_tiles_general!(
                 board, visited, depth_dict, low_dict, parent_dict, board.queen_pos_white, 0
             )
-        elseif board.queen_pos_black >= 0
+        else
             get_pinned_tiles_general!(
                 board, visited, depth_dict, low_dict, parent_dict, board.queen_pos_black, 0
             )
-        elseif board.tile_locs[MID] >= 0
-            get_pinned_tiles_general!(
-                board, visited, depth_dict, low_dict, parent_dict, board.tile_locs[MID], 0
-            )
-        else
-            for loc in board.tile_locs
-                if loc >= 0
-                    get_pinned_tiles_general!(
-                        board, visited, depth_dict, low_dict, parent_dict, loc, 0
-                    )
-                    break
-                end
-            end
         end
     end
     return nothing
