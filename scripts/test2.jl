@@ -6,24 +6,13 @@ using Profile
 
 board = handle_newgame_command(MLPGame)
 
-movestrings = [
-    raw"wG1",
-    raw"bG1 wG1-",
-    raw"wB1 /wG1",
-    raw"bB1 bG1-",
-    raw"wQ \wB1",
-    raw"bQ \bB1",
-    raw"wL \wG1",
-    raw"bB1 bQ",
-    raw"wB1 wG1",
-    raw"bM bB1\\",
-]
+movestrings = raw"wB1;bS1 wB1-;wQ /wB1;bQ bS1/;wG1 -wB1;bG1 bS1-;wM -wQ;bM bQ-;wP /wQ;bP bQ/;wL -wG1;bL bG1-;wA1 wQ\;bB1 \bQ;wS1 wA1-;bA1 -bB1;wA2 -wP;bA2 bP-;wA2 wS1/;bA2 /bA1;wB1 wG1\;"[begin:(end - 1)]
 
-wl_move = raw"wL \bG1"
-
-for movestring in movestrings
+for movestring in split(movestrings, ";")
     do_action(board, movestring)
 end
 
 show(board)
-show_valid_actions(board)
+undo(board)
+show(board)
+# do_action(board, movestring)

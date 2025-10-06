@@ -315,6 +315,7 @@ function action_from_move_string(board::Board, move_string)
     end
     valid_actions = validactions(board)
     if !(action in valid_actions)
+        println("SHOWING BOARD AS DEBUG OUTPUT")
         show(board)
         show_valid_actions(board)
         error(

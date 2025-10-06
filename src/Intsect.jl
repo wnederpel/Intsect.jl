@@ -41,6 +41,7 @@ export Gametype
 export Direction
 
 # methods
+export set!
 export example
 export start
 export perft

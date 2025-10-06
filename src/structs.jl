@@ -36,14 +36,22 @@ end
 HexSet() = HexSet(zeros(MVector{HEX_SET_NUM_WORDS,HEX_SET_TYPE}))
 
 struct Workspaces
-    ant_visited_hs::HexSet
     no_placement_hs::HexSet
     ladybug_visited_step_2::HexSet
-    ladybug_visited_step_3::HexSet
     ispinned_visited::HexSet
+
+    move_to_set::HexSet
+    pillbug_throw_from::HexSet
+    pillbug_throw_to::HexSet
+    mosquito_throw_from::HexSet
+    mosquito_throw_to::HexSet
 end
 
-make_ws() = Workspaces(HexSet(), HexSet(), HexSet(), HexSet(), HexSet())
+function make_ws()
+    return Workspaces(
+        HexSet(), HexSet(), HexSet(), HexSet(), HexSet(), HexSet(), HexSet(), HexSet()
+    )
+end
 
 struct MoveStoreEntry
     location_hash::UInt64
