@@ -42,6 +42,8 @@ export Direction
 
 # methods
 export set!
+export remove!
+export toggle!
 export example
 export start
 export perft
@@ -75,7 +77,8 @@ export spidermoves
 export beetlemoves
 export ladybugmoves
 export queenmoves
-export pillbugmoves
+export pillbugmoves_normal
+export pillbugmoves_throw
 export mosquitomoves
 export handle_newgame_command
 export get_tile_on_board

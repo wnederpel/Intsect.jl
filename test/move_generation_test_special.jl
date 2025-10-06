@@ -26,17 +26,17 @@
     push!(board.underworld[bB1_loc], bS1)
 
     # Generate the moves
-    beetlemoves(board, bB1_loc, get_tile_height(bB1), board.validactions)
-    moves = extract_valid_actions(board)
+    move_to_locs = HexSet()
+    beetlemoves(board, bB1_loc, get_tile_height(bB1), move_to_locs)
 
     # Check the moves
-    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.NE)) in moves
-    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.NW)) in moves
-    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.E)) in moves
-    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.SE)) in moves
-    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.W)) in moves
-    @test Climb(bB1_loc, apply_direction(bB1_loc, Direction.SW)) in moves
-    @test length(moves) == 6
+    @test move_to_locs[apply_direction(bB1_loc, Direction.NE)] == 1
+    @test move_to_locs[apply_direction(bB1_loc, Direction.NW)] == 1
+    @test move_to_locs[apply_direction(bB1_loc, Direction.E)] == 1
+    @test move_to_locs[apply_direction(bB1_loc, Direction.SE)] == 1
+    @test move_to_locs[apply_direction(bB1_loc, Direction.W)] == 1
+    @test move_to_locs[apply_direction(bB1_loc, Direction.SW)] == 1
+    @test count_ones(move_to_locs) == 6
 end
 
 @testitem "Sliding between stacked pieces" begin
@@ -61,16 +61,16 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    beetlemoves(board, wB1_loc, get_tile_height(wB1), board.validactions)
-    moves = extract_valid_actions(board)
+    move_to_locs = HexSet()
+    beetlemoves(board, wB1_loc, get_tile_height(wB1), board.move_to_locs)
 
     # Check the moves
     # wB1 cammot move to bB1_loc
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.NE)) in moves
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.SE)) in moves
-    @test Move(wB1_loc, apply_direction(wB1_loc, Direction.NW)) in moves
-    @test Move(wB1_loc, apply_direction(wB1_loc, Direction.SW)) in moves
-    @test length(moves) == 4
+    @test move_to_locs[apply_direction(wB1_loc, Direction.NE)] == 1
+    @test move_to_locs[apply_direction(wB1_loc, Direction.SE)] == 1
+    @test move_to_locs[apply_direction(wB1_loc, Direction.NW)] == 1
+    @test move_to_locs[apply_direction(wB1_loc, Direction.SW)] == 1
+    @test count_ones(move_to_locs) == 4
 
     # If bB1 is one lvl higher, this does work, as wB1 goes up to the lvl above  bB1
     wB1 = get_tile_from_string("wB1")
@@ -93,11 +93,11 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    beetlemoves(board, wB1_loc, get_tile_height(wB1), board.validactions)
-    moves = extract_valid_actions(board)
+    move_to_locs = HexSet()
+    beetlemoves(board, wB1_loc, get_tile_height(wB1), move_to_locs)
 
     # Check the moves
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.E)) in moves
+    @test move_to_locs[apply_direction(wB1_loc, Direction.E)]
 
     # If wB1 is one lvl higher, this does not work as the other pieces still block the sliding
     wB1 = get_tile_from_string("wB1") + 0b00000001
@@ -120,12 +120,12 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    beetlemoves(board, wB1_loc, get_tile_height(wB1), board.validactions)
-    moves = extract_valid_actions(board)
+    move_to_locs = HexSet()
+    beetlemoves(board, wB1_loc, get_tile_height(wB1), move_to_locs)
 
     # Check the moves
     # wB1 still cammot move to bB1_loc as it needs to be two higher
-    @test !(Climb(wB1_loc, apply_direction(wB1_loc, Direction.E)) in moves)
+    @test move_to_locs[apply_direction(wB1_loc, Direction.E)] == 0
 
     # If wB1 is one lvl higher, this does not work as the other pieces still block the sliding
     wB1 = get_tile_from_string("wB1") + 0b00000001
@@ -148,12 +148,12 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    beetlemoves(board, wB1_loc, get_tile_height(wB1), board.validactions)
-    moves = extract_valid_actions(board)
+    move_to_locs = HexSet()
+    beetlemoves(board, wB1_loc, get_tile_height(wB1), move_to_locs)
 
     # Check the moves
     # wB1 now can slide to bB1
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.E)) in moves
+    @test move_to_locs[apply_direction(wB1_loc, Direction.E)] == 1
 
     # If wB1 is two lvls higher, this does work as it can slide
     wB1 = get_tile_from_string("wB1") + 0b00000010
@@ -176,12 +176,12 @@ end
     set_tile_on_board(board, bB2_loc, bB2)
 
     # Generate the moves
-    beetlemoves(board, wB1_loc, get_tile_height(wB1), board.validactions)
-    moves = extract_valid_actions(board)
+    move_to_locs = HexSet()
+    beetlemoves(board, wB1_loc, get_tile_height(wB1), move_to_locs)
 
     # Check the moves
     # wB1 still cammot move to bB1_loc as it needs to be two higher
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.E)) in moves
+    @test move_to_locs[apply_direction(wB1_loc, Direction.E)] == 1
 end
 
 @testitem "Mosquito cannot move when it only touches a mosquito" begin

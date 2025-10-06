@@ -164,18 +164,14 @@ end
     ispinned = DefaultDict(false)
     ispinned[wS1_loc] = true
 
-    # Generate the moves
-    pillbugmoves(board, wP_loc, ispinned, board.validactions)
-    moves = extract_valid_actions(board)
+    # Generate pillbug throws
+    pillbug_throws_from = HexSet()
+    pillbug_throws_to = HexSet()
+    pillbugmoves_throw(board, wP_loc, ispinned, pillbug_throws_from, pillbug_throws_to)
 
-    # Check the moves
-    # First the normal moves
-    @test Move(wP_loc, apply_direction(wP_loc, Direction.W)) in moves
-    @test Move(wP_loc, apply_direction(wP_loc, Direction.SW)) in moves
-    # Then the special moves
-    @test Move(bQ_loc, apply_direction(wP_loc, Direction.W)) in moves
-    @test Move(bQ_loc, apply_direction(wP_loc, Direction.SW)) in moves
-    @test Move(wQ_loc, apply_direction(wP_loc, Direction.W)) in moves
-    @test Move(wQ_loc, apply_direction(wP_loc, Direction.SW)) in moves
-    @test length(moves) == 6
+    show(board)
+    # pill bug can only throw bQ and wQ
+    remove!(pillbug_throws_from, bQ_loc)
+    remove!(pillbug_throws_from, wQ_loc)
+    @test count_ones(pillbug_throws_from) == 0
 end

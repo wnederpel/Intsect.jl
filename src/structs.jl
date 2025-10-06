@@ -69,7 +69,7 @@ function get_move_store_size(move_store_size_mb)
     return n_pow2
 end
 
-move_store_size_mb = 256
+move_store_size_mb = 0.5
 const MOVE_STORE_SIZE::Int = get_move_store_size(move_store_size_mb)
 const MOVE_STORE_MASK::Int = MOVE_STORE_SIZE - 1
 

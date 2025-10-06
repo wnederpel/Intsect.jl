@@ -157,11 +157,11 @@ function add_moves(board, ispinned, move_buffer)
 
     # First we add the pillbug throw actions, as they move a location differnt than their own
     # In the per location loop we will add these as needed
-    my_pillbug = board.current_color == WHITE ? wP : bP
-    my_mosquito = board.current_color == WHITE ? wM : bM
+    wP_loc = get_loc(board, wP)
+    bP_loc = get_loc(board, bP)
+    my_pillbug_loc = board.current_color == WHITE ? wP_loc : bP_loc
 
-    my_pillbug_loc = get_loc(board, my_pillbug)
-    my_mosquito_loc = get_loc(board, my_mosquito)
+    my_mosquito_loc = get_loc(board, board.current_color == WHITE ? wM : bM)
 
     pillbug_throw_from = board.workspaces.pillbug_throw_from
     pillbug_throw_to = board.workspaces.pillbug_throw_to
@@ -180,7 +180,7 @@ function add_moves(board, ispinned, move_buffer)
 
     if my_mosquito_loc >= 0
         mosq_neighs = allneighs(my_mosquito_loc)
-        mosq_can_throw = my_pillbug_loc in mosq_neighs
+        mosq_can_throw = wP_loc in mosq_neighs || bP_loc in mosq_neighs
         if mosq_can_throw
             pillbugmoves_throw(
                 board, my_mosquito_loc, board.ispinned, mosquito_throw_from, mosquito_throw_to

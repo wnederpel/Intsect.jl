@@ -407,8 +407,6 @@ end
     do_action(board, action_from_move_string(board, "wQ -wP"))
     do_action(board, action_from_move_string(board, "bQ bS1-"))
 
-    show(board)
-    show_valid_actions(board)
     @test length(validactions(board)) == 34
     @test count(action -> action isa Move, validactions(board)) == 4
 end
