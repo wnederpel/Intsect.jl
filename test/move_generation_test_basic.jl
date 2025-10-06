@@ -364,7 +364,7 @@ end
 
     # Setup dict of pinned pieces
     ispinned = DefaultDict(false)
-    ispinned[wS1_loc + 1] = true
+    ispinned[wS1_loc] = true
 
     # Generate the moves
     pillbugmoves(board, wP_loc, ispinned, board.validactions)

@@ -311,13 +311,13 @@ end
 
     # Test pinned tiles
     is_pinned = get_pinned_tiles(board)
-    @test is_pinned[wS1_loc + 1] == true
-    @test is_pinned[bS1_loc + 1] == true
-    @test is_pinned[wQ_loc + 1] == true
-    @test is_pinned[bQ_loc + 1] == false
-    @test is_pinned[wA1_loc + 1] == false
-    @test is_pinned[bA1_loc + 1] == false
-    @test is_pinned[wS2_loc + 1] == false
+    @test is_pinned[wS1_loc] == true
+    @test is_pinned[bS1_loc] == true
+    @test is_pinned[wQ_loc] == true
+    @test is_pinned[bQ_loc] == false
+    @test is_pinned[wA1_loc] == false
+    @test is_pinned[bA1_loc] == false
+    @test is_pinned[wS2_loc] == false
 
     action10 = Placement(bA2_loc, bA2)
     do_action(board, action10)
@@ -327,14 +327,14 @@ end
     do_action(board, action11)
 
     is_pinned = get_pinned_tiles(board)
-    @test is_pinned[wS1_loc + 1] == false
-    @test is_pinned[bS1_loc + 1] == false
-    @test is_pinned[wQ_loc + 1] == false
-    @test is_pinned[bQ_loc + 1] == false
-    @test is_pinned[wA1_loc + 1] == false
-    @test is_pinned[bA1_loc + 1] == false
-    @test is_pinned[wS2_loc + 1] == false
-    @test is_pinned[bA2_loc + 1] == false
+    @test is_pinned[wS1_loc] == false
+    @test is_pinned[bS1_loc] == false
+    @test is_pinned[wQ_loc] == false
+    @test is_pinned[bQ_loc] == false
+    @test is_pinned[wA1_loc] == false
+    @test is_pinned[bA1_loc] == false
+    @test is_pinned[wS2_loc] == false
+    @test is_pinned[bA2_loc] == false
 
     bA3_loc = apply_direction(bA2_loc, Direction.NE)
     action12 = Placement(bA3_loc, bA3)
@@ -345,16 +345,16 @@ end
     do_action(board, action12)
 
     is_pinned = get_pinned_tiles(board)
-    @test is_pinned[wS1_loc + 1] == false
-    @test is_pinned[bS1_loc + 1] == false
-    @test is_pinned[wQ_loc + 1] == false
-    @test is_pinned[bQ_loc + 1] == false
-    @test is_pinned[wA1_loc + 1] == false
-    @test is_pinned[bA1_loc + 1] == false
-    @test is_pinned[wS2_loc + 1] == true
-    @test is_pinned[bA2_loc + 1] == true
-    @test is_pinned[bA3_loc + 1] == false
-    @test is_pinned[wA2_loc + 1] == false
+    @test is_pinned[wS1_loc] == false
+    @test is_pinned[bS1_loc] == false
+    @test is_pinned[wQ_loc] == false
+    @test is_pinned[bQ_loc] == false
+    @test is_pinned[wA1_loc] == false
+    @test is_pinned[bA1_loc] == false
+    @test is_pinned[wS2_loc] == true
+    @test is_pinned[bA2_loc] == true
+    @test is_pinned[bA3_loc] == false
+    @test is_pinned[wA2_loc] == false
 end
 
 @testitem "Test climb moves and underworld" begin

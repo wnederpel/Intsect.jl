@@ -936,13 +936,9 @@ to avoid the pillbug adding duplicate moves
 """
 function move_not_duplicate(board::Board, move, move_buffer, search_from)
     move_index = action_index(move)
+
     @inbounds buffer_view = view(move_buffer, search_from:(board.action_index - 1))
-    for action_index in buffer_view
-        if action_index == move_index
-            return false
-        end
-    end
-    return return true
+    return !(move_index in buffer_view)
 end
 
 """

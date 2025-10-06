@@ -157,6 +157,9 @@ function add_moves(board, ispinned, move_buffer, num_placements)
             end
             # Generate moves for placed tiles
             tile = get_tile_on_board(board, loc)
+            # println(
+            #     "calling bug moves the normal way and with actions_before_throw_moves: $actions_before_throw_moves",
+            # )
             actions_before_throw_moves = bugmoves(
                 board,
                 loc,
@@ -223,6 +226,14 @@ end
     start_search=board.action_index,
     actions_before_throw_moves=num_placements,
 )
+    if avoid_duplicates
+        # println("num placements: $num_placements")
+        # println("actions before throw moves: $actions_before_throw_moves")
+        # println("board.action_index: $(board.action_index)")
+        # println("start search: $start_search")
+        # println("making moves for loc $loc")
+        # println()
+    end
     # Pill bug can yield special moves, even when pinned
     # Moquito can yield pill bug moves, even when pinned
     # Beetle can move on top op hive, even when pinned
@@ -234,9 +245,9 @@ end
         mosquitomoves(
             board, loc, height, ispinned, move_buffer, num_placements, actions_before_throw_moves
         )
-    elseif bug == Integer(Bug.BEETLE) && (!ispinned[loc + 1] || height != 1)
+    elseif bug == Integer(Bug.BEETLE) && (!ispinned[loc] || height != 1)
         beetlemoves(board, loc, height, move_buffer; avoid_duplicates, start_search)
-    elseif !ispinned[loc + 1]
+    elseif !ispinned[loc]
         if bug == Integer(Bug.ANT)
             antmoves(board, loc, move_buffer; avoid_duplicates, start_search)
         elseif bug == Integer(Bug.SPIDER)
@@ -246,7 +257,7 @@ end
         elseif bug == Integer(Bug.GRASSHOPPER)
             grasshoppermoves(board, loc, move_buffer; avoid_duplicates, start_search)
         elseif bug == Integer(Bug.LADYBUG)
-            ladybugmoves(board, loc, move_buffer; start_search)
+            ladybugmoves(board, loc, move_buffer; avoid_duplicates, start_search)
         end
     end
     return actions_before_throw_moves
@@ -268,6 +279,9 @@ function mosquitomoves(
             if bug != Integer(Bug.MOSQUITO)
                 # Needs to avoid duplicates bc multiple of the same bugs can touch the mosquito (and the same move can come for different bugs)
                 # Set the number of actions before the mosquito as the start since this mosquito moveset consist of multiple bugmoves.
+                # println(
+                #     "calling bug moves from mosquito moves with actions_before_throw_moves: $actions_before_throw_moves",
+                # )
                 bugmoves(
                     board,
                     loc,
@@ -278,6 +292,7 @@ function mosquitomoves(
                     num_placements;
                     avoid_duplicates=true,
                     start_search=actions_before_throw_moves,
+                    actions_before_throw_moves=actions_before_throw_moves,
                 )
             end
         end
@@ -296,7 +311,7 @@ function pillbugmoves(
     start_search=board.action_index,
 )
     maxdepth = 1
-    if !ispinned[startloc + 1]
+    if !ispinned[startloc]
         # pillbug moves before mosquito, so we do not have to remove duplicates
         moves_to_depth(
             board, startloc, maxdepth, move_buffer; avoid_duplicates=avoid_duplicates, start_search
@@ -304,6 +319,10 @@ function pillbugmoves(
     end
     # Save this because the mosquito moves had to avoid duplicate throw moves
     actions_before_throw_moves = board.action_index
+
+    # println("actions_before_throw_moves: $actions_before_throw_moves")
+    # println("adding throws now: deduplicating them from index $(num_placements + 1)")
+
     # pillbug also has special moves
     # For all surrounding tiles, if they are not pinned, and did not just move,
     # and can slide on the pillbug, and the tile is not stacked
@@ -324,7 +343,7 @@ function pillbugmoves(
             loc = neighlocs[i]
             tile = get_tile_on_board(board, loc)
             if tile != EMPTY_TILE &&
-                !ispinned[loc + 1] &&
+                !ispinned[loc] &&
                 loc != board.just_moved_loc &&
                 get_tile_height(tile) == 1 &&
                 canslidepillbug(i, board, neighlocs)
@@ -332,6 +351,7 @@ function pillbugmoves(
                     if slideloc != loc && get_tile_on_board(board, slideloc) == EMPTY_TILE
                         move = Move(loc, slideloc)
                         # Throwing moves move other pieces, this can always make duplicate moves for any bug
+
                         add_action(
                             board,
                             move,
@@ -348,52 +368,73 @@ function pillbugmoves(
     return actions_before_throw_moves
 end
 
-function ladybugmoves(board, startloc, move_buffer; start_search=board.action_index)
-    maxdepth = 3
+function ladybugmoves(
+    board, startloc, move_buffer; avoid_duplicates=false, start_search=board.action_index
+)
     tmp_tile = get_tile_on_board(board, startloc)
     set_tile_on_board(board, startloc, EMPTY_TILE)
 
-    moves_to_depth_ladybug!(board, startloc, maxdepth, move_buffer, start_search)
+    visited_step_2 = board.workspaces.ladybug_visited_step_2
+    visited_step_3 = board.workspaces.ladybug_visited_step_3
+    clear!(visited_step_2)
+    clear!(visited_step_3)
+
+    neighlocs = allneighs(startloc)
+    for i in 1:6
+        step_1_loc = neighlocs[i]
+        if get_tile_on_board(board, step_1_loc) == EMPTY_TILE
+            continue
+        end
+        if !canslidehigh(i, board, neighlocs, 1)
+            continue
+        end
+
+        step_2_locs = allneighs(step_1_loc)
+        for j in 1:6
+            step_2_loc = step_2_locs[j]
+            if get_tile_on_board(board, step_2_loc) == EMPTY_TILE
+                continue
+            end
+            if visited_step_2[step_2_loc]
+                continue
+            end
+            step_1_height = get_tile_height(get_tile_on_board(board, step_1_loc))
+            if !canslidehigh(j, board, step_2_locs, step_1_height + 1)
+                continue
+            end
+
+            set!(visited_step_2, step_2_loc)
+
+            step_3_locs = allneighs(step_2_loc)
+
+            for k in 1:6
+                step_3_loc = step_3_locs[k]
+                if get_tile_on_board(board, step_3_loc) != EMPTY_TILE
+                    continue
+                end
+                if visited_step_3[step_3_loc]
+                    continue
+                end
+                step_2_height = get_tile_height(get_tile_on_board(board, step_2_loc))
+                if !canslidehigh(k, board, step_3_locs, step_2_height + 1)
+                    continue
+                end
+
+                set!(visited_step_3, step_3_loc)
+                if step_3_loc != startloc
+                    add_action(
+                        board,
+                        Move(startloc, step_3_loc),
+                        move_buffer;
+                        avoid_duplicates=avoid_duplicates,
+                        start_search,
+                    )
+                end
+            end
+        end
+    end
 
     set_tile_on_board(board, startloc, tmp_tile)
-
-    return nothing
-end
-
-function moves_to_depth_ladybug!(
-    board, startloc, depth, move_buffer, start_search; cur_loc=startloc
-)
-    if depth == 0
-        if cur_loc != startloc
-            add_action(
-                board, Move(startloc, cur_loc), move_buffer; avoid_duplicates=true, start_search
-            )
-        end
-        return nothing
-    end
-    neighlocs = allneighs(cur_loc)
-    for i in 1:6
-        height = get_tile_height(get_tile_on_board(board, cur_loc))
-        if (
-                depth == 3 &&
-                get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
-                canslidehigh(i, board, neighlocs, 1)
-            ) ||
-            (
-                depth == 2 &&
-                get_tile_on_board(board, neighlocs[i]) != EMPTY_TILE &&
-                canslidehigh(i, board, neighlocs, height + 1)
-            ) ||
-            (
-                depth == 1 &&
-                get_tile_on_board(board, neighlocs[i]) == EMPTY_TILE &&
-                canslidehigh(i, board, neighlocs, height + 1)
-            )
-            moves_to_depth_ladybug!(
-                board, startloc, depth - 1, move_buffer, start_search; cur_loc=neighlocs[i]
-            )
-        end
-    end
 
     return nothing
 end
@@ -490,7 +531,7 @@ end
 function antmoves(
     board, startloc, move_buffer; avoid_duplicates=false, start_search=board.action_index
 )
-    visited_hs = board.workspaces.ant_reachable_hs
+    visited_hs = board.workspaces.ant_visited_hs
     clear!(visited_hs)
 
     tmp_tile = get_tile_on_board(board, startloc)
@@ -579,20 +620,27 @@ end
         end
         return nothing
     end
+
     neighlocs = allneighs(cur_loc)
-    for i in 1:6
-        if canslide(i, board, neighlocs) && neighlocs[i] != prev_loc
-            moves_to_depth!(
-                board,
-                startloc,
-                depth - 1,
-                move_buffer,
-                neighlocs[i],
-                cur_loc;
-                avoid_duplicates,
-                start_search,
-            )
+    slide_neighs = get_slide_neighs(board, neighlocs)
+    # slide_neighs is a number with bits for the slidable neighbours
+    while slide_neighs != 0
+        slide_neigh_i = trailing_zeros(slide_neighs) + 1
+        slide_neighs &= slide_neighs - 1
+
+        if neighlocs[slide_neigh_i] == prev_loc
+            continue
         end
+        moves_to_depth!(
+            board,
+            startloc,
+            depth - 1,
+            move_buffer,
+            neighlocs[slide_neigh_i],
+            cur_loc;
+            avoid_duplicates,
+            start_search,
+        )
     end
 end
 
@@ -629,6 +677,7 @@ end
 end
 
 @inline function get_pinned_tiles!(board, last_goal_loc, last_moving_loc; inverse=false)
+    return board.general_pinned_update_required = true
     # NOTE! the goal and moving loc have already happened!
     is_simple_goal, goal_neigh = is_simple_last_goal_loc(board, last_goal_loc, inverse)
     is_simple_moving, moving_neigh = is_simple_last_moving_loc(
@@ -639,11 +688,11 @@ end
             board, last_goal_loc, goal_neigh, last_moving_loc, moving_neigh
         )
         # TODO speed: implement the commented code
+        # Maybe that speeds things up, for now just returning that a full update is required is faster
         # elseif is_last_change_elbow(board)
         #     update_ispinned_elbow!(board)
         #     return nothing
     end
-    return board.general_pinned_update_required = true
 end
 
 @inline function is_simple_last_goal_loc(board, last_goal_loc, inverse)
@@ -708,14 +757,14 @@ end
     board, last_goal_loc, goal_neigh, last_moving_loc, moving_neigh
 )
     if moving_neigh >= 0
-        @inbounds board.ispinned[moving_neigh + 1] = false
+        remove!(board.ispinned, moving_neigh)
     end
 
     # If the goal_loc exists,
     # Then, at the goal loc, the neigh becomes stuck and you are unstuck
     if last_goal_loc >= 0
-        @inbounds board.ispinned[last_goal_loc + 1] = false
-        @inbounds board.ispinned[goal_neigh + 1] = true
+        remove!(board.ispinned, last_goal_loc)
+        set!(board.ispinned, goal_neigh)
     end
 
     return nothing
@@ -766,39 +815,50 @@ GetArticulationPoints(i, d)
         Output i as articulation point
 """
 @inline function update_ispinned_general!(board)
-    fill!(board.ispinned, false)
+    clear!(board.ispinned)
+    visited = board.workspaces.ispinned_visited
+    clear!(visited)
 
     @no_escape PINNED_BUFFER[2] begin
         # Allocate a `PtrArray` (see StrideArraysCore.jl) using memory from the default buffer.
-        visited_dict = @alloc(eltype(true), GRID_SIZE)
         depth_dict = @alloc(eltype(board.tile_locs), GRID_SIZE)
         low_dict = @alloc(eltype(board.tile_locs), GRID_SIZE)
         parent_dict = @alloc(eltype(board.tile_locs), GRID_SIZE)
 
-        visited_dict .= false
         parent_dict .= INVALID_LOC
 
-        for loc in board.tile_locs
-            if loc >= 0
-                get_pinned_tiles_general!(
-                    board, visited_dict, depth_dict, low_dict, parent_dict, loc, 0
-                )
-                break
+        if board.queen_pos_white >= 0
+            get_pinned_tiles_general!(
+                board, visited, depth_dict, low_dict, parent_dict, board.queen_pos_white, 0
+            )
+        elseif board.queen_pos_black >= 0
+            get_pinned_tiles_general!(
+                board, visited, depth_dict, low_dict, parent_dict, board.queen_pos_black, 0
+            )
+        elseif board.tile_locs[MID] >= 0
+            get_pinned_tiles_general!(
+                board, visited, depth_dict, low_dict, parent_dict, board.tile_locs[MID], 0
+            )
+        else
+            for loc in board.tile_locs
+                if loc >= 0
+                    get_pinned_tiles_general!(
+                        board, visited, depth_dict, low_dict, parent_dict, loc, 0
+                    )
+                    break
+                end
             end
         end
     end
+    return nothing
 end
 
 @inline function get_pinned_tiles_general!(
-    board, visited_dict, depth_dict, low_dict, parent_dict, loc, depth
+    board, visited::HexSet, depth_dict, low_dict, parent_dict, loc, depth
 )
-    if loc < 0
-        show(board)
-        error("attempt to find pinned tiles from an invalid loc $loc")
-    end
     loc_p1 = loc + 1
 
-    @inbounds visited_dict[loc_p1] = true
+    set!(visited, loc)
     @inbounds depth_dict[loc_p1] = depth
     @inbounds low_dict[loc_p1] = depth
     child_count = 0
@@ -809,10 +869,10 @@ end
             continue
         end
         nloc_p1 = nloc + 1
-        if @inbounds !visited_dict[nloc_p1]
+        if !visited[nloc]
             @inbounds parent_dict[nloc_p1] = loc
             get_pinned_tiles_general!(
-                board, visited_dict, depth_dict, low_dict, parent_dict, nloc, depth + 1
+                board, visited, depth_dict, low_dict, parent_dict, nloc, depth + 1
             )
             child_count += 1
             if @inbounds low_dict[nloc_p1] >= depth_dict[loc_p1]
@@ -825,8 +885,9 @@ end
     end
     if @inbounds (parent_dict[loc_p1] != INVALID_LOC && is_articulation) ||
         (parent_dict[loc_p1] == INVALID_LOC && child_count > 1)
-        @inbounds board.ispinned[loc_p1] = true
+        set!(board.ispinned, loc)
     end
+    return nothing
 end
 
 function get_pinned_tiles(board)

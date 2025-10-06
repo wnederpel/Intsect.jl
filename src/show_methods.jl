@@ -71,7 +71,7 @@ function show_pinned(board::Board, show_locs::Bool=true)
         print("  "^(ROW_SIZE - row))
         for col in 1:ROW_SIZE
             loc = (row - 1) * ROW_SIZE + col - 1
-            if board.ispinned[loc + 1]
+            if board.ispinned[loc]
                 name = " X "
             else
                 name = ""
