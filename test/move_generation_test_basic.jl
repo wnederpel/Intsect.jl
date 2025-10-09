@@ -32,15 +32,15 @@
     set_tile_on_board(board, bG1_loc, bG1)
 
     # Generate the moves
-    queenmoves(board, bQ_loc, board.validactions)
-    moves = extract_valid_actions(board)
+    move_set = HexSet()
+    queenmoves(board, bQ_loc, move_set)
 
     # Check the moves
-    @test Move(bQ_loc, apply_direction(bQ_loc, Direction.E)) in moves
-    @test Move(bQ_loc, apply_direction(bQ_loc, Direction.SE)) in moves
-    @test Move(bQ_loc, apply_direction(bQ_loc, Direction.W)) in moves
-    @test Move(bQ_loc, apply_direction(bQ_loc, Direction.NW)) in moves
-    @test length(moves) == 4
+    @test move_set[apply_direction(bQ_loc, Direction.E)]
+    @test move_set[apply_direction(bQ_loc, Direction.SE)]
+    @test move_set[apply_direction(bQ_loc, Direction.W)]
+    @test move_set[apply_direction(bQ_loc, Direction.NW)]
+    @test count_ones(move_set) == 4
 end
 
 @testitem "Grasshopper movement basic" begin
@@ -89,14 +89,14 @@ end
     set_tile_on_board(board, wB1_loc, wB1)
 
     # Generate the moves
-    grasshoppermoves(board, wG1_loc, board.validactions)
-    moves = extract_valid_actions(board)
+    move_set = HexSet()
+    grasshoppermoves(board, wG1_loc, move_set)
 
     # Check the moves
-    @test Move(wG1_loc, apply_direction(bQ_loc, Direction.E)) in moves
-    @test Move(wG1_loc, apply_direction(wB1_loc, Direction.W)) in moves
-    @test Move(wG1_loc, apply_direction(wQ_loc, Direction.SW)) in moves
-    @test length(moves) == 3
+    @test move_set[apply_direction(bQ_loc, Direction.E)]
+    @test move_set[apply_direction(wB1_loc, Direction.W)]
+    @test move_set[apply_direction(wQ_loc, Direction.SW)]
+    @test count_ones(move_set) == 3
 end
 
 @testitem "Spider movement basic" begin
@@ -139,15 +139,15 @@ end
     set_tile_on_board(board, wB1_loc, wB1)
 
     # Generate the moves
-    spidermoves(board, bS1_loc, board.validactions)
-    moves = extract_valid_actions(board)
+    move_set = HexSet()
+    spidermoves(board, bS1_loc, move_set)
 
     # Check the moves
-    @test Move(bS1_loc, apply_direction(wQ_loc, Direction.E)) in moves
-    @test Move(bS1_loc, apply_direction(wB1_loc, Direction.NW)) in moves
-    @test Move(bS1_loc, apply_direction(bQ_loc, Direction.E)) in moves
-    @test Move(bS1_loc, apply_direction(bB1_loc, Direction.W)) in moves
-    @test length(moves) == 4
+    @test move_set[apply_direction(wQ_loc, Direction.E)]
+    @test move_set[apply_direction(wB1_loc, Direction.NW)]
+    @test move_set[apply_direction(bQ_loc, Direction.E)]
+    @test move_set[apply_direction(bB1_loc, Direction.W)]
+    @test count_ones(move_set) == 4
 end
 
 @testitem "Ant movement basic" begin
@@ -178,22 +178,22 @@ end
     set_tile_on_board(board, bA1_loc, bA1)
 
     # Generate the moves
-    antmoves(board, bA1_loc, board.validactions)
-    moves = extract_valid_actions(board)
+    move_set = HexSet()
+    antmoves(board, bA1_loc, move_set)
 
     # Check the moves
-    @test Move(bA1_loc, apply_direction(bB1_loc, Direction.E)) in moves
-    @test Move(bA1_loc, apply_direction(bB1_loc, Direction.SE)) in moves
-    @test Move(bA1_loc, apply_direction(wQ_loc, Direction.E)) in moves
-    @test Move(bA1_loc, apply_direction(wQ_loc, Direction.NE)) in moves
-    @test Move(bA1_loc, apply_direction(wQ_loc, Direction.NW)) in moves
-    @test Move(bA1_loc, apply_direction(bQ_loc, Direction.NE)) in moves
-    @test Move(bA1_loc, apply_direction(bQ_loc, Direction.NW)) in moves
-    @test Move(bA1_loc, apply_direction(bQ_loc, Direction.W)) in moves
-    @test Move(bA1_loc, apply_direction(wG1_loc, Direction.W)) in moves
-    @test Move(bA1_loc, apply_direction(wB1_loc, Direction.W)) in moves
-    @test Move(bA1_loc, apply_direction(bA1_loc, Direction.W)) in moves
-    @test length(moves) == 11
+    @test move_set[apply_direction(bB1_loc, Direction.E)]
+    @test move_set[apply_direction(bB1_loc, Direction.SE)]
+    @test move_set[apply_direction(wQ_loc, Direction.E)]
+    @test move_set[apply_direction(wQ_loc, Direction.NE)]
+    @test move_set[apply_direction(wQ_loc, Direction.NW)]
+    @test move_set[apply_direction(bQ_loc, Direction.NE)]
+    @test move_set[apply_direction(bQ_loc, Direction.NW)]
+    @test move_set[apply_direction(bQ_loc, Direction.W)]
+    @test move_set[apply_direction(wG1_loc, Direction.W)]
+    @test move_set[apply_direction(wB1_loc, Direction.W)]
+    @test move_set[apply_direction(bA1_loc, Direction.W)]
+    @test count_ones(move_set) == 11
 end
 
 @testitem "Beetle movement basic" begin
@@ -224,29 +224,28 @@ end
     set_tile_on_board(board, wS1_loc, wS1)
 
     # Generate the moves
-    beetlemoves(board, wB1_loc, 1, board.validactions)
-    moves = extract_valid_actions(board)
-
+    move_set = HexSet()
+    beetlemoves(board, wB1_loc, 1, move_set)
     # Check the moves
-    @test Move(wB1_loc, apply_direction(wB1_loc, Direction.NW)) in moves
-    @test Move(wB1_loc, apply_direction(wB1_loc, Direction.SE)) in moves
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.W)) in moves
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.SW)) in moves
-    @test length(moves) == 4
+    @test move_set[apply_direction(wB1_loc, Direction.NW)]
+    @test move_set[apply_direction(wB1_loc, Direction.SE)]
+    @test move_set[apply_direction(wB1_loc, Direction.W)]
+    @test move_set[apply_direction(wB1_loc, Direction.SW)]
+    @test count_ones(move_set) == 4
 
     do_action(board, Move(wB1_loc, apply_direction(wB1_loc, Direction.NW)))
     wB1_loc = apply_direction(wB1_loc, Direction.NW)
 
-    beetlemoves(board, wB1_loc, 2, board.validactions)
-    moves = extract_valid_actions(board)
-
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.NW)) in moves
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.SE)) in moves
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.W)) in moves
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.E)) in moves
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.SW)) in moves
-    @test Climb(wB1_loc, apply_direction(wB1_loc, Direction.NE)) in moves
-    @test length(moves) == 6
+    move_set = HexSet()
+    beetlemoves(board, wB1_loc, 2, move_set)
+    # Comment text text
+    @test move_set[apply_direction(wB1_loc, Direction.NW)]
+    @test move_set[apply_direction(wB1_loc, Direction.SE)]
+    @test move_set[apply_direction(wB1_loc, Direction.W)]
+    @test move_set[apply_direction(wB1_loc, Direction.E)]
+    @test move_set[apply_direction(wB1_loc, Direction.SW)]
+    @test move_set[apply_direction(wB1_loc, Direction.NE)]
+    @test count_ones(move_set) == 6
 end
 
 @testitem "Ladybug movement basic" begin
@@ -277,21 +276,21 @@ end
     set_tile_on_board(board, bB1_loc, bB1)
 
     # Generate the moves
-    ladybugmoves(board, wL1_loc, board.validactions)
-    moves = extract_valid_actions(board)
+    move_set = HexSet()
+    ladybugmoves(board, wL1_loc, move_set)
 
     # Check the moves
-    @test Move(wL1_loc, apply_direction(wL1_loc, Direction.E)) in moves
-    @test Move(wL1_loc, apply_direction(bB1_loc, Direction.E)) in moves
-    @test Move(wL1_loc, apply_direction(wQ_loc, Direction.E)) in moves
-    @test Move(wL1_loc, apply_direction(wQ_loc, Direction.NE)) in moves
-    @test Move(wL1_loc, apply_direction(wQ_loc, Direction.W)) in moves
-    @test Move(wL1_loc, apply_direction(wQ_loc, Direction.NW)) in moves
-    @test Move(wL1_loc, apply_direction(wL1_loc, Direction.W)) in moves
-    @test Move(wL1_loc, apply_direction(wB1_loc, Direction.W)) in moves
-    @test Move(wL1_loc, apply_direction(wG1_loc, Direction.W)) in moves
-    @test Move(wL1_loc, apply_direction(bQ_loc, Direction.W)) in moves
-    @test length(moves) == 10
+    @test move_set[apply_direction(wL1_loc, Direction.E)]
+    @test move_set[apply_direction(bB1_loc, Direction.E)]
+    @test move_set[apply_direction(wQ_loc, Direction.E)]
+    @test move_set[apply_direction(wQ_loc, Direction.NE)]
+    @test move_set[apply_direction(wQ_loc, Direction.W)]
+    @test move_set[apply_direction(wQ_loc, Direction.NW)]
+    @test move_set[apply_direction(wL1_loc, Direction.W)]
+    @test move_set[apply_direction(wB1_loc, Direction.W)]
+    @test move_set[apply_direction(wG1_loc, Direction.W)]
+    @test move_set[apply_direction(bQ_loc, Direction.W)]
+    @test count_ones(move_set) == 10
 end
 
 @testitem "Mosquito movement basic" begin
@@ -320,17 +319,17 @@ end
     set_tile_on_board(board, wM_loc, wM)
 
     # Generate the moves
-    mosquitomoves(board, wM_loc, 1, DefaultDict(false), board.validactions, 1, 1)
-    moves = extract_valid_actions(board)
+    move_set = HexSet()
+    mosquitomoves(board, wM_loc, 1, DefaultDict(false), move_set)
 
     # Check the moves
-    @test Move(wM_loc, apply_direction(wM_loc, Direction.W)) in moves
-    @test Move(wM_loc, apply_direction(wM_loc, Direction.E)) in moves
-    @test Climb(wM_loc, apply_direction(wM_loc, Direction.NE)) in moves
-    @test Climb(wM_loc, apply_direction(wM_loc, Direction.NW)) in moves
-    @test Move(wM_loc, apply_direction(wQ_loc, Direction.E)) in moves
-    @test Move(wM_loc, apply_direction(bS1_loc, Direction.NW)) in moves
-    @test length(moves) == 6
+    @test move_set[apply_direction(wM_loc, Direction.W)]
+    @test move_set[apply_direction(wM_loc, Direction.E)]
+    @test move_set[apply_direction(wM_loc, Direction.NE)]
+    @test move_set[apply_direction(wM_loc, Direction.NW)]
+    @test move_set[apply_direction(wQ_loc, Direction.E)]
+    @test move_set[apply_direction(bS1_loc, Direction.NW)]
+    @test count_ones(move_set) == 6
 end
 
 @testitem "Pillbug movement basic" begin
@@ -367,19 +366,22 @@ end
     ispinned[wS1_loc] = true
 
     # Generate the moves
-    pillbugmoves(board, wP_loc, ispinned, board.validactions)
-    moves = extract_valid_actions(board)
+    move_to_set = HexSet()
+    throw_to_set = HexSet()
+    throw_from_set = HexSet()
+
+    pillbugmoves_normal(board, wP_loc, ispinned, move_to_set)
+    pillbugmoves_throw(board, wP_loc, ispinned, throw_from_set, throw_to_set)
 
     # Check the moves
     # First the normal moves
-    @test Move(wP_loc, apply_direction(wP_loc, Direction.W)) in moves
-    @test Move(wP_loc, apply_direction(wP_loc, Direction.SW)) in moves
+    @test move_to_set[apply_direction(wP_loc, Direction.W)]
+    @test move_to_set[apply_direction(wP_loc, Direction.SW)]
     # Then the special moves
-    @test Move(bQ_loc, apply_direction(wP_loc, Direction.W)) in moves
-    @test Move(bQ_loc, apply_direction(wP_loc, Direction.SW)) in moves
-    @test Move(bA1_loc, apply_direction(wP_loc, Direction.W)) in moves
-    @test Move(bA1_loc, apply_direction(wP_loc, Direction.SW)) in moves
-    @test Move(wQ_loc, apply_direction(wP_loc, Direction.W)) in moves
-    @test Move(wQ_loc, apply_direction(wP_loc, Direction.SW)) in moves
-    @test length(moves) == 8
+    @test throw_to_set[apply_direction(wP_loc, Direction.W)]
+    @test throw_to_set[apply_direction(wP_loc, Direction.SW)]
+
+    @test throw_from_set[bQ_loc]
+    @test throw_from_set[bA1_loc]
+    @test throw_from_set[wQ_loc]
 end

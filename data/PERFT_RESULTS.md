@@ -694,15 +694,15 @@ total time       = 21.93 seconds
 https://github.com/jonthysell/Mzinga/wiki/Perft
 
 goal:
-1:   7
-2:   294
-3:   6,678
-4:   151,686
-5:   5,427,108
-6:   192,353,904
-7:   3,151,035,948
-8:   50,945,151,390
-9:   2,784,830,280,25
+1:                  7
+2:                294
+3:              6,678
+4:            151,686
+5:          5,427,108
+6:        192,353,904
+7:      3,151,035,948
+8:     50,945,151,390
+9:  2,784,830,280,258
 
 # the above results are sufficient. Further down in the search tree, the bot performs worse. From now on, perft results are shown from the following start state:
 Base+MLP;InProgress;white[11];wB1;bS1 wB1-;wQ /wB1;bQ bS1/;wG1 -wB1;bG1 bS1-;wM -wQ;bM bQ-;wP /wQ;bP bQ/;wL -wG1;bL bG1-;wA1 wQ\;bB1 \bQ;wS1 wA1-;bA1 -bB1;wA2 -wP;bA2 bP-;wA2 wS1/;bA2 /bA1

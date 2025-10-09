@@ -317,7 +317,7 @@ function action_from_move_string(board::Board, move_string)
     if !(action in valid_actions)
         println("SHOWING BOARD AS DEBUG OUTPUT")
         show(board)
-        show_valid_actions(board)
+        # show_valid_actions(board)
         error(
             "Invalid action: '$(move_string_from_action(board, action))' or '$action' not present in valid actions",
         )
@@ -536,6 +536,7 @@ function do_action(board::Board, climb::Climb)
 
     # This assumes the doing has already happened
     old_height = get_tile_height_unsafe(moving_tile) - 0x01
+    # TODO: move a system with a manual stack as the underword, and keeping track of the height
     # moving_tile += min(UInt8(length(board.underworld[climb.goal_loc])) - old_height, 0x04)
     moving_tile += UInt8(length(board.underworld[climb.goal_loc])) - old_height
 

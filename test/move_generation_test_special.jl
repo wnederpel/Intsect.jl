@@ -30,12 +30,12 @@
     beetlemoves(board, bB1_loc, get_tile_height(bB1), move_to_locs)
 
     # Check the moves
-    @test move_to_locs[apply_direction(bB1_loc, Direction.NE)] == 1
-    @test move_to_locs[apply_direction(bB1_loc, Direction.NW)] == 1
-    @test move_to_locs[apply_direction(bB1_loc, Direction.E)] == 1
-    @test move_to_locs[apply_direction(bB1_loc, Direction.SE)] == 1
-    @test move_to_locs[apply_direction(bB1_loc, Direction.W)] == 1
-    @test move_to_locs[apply_direction(bB1_loc, Direction.SW)] == 1
+    @test move_to_locs[apply_direction(bB1_loc, Direction.NE)]
+    @test move_to_locs[apply_direction(bB1_loc, Direction.NW)]
+    @test move_to_locs[apply_direction(bB1_loc, Direction.E)]
+    @test move_to_locs[apply_direction(bB1_loc, Direction.SE)]
+    @test move_to_locs[apply_direction(bB1_loc, Direction.W)]
+    @test move_to_locs[apply_direction(bB1_loc, Direction.SW)]
     @test count_ones(move_to_locs) == 6
 end
 
@@ -62,14 +62,14 @@ end
 
     # Generate the moves
     move_to_locs = HexSet()
-    beetlemoves(board, wB1_loc, get_tile_height(wB1), board.move_to_locs)
+    beetlemoves(board, wB1_loc, get_tile_height(wB1), move_to_locs)
 
     # Check the moves
     # wB1 cammot move to bB1_loc
-    @test move_to_locs[apply_direction(wB1_loc, Direction.NE)] == 1
-    @test move_to_locs[apply_direction(wB1_loc, Direction.SE)] == 1
-    @test move_to_locs[apply_direction(wB1_loc, Direction.NW)] == 1
-    @test move_to_locs[apply_direction(wB1_loc, Direction.SW)] == 1
+    @test move_to_locs[apply_direction(wB1_loc, Direction.NE)]
+    @test move_to_locs[apply_direction(wB1_loc, Direction.SE)]
+    @test move_to_locs[apply_direction(wB1_loc, Direction.NW)]
+    @test move_to_locs[apply_direction(wB1_loc, Direction.SW)]
     @test count_ones(move_to_locs) == 4
 
     # If bB1 is one lvl higher, this does work, as wB1 goes up to the lvl above  bB1
@@ -153,7 +153,7 @@ end
 
     # Check the moves
     # wB1 now can slide to bB1
-    @test move_to_locs[apply_direction(wB1_loc, Direction.E)] == 1
+    @test move_to_locs[apply_direction(wB1_loc, Direction.E)]
 
     # If wB1 is two lvls higher, this does work as it can slide
     wB1 = get_tile_from_string("wB1") + 0b00000010
@@ -181,7 +181,7 @@ end
 
     # Check the moves
     # wB1 still cammot move to bB1_loc as it needs to be two higher
-    @test move_to_locs[apply_direction(wB1_loc, Direction.E)] == 1
+    @test move_to_locs[apply_direction(wB1_loc, Direction.E)]
 end
 
 @testitem "Mosquito cannot move when it only touches a mosquito" begin
@@ -206,11 +206,11 @@ end
     set_tile_on_board(board, bM_loc, bM)
 
     # Generate the moves
-    mosquitomoves(board, bM_loc, get_tile_height(bM), nothing, board.validactions, 0, 0)
-    moves = extract_valid_actions(board)
+    move_to_locs = HexSet()
+    mosquitomoves(board, bM_loc, get_tile_height(bM), nothing, move_to_locs)
 
     # Check the moves
-    @test length(moves) == 0
+    @test count_ones(move_to_locs) == 0
 end
 
 @testitem "Move to oneself is invalid for spider" begin
@@ -252,16 +252,16 @@ end
 
     set_tile_on_board(board, wS1_loc, wS1)
 
-    spidermoves(board, wS1_loc, board.validactions)
-    moves = extract_valid_actions(board)
+    move_to_locs = HexSet()
+    spidermoves(board, wS1_loc, move_to_locs)
 
-    @test length(moves) == 0
+    @test count_ones(move_to_locs) == 0
 
     # Also invalid for ant
-    antmoves(board, wS1_loc, board.validactions)
-    moves = extract_valid_actions(board)
+    move_to_locs = HexSet()
+    antmoves(board, wS1_loc, move_to_locs)
 
-    @test length(moves) == 2
+    @test count_ones(move_to_locs) == 2
 end
 
 @testitem "The board wraps around." begin
@@ -292,22 +292,22 @@ end
     set_tile_on_board(board, bA1_loc, bA1)
 
     # Generate the moves
-    antmoves(board, bA1_loc, board.validactions)
-    moves = extract_valid_actions(board)
+    move_to_locs = HexSet()
+    antmoves(board, bA1_loc, move_to_locs)
 
     # Check the moves
-    @test Move(bA1_loc, apply_direction(bB1_loc, Direction.E)) in moves
-    @test Move(bA1_loc, apply_direction(bB1_loc, Direction.SE)) in moves
-    @test Move(bA1_loc, apply_direction(wQ_loc, Direction.E)) in moves
-    @test Move(bA1_loc, apply_direction(wQ_loc, Direction.NE)) in moves
-    @test Move(bA1_loc, apply_direction(wQ_loc, Direction.NW)) in moves
-    @test Move(bA1_loc, apply_direction(bQ_loc, Direction.NE)) in moves
-    @test Move(bA1_loc, apply_direction(bQ_loc, Direction.NW)) in moves
-    @test Move(bA1_loc, apply_direction(bQ_loc, Direction.W)) in moves
-    @test Move(bA1_loc, apply_direction(wG1_loc, Direction.W)) in moves
-    @test Move(bA1_loc, apply_direction(wB1_loc, Direction.W)) in moves
-    @test Move(bA1_loc, apply_direction(bA1_loc, Direction.W)) in moves
-    @test length(moves) == 11
+    @test move_to_locs[apply_direction(bB1_loc, Direction.E)]
+    @test move_to_locs[apply_direction(bB1_loc, Direction.SE)]
+    @test move_to_locs[apply_direction(wQ_loc, Direction.E)]
+    @test move_to_locs[apply_direction(wQ_loc, Direction.NE)]
+    @test move_to_locs[apply_direction(wQ_loc, Direction.NW)]
+    @test move_to_locs[apply_direction(bQ_loc, Direction.NE)]
+    @test move_to_locs[apply_direction(bQ_loc, Direction.NW)]
+    @test move_to_locs[apply_direction(bQ_loc, Direction.W)]
+    @test move_to_locs[apply_direction(wG1_loc, Direction.W)]
+    @test move_to_locs[apply_direction(wB1_loc, Direction.W)]
+    @test move_to_locs[apply_direction(bA1_loc, Direction.W)]
+    @test count_ones(move_to_locs) == 11
 end
 
 @testitem "Pillbug special moves can fill elbows" begin
@@ -341,18 +341,19 @@ end
     ispinned[bQ_loc] = true
     ispinned[bP_loc] = true
 
-    pillbugmoves(board, wP_loc, ispinned, board.validactions)
-    moves = extract_valid_actions(board)
+    move_to_locs = HexSet()
+    throw_from_locs = HexSet()
+    pillbugmoves_normal(board, wP_loc, ispinned, move_to_locs)
+    pillbugmoves_throw(board, wP_loc, ispinned, throw_from_locs, move_to_locs)
 
-    @test Move(wQ_loc, apply_direction(wP_loc, Direction.SE)) in moves
-    @test Move(wQ_loc, apply_direction(wP_loc, Direction.NE)) in moves
-    @test Move(wQ_loc, apply_direction(wP_loc, Direction.NW)) in moves
+    @test move_to_locs[apply_direction(wP_loc, Direction.SE)]
+    @test move_to_locs[apply_direction(wP_loc, Direction.NE)]
+    @test move_to_locs[apply_direction(wP_loc, Direction.NW)]
 
-    @test Move(wM_loc, apply_direction(wP_loc, Direction.SE)) in moves
-    @test Move(wM_loc, apply_direction(wP_loc, Direction.NE)) in moves
-    @test Move(wM_loc, apply_direction(wP_loc, Direction.NW)) in moves
+    @test throw_from_locs[wQ_loc]
+    @test throw_from_locs[wM_loc]
 
-    @test length(moves) == 6
+    @test count_ones(move_to_locs) == 3
 end
 
 @testitem "Pillbug cannot special move through a beetle gate" begin
@@ -386,13 +387,17 @@ end
     ispinned[bQ_loc] = true
     ispinned[bB1_loc] = true
 
-    pillbugmoves(board, wP_loc, ispinned, board.validactions)
-    moves = extract_valid_actions(board)
+    move_to_locs = HexSet()
+    move_to_locs = HexSet()
+    throw_from_locs = HexSet()
+    pillbugmoves_normal(board, wP_loc, ispinned, move_to_locs)
+    pillbugmoves_throw(board, wP_loc, ispinned, throw_from_locs, move_to_locs)
 
-    @test Move(wM_loc, apply_direction(wP_loc, Direction.NE)) in moves
-    @test Move(wM_loc, apply_direction(wP_loc, Direction.NW)) in moves
+    @test move_to_locs[apply_direction(wP_loc, Direction.NE)]
+    @test move_to_locs[apply_direction(wP_loc, Direction.NW)]
+    @test throw_from_locs[wM_loc]
 
-    @test length(moves) == 2
+    @test count_ones(move_to_locs) == 2
 end
 
 @testitem "Pillbug special moves take into account that a piece sliding on the pill bug might add a possible down sliding move" begin
