@@ -214,7 +214,7 @@ Given a tile string such as bB2, wL, return the tile as a UInt8
 """
 function get_tile_from_string(board::Board, tile_string)
     tile_without_height = get_tile_from_string(tile_string)
-    height = UInt8(length(board.underworld[get_loc(board, tile_without_height)]))
+    height = min(UInt8(length(board.underworld[get_loc(board, tile_without_height)])), 0x03)
     return tile_without_height + height
 end
 
@@ -525,6 +525,7 @@ function do_action(board::Board, climb::Climb)
         push!(board.underworld[climb.goal_loc], burrowed_tile)
         set_loc(board, burrowed_tile, UNDERGROUND)
     end
+
     if get_tile_height(moving_tile) > 0x01
         # Release the tile below moving_tile from the underworld
         released_tile = pop!(board.underworld[climb.moving_loc])
@@ -537,8 +538,7 @@ function do_action(board::Board, climb::Climb)
     # This assumes the doing has already happened
     old_height = get_tile_height_unsafe(moving_tile) - 0x01
     # TODO: move a system with a manual stack as the underword, and keeping track of the height
-    # moving_tile += min(UInt8(length(board.underworld[climb.goal_loc])) - old_height, 0x04)
-    moving_tile += UInt8(length(board.underworld[climb.goal_loc])) - old_height
+    moving_tile += min(UInt8(length(board.underworld[climb.goal_loc])), 0x03) - old_height
 
     set_tile_on_board(board, climb.goal_loc, moving_tile)
     set_loc(board, moving_tile, climb.goal_loc)
@@ -618,10 +618,10 @@ function undo_action(board::Board, climb::Climb)
 
     # This assumes that the undoing has already happened
     old_height = get_tile_height_unsafe(moving_tile) - 0x01
-    new_tile = moving_tile + UInt8(length(board.underworld[climb.moving_loc])) - old_height
+    moving_tile += min(UInt8(length(board.underworld[climb.moving_loc])), 0x03) - old_height
 
-    set_tile_on_board(board, climb.moving_loc, new_tile)
-    set_loc(board, new_tile, climb.moving_loc)
+    set_tile_on_board(board, climb.moving_loc, moving_tile)
+    set_loc(board, moving_tile, climb.moving_loc)
 
     inverse_post_action_update(board, climb)
 
@@ -634,6 +634,7 @@ function undo_action(board::Board, pass::Pass)
 end
 
 function inverse_post_action_update(board::Board, action)
+    check_gameover(board)
     inverse_post_action_pillbug_update(board)
     inverse_post_action_general_update(board)
 
@@ -726,8 +727,8 @@ function post_action_hs_hash_update(board, action::Climb)
     opened_tile = get_tile_on_board(board, action.moving_loc)
     moved_tile = get_tile_on_board(board, action.goal_loc)
 
-    # This is not necessarily the current color, because the pillbug can move other pieces
-    moved_color = get_tile_color(get_tile_on_board(board, action.goal_loc))
+    # This is necessarily the current color, because the pillbug cannot make climbs
+    moved_color = board.current_color
 
     toggle_tile_on_hex_set!(board, moved_color, action.moving_loc)
     if opened_tile != EMPTY_TILE
@@ -754,9 +755,12 @@ function post_action_hs_hash_update(board, action::Climb)
     board.hash ⊻= get_hash_value(
         tile, action.goal_loc; height=length(board.underworld[action.goal_loc])
     )
-    return board.hash ⊻= get_hash_value(
-        tile, action.moving_loc; height=length(board.underworld[action.moving_loc])
+    board.hash ⊻= get_hash_value(
+        tile,
+        action.moving_loc;
+        height=length(board.underworld[action.moving_loc]) + Int(opened_tile != EMPTY_TILE),
     )
+    return nothing
 end
 
 function post_action_hs_hash_update(board, pass::Pass) end
@@ -796,8 +800,9 @@ function inverse_post_action_hs_hash_update(board, action::Climb)
     opened_tile = get_tile_on_board(board, action.goal_loc)
     moved_tile = get_tile_on_board(board, action.moving_loc)
 
-    # This is not necessarily the current color, because the pillbug can move other pieces
-    moved_color = get_tile_color(get_tile_on_board(board, action.moving_loc))
+    # This is necessarily the current color, because the pillbug cannot make throw moves
+    moved_color = board.current_color
+
     toggle_tile_on_hex_set!(board, moved_color, action.goal_loc)
     if opened_tile != EMPTY_TILE
         color = get_tile_color(opened_tile)
@@ -820,10 +825,13 @@ function inverse_post_action_hs_hash_update(board, action::Climb)
     toggle_tile_on_hex_set!(board, moved_color, action.moving_loc)
 
     # To correctly undo the hash change, we need to use the heights as they were before the undo took place
-    old_goal_loc_height = length(board.underworld[action.goal_loc]) + opened_tile != EMPTY_TILE
-    old_moving_loc_height = max(length(board.underworld[action.goal_loc]) - 1, 0)
+    old_goal_loc_height = length(board.underworld[action.goal_loc])
+    old_moving_loc_height =
+        length(board.underworld[action.goal_loc]) + Int(opened_tile != EMPTY_TILE)
     tile = get_tile_on_board(board, action.moving_loc)
+    # println("xor tile $tile at $(action.goal_loc) with height $old_goal_loc_height")
     board.hash ⊻= get_hash_value(tile, action.goal_loc; height=old_goal_loc_height)
+    # println("xor tile $tile at $(action.moving_loc) with height $old_moving_loc_height")
     board.hash ⊻= get_hash_value(tile, action.moving_loc; height=old_moving_loc_height)
     return nothing
 end

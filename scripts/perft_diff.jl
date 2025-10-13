@@ -231,13 +231,11 @@ function diff_perft!(
         child_move_str = move_to_str(board, act)  # must reflect the move we just made
         do_action(board, act)
         child_nodes = perft(depth - 1, board)
-        undo(board)
 
         child_gs = string(game_string, ";", child_move_str)
         nk_child = nokamute_perft_counts(child_gs, depth - 1; exe)
         theirs_child = get(nk_child, depth - 1, nothing)
         if theirs_child === nothing
-            show(child_move_str, board)
             error("Nokamute child missing depth=$(depth-1) for move $child_move_str")
         end
 
@@ -245,12 +243,18 @@ function diff_perft!(
             println(
                 " -> first diverging move: $child_move_str at depth $(depth-1)  mine=$child_nodes  nok=$theirs_child",
             )
+            show(board; simple=false)
+            println(board.hash)
+            undo(board)
             # Recurse down this path until depth 1
             do_action(board, act)
+            show(board; simple=false)
+            println(board.hash)
             ok = diff_perft!(board, child_gs, depth - 1; exe, stop_on_first=stop_on_first)
             undo(board)
             return ok  # stop at first mismatch
         end
+        undo(board)
     end
 
     # If we got here, none of the children mismatched. That means the mismatch
@@ -286,40 +290,13 @@ function verify_perft(
             do_action(board, mv)
         end
     end
-    show(board; simple=false)
+    # show(board; simple=false)
     for d in 1:maxdepth
         println("=== depth $d ===")
         ok = diff_perft!(board, game_string, d; exe, stop_on_first=stop_on_first)
         ok || return nothing
     end
     return println("All depths 1..$maxdepth matched.")
-end
-
-function find_perft4_diffs(
-    gs::AbstractString; exe_nokamute="C:\\hive\\intsect\\external\\nokamute.exe"
-)
-    board = handle_newgame_command(MLPGame)
-    parts = split(gs, ';')
-    if length(parts) > 3
-        for mv in parts[4:end]
-            isempty(mv) && continue
-            do_action(board, mv)
-        end
-    end
-    # Get valid moves from your engine
-    buf = similar_move_buffer()
-    valid_indices = collect(list_actions!(board, buf))
-    for idx in valid_indices
-        move_str = move_to_str(board, idx)
-        child_gs = string(gs, ";", move_str)
-        do_action(board, idx)
-        println("Testing child: $child_gs")
-        ok = diff_perft!(board, child_gs, 4; exe=exe_nokamute)
-        undo(board)
-        if !ok
-            println("DIFF FOUND at perft 4 for: $child_gs")
-        end
-    end
 end
 
 # verify_perft(
@@ -342,7 +319,15 @@ end
 #     raw"Base+MLP;InProgress;white[11];wB1;bS1 wB1-;wQ /wB1;bQ bS1/;wG1 -wB1;bG1 bS1-;wM -wQ;bM bQ-;wP /wQ;bP bQ/;wL -wG1;bL bG1-;wA1 wQ\;bB1 \bQ;wS1 wA1-;bA1 -bB1;wA2 -wP;bA2 bP-;wA2 wS1/;bA2 /bA1",
 #     4,
 # )
+# verify_perft(
+#     raw"Base+MLP;InProgress;White[10];wS1;bS1 wS1-;wQ -wS1;bQ bS1\;wB1 -wQ;bB1 bQ-;wB1 wQ;bA1 bS1-;wM -wB1;bP bA1-;wL \wB1;bL bP-;wP \wL;bM bL-;wA1 -wP;bG1 bP\;wA1 wP-;bB1 bA1;wA2 wB1\;bB1 bS1;wA3 wB1/;bG2 bB1/;wB1 wA3;bM bQ-;wL -wA2",
+#     5,
+# )
+# verify_perft(
+#     raw"Base+MLP;InProgress;White[10];wA1;bA1 wA1-;wQ -wA1;bQ bA1-;wB1 /wA1;bB1 bA1\;wB2 \wA1;bB2 bA1/;wB1 wA1;bB1 bA1;wB2 wB1;bG1 bB1\;wB2 bB1;bB2 wB2;wB1 bB2;bA2 bQ-;wL wQ/;bL /bG1;wA2 -wQ;bA3 bQ/;wB1 bQ",
+#     4,
+# )
 verify_perft(
-    raw"Base+MLP;InProgress;White[10];wS1;bS1 wS1-;wQ -wS1;bQ bS1\;wB1 -wQ;bB1 bQ-;wB1 wQ;bA1 bS1-;wM -wB1;bP bA1-;wL \wB1;bL bP-;wP \wL;bM bL-;wA1 -wP;bG1 bP\;wA1 wP-;bB1 bA1;wA2 wB1\;bB1 bS1;wA3 wB1/;bG2 bB1/;wB1 wA3;bM bQ-;wL -wA2",
-    5,
+    raw"Base+MLP;InProgress;White[10];wA1;bA1 wA1-;wQ -wA1;bQ bA1-;wB1 wQ\;bB1 bA1\;wB2 \wA1;bB2 \bQ;wB1 wA1;bB1 bA1;wB2 wB1;bG1 bB1\;wB2 bB1;bB2 wB2;wB1 bB2;bA2 bQ-;wL \wA1;bL /bG1;wA2 -wQ;bA3 \bA2;wB1 bQ;bB2 wA1/;wA2 \wL;bL bG1-;wQ /wA1",
+    4,
 )
