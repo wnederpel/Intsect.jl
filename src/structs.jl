@@ -69,20 +69,19 @@ function MoveStoreEntry()
     return MoveStoreEntry(NO_HASH, HexSet())
 end
 
-function get_store_size(move_store_size_mb)
-    entry_size = sizeof(MoveStoreEntry)
+function get_store_size(move_store_size_mb, size)
     n = (move_store_size_mb * 1024 * 1024) ÷ entry_size
     n_pow2 = 1 << (floor(Int, log2(n)))
     return n_pow2
 end
 
 move_store_size_mb = 64
-const MOVE_STORE_SIZE::Int = get_store_size(move_store_size_mb)
+const MOVE_STORE_SIZE::Int = get_store_size(move_store_size_mb, sizeof(MoveStoreEntry))
 const MOVE_STORE_MASK::Int = MOVE_STORE_SIZE - 1
 println("size of move store: $MOVE_STORE_SIZE")
 
 pinned_store_size_mb = 64
-const PINNED_STORE_SIZE::Int = get_store_size(pinned_store_size_mb)
+const PINNED_STORE_SIZE::Int = get_store_size(pinned_store_size_mb, sizeof(PinnedStoreEntry))
 const PINNED_STORE_MASK::Int = PINNED_STORE_SIZE - 1
 println("size of pinned store: $PINNED_STORE_SIZE")
 

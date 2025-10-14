@@ -10,10 +10,10 @@ end
 function get_hash_value(board::Board)
     # add current_color and just_moved_loc to the hash, these can make the state different with equal pieces
     hash = board.hash
-    if current_color == BLACK
-        hash ⊻= COLOR_HASH
+    if board.current_color == BLACK
+        hash ⊻= COLOR_HASH_VALUE
     end
-    hash ⊻= JUST_MOVED_HASH_VALUES[just_moved_loc + 1]
+    hash ⊻= board.JUST_MOVED_HASH_VALUES[just_moved_loc + 1]
     return hash
 end
 

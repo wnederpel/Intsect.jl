@@ -707,7 +707,8 @@ function post_action_hs_hash_update(board, placement::Placement)
     toggle_tile_on_hex_set!(board, board.current_color, goal_loc)
 
     board.hash ⊻= get_hash_value(placement.tile, placement.goal_loc)
-    return board.location_hash ⊻= get_location_hash_value(placement.goal_loc)
+    board.location_hash ⊻= get_location_hash_value(placement.goal_loc)
+    return nothing
 end
 
 function post_action_hs_hash_update(board, action::Move)
@@ -721,7 +722,8 @@ function post_action_hs_hash_update(board, action::Move)
     board.hash ⊻= get_hash_value(tile, action.moving_loc)
 
     board.location_hash ⊻= get_location_hash_value(action.goal_loc)
-    return board.location_hash ⊻= get_location_hash_value(action.moving_loc)
+    board.location_hash ⊻= get_location_hash_value(action.moving_loc)
+    return nothing
 end
 
 function post_action_hs_hash_update(board, action::Climb)

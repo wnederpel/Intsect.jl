@@ -521,7 +521,7 @@ function antmoves(board, startloc, move_to_set::HexSet)
     tmp_tile = get_tile_on_board(board, startloc)
     move_entry_hash = board.location_hash ⊻ get_location_hash_value(startloc)
 
-    move_entry = board.move_store[move_entry_hash & MOVE_STORE_MASK]
+    move_entry = board.move_store[(move_entry_hash & MOVE_STORE_MASK) + 1]
     stored_hash = move_entry.location_hash
     stored_moves = move_entry.ant_reachable_hs
 
@@ -568,7 +568,7 @@ function antmoves(board, startloc, move_to_set::HexSet)
 
     if (stored_hash != move_entry_hash) && count_ones(move_to_set) > 10
         entry = MoveStoreEntry(move_entry_hash, copy(move_to_set))
-        board.move_store[move_entry_hash & MOVE_STORE_MASK] = entry
+        board.move_store[(move_entry_hash & MOVE_STORE_MASK) + 1] = entry
     end
 
     remove!(move_to_set, startloc)
@@ -818,7 +818,7 @@ GetArticulationPoints(i, d)
 @inline function update_ispinned_general!(board::Board)
     clear!(board.ispinned)
 
-    pinned_entry = board.pinned_store[board.location_hash & PINNED_STORE_MASK]
+    pinned_entry = board.pinned_store[(board.location_hash & PINNED_STORE_MASK) + 1]
     stored_hash = pinned_entry.location_hash
 
     if stored_hash == board.location_hash
@@ -846,7 +846,7 @@ GetArticulationPoints(i, d)
     end
 
     entry = PinnedStoreEntry(board.location_hash, copy(board.ispinned))
-    board.pinned_store[board.location_hash & PINNED_STORE_MASK] = entry
+    board.pinned_store[(board.location_hash & PINNED_STORE_MASK) + 1] = entry
 
     return nothing
 end
