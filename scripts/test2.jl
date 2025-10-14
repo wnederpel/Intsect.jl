@@ -18,9 +18,7 @@ depth = 1
 # show(board.pieces[BLACK])
 println("start")
 before_out = perft(depth, board)
-println(board.queen_pos_white)
-println(board.queen_pos_black)
-show(board)
+
 extra_moves = [Move(134, 102), Move(170, 155), Move(135, 152)]
 for move in extra_moves
     do_action(board, move)
@@ -28,8 +26,6 @@ end
 for _ in extra_moves
     undo(board)
 end
-println(board.queen_pos_white)
-println(board.queen_pos_black)
 
 # show_pinned(board)
 # show_valid_actions(board)

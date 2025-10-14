@@ -317,6 +317,7 @@ function action_from_move_string(board::Board, move_string)
     if !(action in valid_actions)
         println("SHOWING BOARD AS DEBUG OUTPUT")
         show(board)
+        show_pinned(board)
         # show_valid_actions(board)
         error(
             "Invalid action: '$(move_string_from_action(board, action))' or '$action' not present in valid actions",

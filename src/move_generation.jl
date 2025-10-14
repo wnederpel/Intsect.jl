@@ -319,6 +319,7 @@ function mosquitomoves(board, loc, height, ispinned, move_to_set::HexSet)
 
     # Check bugs at index 1 to 7 (8 is mosquito, 0 is empty tile)
     if bugs_touched & 1 << Integer(Bug.ANT) != 0
+        # It's Important that the antmoves are added first, because the antmoves might overwrite the move_to_set using the move store
         antmoves(board, loc, move_to_set)
     else
         if bugs_touched & (1 << Integer(Bug.QUEEN) | 1 << Integer(Bug.PILLBUG)) != 0
@@ -518,6 +519,20 @@ end
 
 function antmoves(board, startloc, move_to_set::HexSet)
     tmp_tile = get_tile_on_board(board, startloc)
+    move_entry_hash = board.location_hash ⊻ get_location_hash_value(startloc)
+
+    move_entry = board.move_store[move_entry_hash & MOVE_STORE_MASK]
+    stored_hash = move_entry.location_hash
+    stored_moves = move_entry.ant_reachable_hs
+
+    if stored_hash == move_entry_hash && stored_moves[startloc]
+        # println("using store, we have valid antmoves from $startloc")
+        # show(board)
+        union!(move_to_set, stored_moves)
+        remove!(move_to_set, startloc)
+        return nothing
+    end
+
     # Temporarily remove the tile to find where it can move to
     set_tile_on_board(board, startloc, EMPTY_TILE)
     @no_escape begin
@@ -552,7 +567,17 @@ function antmoves(board, startloc, move_to_set::HexSet)
         end
         set_tile_on_board(board, startloc, tmp_tile)
     end
+
+    if stored_hash != move_entry_hash
+        entry = MoveStoreEntry(move_entry_hash, copy(move_to_set))
+        # println("($move_entry_hash) ant at $startloc can move to:")
+        # show(board)
+        # show(move_to_set)
+        board.move_store[move_entry_hash & MOVE_STORE_MASK] = entry
+    end
+
     remove!(move_to_set, startloc)
+
     return nothing
 end
 
@@ -809,14 +834,11 @@ GetArticulationPoints(i, d)
         parent_dict .= INVALID_LOC
 
         if board.queen_pos_white >= 0
-            get_pinned_tiles_general!(
-                board, visited, depth_dict, low_dict, parent_dict, board.queen_pos_white, 0
-            )
+            start_loc = board.queen_pos_white
         else
-            get_pinned_tiles_general!(
-                board, visited, depth_dict, low_dict, parent_dict, board.queen_pos_black, 0
-            )
+            start_loc = board.queen_pos_black
         end
+        get_pinned_tiles_general!(board, visited, depth_dict, low_dict, parent_dict, start_loc, 0)
     end
     return nothing
 end

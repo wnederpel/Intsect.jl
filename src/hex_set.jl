@@ -31,6 +31,12 @@ end
     return fill!(hs.table, zero(HEX_SET_TYPE))
 end
 
+@inline function union!(hs1::HexSet, hs2::HexSet)
+    hs1.table[i] = hs1.table[i] | hs2.table[i]
+    for i in 1:HEX_SET_NUM_WORDS
+    end
+end
+
 @inline function for_each_bit_set(f::Function, hs::HexSet)
     for i in 1:HEX_SET_NUM_WORDS
         @inbounds word = hs.table[i]
