@@ -319,7 +319,7 @@ function mosquitomoves(board, loc, height, ispinned, move_to_set::HexSet)
 
     # Check bugs at index 1 to 7 (8 is mosquito, 0 is empty tile)
     if bugs_touched & 1 << Integer(Bug.ANT) != 0
-        # It's Important that the antmoves are added first, because the antmoves might overwrite the move_to_set using the move store
+        # It's Important that the antmoves are added first, because the antmoves will store the current move_to_set as the ant_reachable_hs in the move store
         antmoves(board, loc, move_to_set)
     else
         if bugs_touched & (1 << Integer(Bug.QUEEN) | 1 << Integer(Bug.PILLBUG)) != 0
@@ -526,8 +526,6 @@ function antmoves(board, startloc, move_to_set::HexSet)
     stored_moves = move_entry.ant_reachable_hs
 
     if stored_hash == move_entry_hash && stored_moves[startloc]
-        # println("using store, we have valid antmoves from $startloc")
-        # show(board)
         union!(move_to_set, stored_moves)
         remove!(move_to_set, startloc)
         return nothing
@@ -568,11 +566,8 @@ function antmoves(board, startloc, move_to_set::HexSet)
         set_tile_on_board(board, startloc, tmp_tile)
     end
 
-    if stored_hash != move_entry_hash
+    if (stored_hash != move_entry_hash) && count_ones(move_to_set) > 10
         entry = MoveStoreEntry(move_entry_hash, copy(move_to_set))
-        # println("($move_entry_hash) ant at $startloc can move to:")
-        # show(board)
-        # show(move_to_set)
         board.move_store[move_entry_hash & MOVE_STORE_MASK] = entry
     end
 
@@ -581,7 +576,7 @@ function antmoves(board, startloc, move_to_set::HexSet)
     return nothing
 end
 
-function push_slidelocs!(board::Board, stack_arr, stack_ptr, loc, reachable_hs::HexSet)
+@inline function push_slidelocs!(board::Board, stack_arr, stack_ptr, loc, reachable_hs::HexSet)
     neighlocs = allneighs(loc)
     for i in 1:6
         if !get(reachable_hs, neighlocs[i])
@@ -820,8 +815,17 @@ GetArticulationPoints(i, d)
     if (parent[i] ≠ null and isArticulation) or (parent[i] = null and childCount > 1) then
         Output i as articulation point
 """
-@inline function update_ispinned_general!(board)
+@inline function update_ispinned_general!(board::Board)
     clear!(board.ispinned)
+
+    pinned_entry = board.pinned_store[board.location_hash & PINNED_STORE_MASK]
+    stored_hash = pinned_entry.location_hash
+
+    if stored_hash == board.location_hash
+        union!(board.ispinned, pinned_entry.pinned_pieces_hs)
+        return nothing
+    end
+
     visited = board.workspaces.ispinned_visited
     clear!(visited)
 
@@ -840,6 +844,10 @@ GetArticulationPoints(i, d)
         end
         get_pinned_tiles_general!(board, visited, depth_dict, low_dict, parent_dict, start_loc, 0)
     end
+
+    entry = PinnedStoreEntry(board.location_hash, copy(board.ispinned))
+    board.pinned_store[board.location_hash & PINNED_STORE_MASK] = entry
+
     return nothing
 end
 

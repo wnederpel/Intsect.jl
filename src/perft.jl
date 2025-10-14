@@ -30,7 +30,6 @@ function perft(n; output=true, type=MLPGame, game_string="Base+MLP;InProgress;wh
             println()
         end
     end
-    println(length(filter(entry -> entry.location_hash != NO_HASH, board.move_store)))
     return nothing
 end
 
