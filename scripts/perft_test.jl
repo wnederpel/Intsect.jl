@@ -10,9 +10,9 @@ gamestring = raw"Base+MLP;InProgress;white[5];wL;bL wL\;wM \wL;bM bL\;wA1 /wM;bA
 
 perft(depth; game_string=gamestring, output=true)
 
-Profile.clear()
-Profile.@profile perft(depth; game_string=gamestring, output=false)
-PProf.pprof()
+# Profile.clear()
+# Profile.@profile perft(depth; game_string=gamestring, output=false)
+# PProf.pprof()
 
 # Collect an allocation profile
 # Profile.Allocs.clear()

@@ -32,8 +32,14 @@ end
 end
 
 @inline function union!(hs1::HexSet, hs2::HexSet)
-    for i in 1:HEX_SET_NUM_WORDS
+    @simd for i in 1:HEX_SET_NUM_WORDS
         hs1.table[i] = hs1.table[i] | hs2.table[i]
+    end
+end
+
+@inline function overwrite!(hs1::HexSet, hs2::HexSet)
+    @simd for i in 1:HEX_SET_NUM_WORDS
+        hs1.table[i] = hs2.table[i]
     end
 end
 

@@ -393,8 +393,10 @@ function move_string_goal(board::Board, goal_loc; moving_loc=INVALID_LOC)
             end
         end
     end
-    if move_string == ""
-        move_string = " adj moving loc"
+    if move_string == "" && board.ply != 1
+        error(
+            "unable to find piece adjacent to tile at loc $moving_loc, and it's not the first round"
+        )
     end
     return move_string
 end

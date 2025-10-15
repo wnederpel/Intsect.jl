@@ -704,7 +704,7 @@ goal:
 8:     50,945,151,390
 9:  2,784,830,280,258
 
-# the above results are sufficient. Further down in the search tree, the bot performs worse. From now on, perft results are shown from the following start state:
+## the above results are sufficient. Further down in the search tree, the bot performs worse. From now on, perft results are shown from the following start state:
 Base+MLP;InProgress;white[11];wB1;bS1 wB1-;wQ /wB1;bQ bS1/;wG1 -wB1;bG1 bS1-;wM -wQ;bM bQ-;wP /wQ;bP bQ/;wL -wG1;bL bG1-;wA1 wQ\;bB1 \bQ;wS1 wA1-;bA1 -bB1;wA2 -wP;bA2 bP-;wA2 wS1/;bA2 /bA1
 
 As of right now the intsect results are:
@@ -744,3 +744,24 @@ total time       = 3.06 seconds
 ## Did some tests with larger bit boards: See bigger_bb_benchmark.jl
 
 Slow downs of 2-3x were observed with larger bit boards
+
+
+
+## Lots of changes have been made: Use hex sets to avoid deduplication of generated moves, use cache for antmoves & pinned tiles
+
+Base+MLP;InProgress;white[5];wL;bL wL\;wM \wL;bM bL\;wA1 /wM;bA1 /bL;wQ wM/;bQ bM-;wA2 wQ\;bA2 bA1\;wA2 /bA2;bA1 /wA1;wB1 wQ\;bP bA2-;wM wB1\;bB1 \bA2;wA3 -wQ;bS1 /bA1;wA3 -bS1
+
+(using a pre allocated cache, results are added by mutating old elements)
+
+Perft(5)         = 3.861.112.056
+KN/S             = 111.160
+memory per node  = 0.0 bytes
+gc time          = 0.0%
+total time       = 34.73 seconds
+
+(using an empty cache, results are copies into it)
+
+time performance is similar at top speed, but less reliable because of gc. Continuing with overwriting.
+
+
+

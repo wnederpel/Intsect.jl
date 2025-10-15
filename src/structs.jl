@@ -69,7 +69,7 @@ function MoveStoreEntry()
     return MoveStoreEntry(NO_HASH, HexSet())
 end
 
-function get_store_size(move_store_size_mb, size)
+function get_store_size(move_store_size_mb, entry_size)
     n = (move_store_size_mb * 1024 * 1024) ÷ entry_size
     n_pow2 = 1 << (floor(Int, log2(n)))
     return n_pow2
@@ -137,6 +137,14 @@ mutable struct Board
 end
 
 function Board(tiles, tile_locs, gametype)
+    move_store = Vector{MoveStoreEntry}(undef, MOVE_STORE_SIZE)
+    for i in 1:MOVE_STORE_SIZE
+        move_store[i] = MoveStoreEntry()
+    end
+    pinned_store = Vector{PinnedStoreEntry}(undef, PINNED_STORE_SIZE)
+    for i in 1:PINNED_STORE_SIZE
+        pinned_store[i] = PinnedStoreEntry()
+    end
     return Board(
         tiles,
         tile_locs,
@@ -175,8 +183,8 @@ function Board(tiles, tile_locs, gametype)
         -1,
         UInt64(0),
         UInt64(0),
-        Vector{MoveStoreEntry}(fill(MoveStoreEntry(), MOVE_STORE_SIZE)),
-        Vector{PinnedStoreEntry}(fill(PinnedStoreEntry(), PINNED_STORE_SIZE)),
+        move_store,
+        pinned_store,
         make_ws(),
     )
 end

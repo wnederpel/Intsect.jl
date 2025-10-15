@@ -567,7 +567,9 @@ function antmoves(board, startloc, move_to_set::HexSet)
     end
 
     if (stored_hash != move_entry_hash) && count_ones(move_to_set) > 10
-        entry = MoveStoreEntry(move_entry_hash, copy(move_to_set))
+        stored_moves = move_entry.ant_reachable_hs
+        overwrite!(stored_moves, move_to_set)
+        entry = MoveStoreEntry(move_entry_hash, stored_moves)
         board.move_store[(move_entry_hash & MOVE_STORE_MASK) + 1] = entry
     end
 
@@ -845,7 +847,9 @@ GetArticulationPoints(i, d)
         get_pinned_tiles_general!(board, visited, depth_dict, low_dict, parent_dict, start_loc, 0)
     end
 
-    entry = PinnedStoreEntry(board.location_hash, copy(board.ispinned))
+    stored_pinned = pinned_entry.pinned_pieces_hs
+    overwrite!(stored_pinned, board.ispinned)
+    entry = PinnedStoreEntry(board.location_hash, stored_pinned)
     board.pinned_store[(board.location_hash & PINNED_STORE_MASK) + 1] = entry
 
     return nothing
