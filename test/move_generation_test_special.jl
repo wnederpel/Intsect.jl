@@ -185,6 +185,8 @@ end
 end
 
 @testitem "Mosquito cannot move when it only touches a mosquito" begin
+    using DataStructures
+
     # Define all pieces
     wQ = get_tile_from_string("wQ")
     bQ = get_tile_from_string("bQ")
@@ -207,7 +209,7 @@ end
 
     # Generate the moves
     move_to_locs = HexSet()
-    mosquitomoves(board, bM_loc, get_tile_height(bM), nothing, move_to_locs)
+    mosquitomoves(board, bM_loc, get_tile_height(bM), DefaultDict(false), move_to_locs)
 
     # Check the moves
     @test count_ones(move_to_locs) == 0

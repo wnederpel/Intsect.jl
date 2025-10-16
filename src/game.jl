@@ -315,10 +315,6 @@ function action_from_move_string(board::Board, move_string)
     end
     valid_actions = validactions(board)
     if !(action in valid_actions)
-        println("SHOWING BOARD AS DEBUG OUTPUT")
-        show(board)
-        show_pinned(board)
-        # show_valid_actions(board)
         error(
             "Invalid action: '$(move_string_from_action(board, action))' or '$action' not present in valid actions",
         )
@@ -556,6 +552,7 @@ function undo(board::Board)
     end
     last_action_index = board.history[board.last_history_index]
     board.last_history_index -= 1
+    board.hash_history_index -= 1
     return undo_action(board, last_action_index)
 end
 
@@ -852,6 +849,9 @@ function post_action_general_update(board::Board, action)
         board.turn += 1
         board.current_color = WHITE
     end
+    board.hash_history_index += 1
+    board.hash_history[board.hash_history_index] = get_hash_value(board)
+    check_draw(board)
     return nothing
 end
 
@@ -886,6 +886,21 @@ function check_gameover(board::Board)
         end
     end
     return nothing
+end
+
+function check_draw(board)
+    # Check the hash history at every other move back (every other move it's black or whites turn so hash is different)
+    count = 0
+    hash_value = get_hash_value(board)
+    for i in (board.hash_history_index):-2:1
+        if board.hash_history[i] == hash_value
+            count += 1
+        end
+    end
+    if count >= 3
+        board.gameover = true
+        board.victor = DRAW
+    end
 end
 
 """

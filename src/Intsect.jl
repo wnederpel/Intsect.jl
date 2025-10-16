@@ -1,12 +1,11 @@
 module Intsect
 
+using Revise
 using StaticArrays
 using EnumX
 using DataStructures
-using Memoize
 using Bumper
 using InteractiveUtils
-using Revise
 
 # structs
 export Board
@@ -69,6 +68,7 @@ export validactions
 export validactions!
 export validactions_indices
 export add_placements
+export verify_perft
 export isvalid_shifted_tile
 export push_slidelocs!
 export antmoves
