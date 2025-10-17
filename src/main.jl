@@ -21,6 +21,8 @@ function start(board, gamestring)
         try
             if command == "info"
                 handle_info_command()
+            elseif command == "perft"
+
             elseif command == "state"
                 if gamestring === nothing
                     println("No game is started yet")

@@ -48,6 +48,7 @@ export start
 export perft
 export direction_from_string
 export show
+export get_hash_value
 export fill_placement_locs_bb
 export show_valid_actions
 export show_pinned
