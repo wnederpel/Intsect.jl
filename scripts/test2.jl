@@ -11,21 +11,17 @@ movestrings = raw"wL;bL wL\;wM \wL;bM bL\;wA1 /wM;bA1 /bL;wQ wM/;bQ bM-;wA2 wQ\;
 for movestring in split(movestrings, ";")
     do_action(board, movestring)
 end
-println(board.hash)
-# show(board)
+println("current hash: ", board.hash)
 
-movestrings = raw"bB1 bL;wM wL;bQ wA2-;wM wA1"
+movestrings = raw"bB1 bL"
 
 for movestring in split(movestrings, ";")
     do_action(board, movestring)
 end
 
-println(board.hash)
+undo(board)
 
-undo(board)
-undo(board)
-undo(board)
-undo(board)
+println("hash after do and undo: ", board.hash)
 
 movestrings = raw"bQ bP-;wQ -wB1;bQ bM-;wQ \wB1"
 for movestring in split(movestrings, ";")

@@ -827,13 +827,12 @@ function inverse_post_action_hs_hash_update(board, action::Climb)
     toggle_tile_on_hex_set!(board, moved_color, action.moving_loc)
 
     # To correctly undo the hash change, we need to use the heights as they were before the undo took place
-    old_goal_loc_height = length(board.underworld[action.goal_loc])
-    old_moving_loc_height =
-        length(board.underworld[action.goal_loc]) + Int(opened_tile != EMPTY_TILE)
+    old_goal_loc_height = length(board.underworld[action.goal_loc]) + Int(opened_tile != EMPTY_TILE)
+    old_moving_loc_height = length(board.underworld[action.goal_loc])
+
     tile = get_tile_on_board(board, action.moving_loc)
-    # println("xor tile $tile at $(action.goal_loc) with height $old_goal_loc_height")
+
     board.hash ⊻= get_hash_value(tile, action.goal_loc; height=old_goal_loc_height)
-    # println("xor tile $tile at $(action.moving_loc) with height $old_moving_loc_height")
     board.hash ⊻= get_hash_value(tile, action.moving_loc; height=old_moving_loc_height)
     return nothing
 end
