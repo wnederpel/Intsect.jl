@@ -134,6 +134,7 @@ mutable struct Board
     move_store::Vector{MoveStoreEntry}
     pinned_store::Vector{PinnedStoreEntry}
     workspaces::Workspaces
+    gametype::Type{<:Gametype}
 end
 
 function Board(tiles, tile_locs, gametype)
@@ -188,6 +189,7 @@ function Board(tiles, tile_locs, gametype)
         move_store,
         pinned_store,
         make_ws(),
+        gametype,
     )
 end
 
@@ -198,12 +200,8 @@ mutable struct GameString
     movestrings::String
 end
 
-function GameString()
-    return GameString("Base+MLP", "NotStarted", "White[1]", "")
-end
-
 function GameString(board)
-    gamestring = GameString()
+    gamestring = GameString(get_gametype_string(board), "NotStarted", "White[1]", "")
     update_gamestring(gamestring, board)
     return gamestring
 end

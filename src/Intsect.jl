@@ -6,6 +6,7 @@ using EnumX
 using DataStructures
 using Bumper
 using InteractiveUtils
+using Printf
 
 # structs
 export Board

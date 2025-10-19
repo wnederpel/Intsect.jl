@@ -6,7 +6,6 @@ end
 
 function start()
     handle_info_command()
-    println("Enter a command:")
 
     board = nothing
     gamestring = nothing
@@ -21,8 +20,6 @@ function start(board, gamestring)
         try
             if command == "info"
                 handle_info_command()
-            elseif command == "perft"
-
             elseif command == "state"
                 if gamestring === nothing
                     println("No game is started yet")
@@ -40,7 +37,7 @@ function start(board, gamestring)
 
                 gametype = gametype_from_string(gametype_string)
                 board = handle_newgame_command(gametype)
-                gamestring = GameString()
+                gamestring = GameString(board)
 
                 show(gamestring)
             elseif command == "options"
@@ -66,6 +63,16 @@ function start(board, gamestring)
                     do_action(board, action)
                     update_gamestring(gamestring, board)
                     show(gamestring)
+                elseif startswith(command, "perft")
+                    max_depth = tryparse(Int, split(command, " ")[2])
+                    max_depth = max_depth === nothing ? 4 : max_depth
+                    println("depth \t\t count \t time \t kn/s")
+                    for depth in 0:max_depth
+                        nodes, time_taken, _, _, _ = @timed perft(depth, board)
+                        kilo_nodes = nodes / 1000
+                        knps = round(kilo_nodes / time_taken)
+                        @printf("%6d%14d%12s%12.1f\n", depth, nodes, format_time(time_taken), knps)
+                    end
                 elseif command == "bestmove"
                     actions = validactions(board)
 
@@ -157,4 +164,17 @@ function example()
 
     start(board, gamestring)
     return nothing
+end
+
+# format seconds into ns / µs / ms / s with one decimal
+function format_time(t::Float64)::String
+    if t < 1e-6
+        @sprintf("%.1fns", t * 1e9)
+    elseif t < 1e-3
+        @sprintf("%.1fµs", t * 1e6)
+    elseif t < 1
+        @sprintf("%.1fms", t * 1e3)
+    else
+        @sprintf("%.1fs", t)
+    end
 end

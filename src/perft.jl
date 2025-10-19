@@ -32,6 +32,9 @@ function perft(n; output=true, type=MLPGame, game_string="Base+MLP;InProgress;wh
 end
 
 function perft(depth::Integer, board)::Integer
+    if depth == 0
+        return 1
+    end
     if depth == 1
         # Not needed to allocate here, use a global valid move buffer,
         # Here you can just read the action_index.

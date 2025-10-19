@@ -937,6 +937,26 @@ function validate_tile_string(tile::AbstractString)
     return false
 end
 
+function get_gametype_string(board::Board)
+    if board.gametype == MLPGame
+        return "Base+MLP"
+    elseif board.gametype == MGame
+        return "Base+M"
+    elseif board.gametype == PGame
+        return "Base+P"
+    elseif board.gametype == LGame
+        return "Base+L"
+    elseif board.gametype == MLGame
+        return "Base+ML"
+    elseif board.gametype == MPGame
+        return "Base+MP"
+    elseif board.gametype == LPGame
+        return "Base+LP"
+    elseif board.gametype == BaseGame
+        return "Base"
+    end
+end
+
 function gametype_from_string(gametype_string)
     if gametype_string == "Base+MLP"
         return MLPGame
@@ -954,6 +974,8 @@ function gametype_from_string(gametype_string)
         return LPGame
     elseif gametype_string == "Base+MLP"
         return MLPGame
+    elseif gametype_string == "Base"
+        return BaseGame
     end
     return error("game type '$gametype_string' not yet supported")
 end
