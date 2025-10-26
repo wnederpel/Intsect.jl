@@ -260,7 +260,12 @@ end
 
 function action_from_move_string(board::Board, move_string)
     if move_string == "pass"
-        return Pass()
+        action = Pass()
+        valid_actions = validactions(board)
+        if !(action in valid_actions)
+            error("Invalid action: '$(move_string)' not present in valid actions")
+        end
+        return action
     end
     move_string = strip(move_string)
     validate_move_string(move_string)
@@ -315,9 +320,7 @@ function action_from_move_string(board::Board, move_string)
     end
     valid_actions = validactions(board)
     if !(action in valid_actions)
-        error(
-            "Invalid action: '$(move_string_from_action(board, action))' or '$action' not present in valid actions",
-        )
+        error("Invalid action: '$(move_string)' not present in valid actions")
     end
     board.action_index = 1
     return action

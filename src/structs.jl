@@ -75,11 +75,11 @@ function get_store_size(move_store_size_mb, entry_size)
     return n_pow2
 end
 
-move_store_size_mb = 64
+move_store_size_mb = 4
 const MOVE_STORE_SIZE::Int = get_store_size(move_store_size_mb, sizeof(MoveStoreEntry))
 const MOVE_STORE_MASK::Int = MOVE_STORE_SIZE - 1
 
-pinned_store_size_mb = 64
+pinned_store_size_mb = 4
 const PINNED_STORE_SIZE::Int = get_store_size(pinned_store_size_mb, sizeof(PinnedStoreEntry))
 const PINNED_STORE_MASK::Int = PINNED_STORE_SIZE - 1
 

@@ -13,9 +13,11 @@ function get_hash_value(board::Board)
     if board.current_color == BLACK
         hash ⊻= COLOR_HASH_VALUE
     end
-    just_moved_color = get_tile_color(get_tile_on_board(board, board.just_moved_loc))
-    if board.just_moved_loc >= 0 && just_moved_color == board.current_color
-        hash ⊻= JUST_MOVED_HASH_VALUES[board.just_moved_loc + 1]
+    if board.just_moved_loc >= 0
+        just_moved_color = get_tile_color(get_tile_on_board(board, board.just_moved_loc))
+        if just_moved_color == board.current_color
+            hash ⊻= JUST_MOVED_HASH_VALUES[board.just_moved_loc + 1]
+        end
     end
     return hash
 end

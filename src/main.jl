@@ -31,17 +31,24 @@ function start(board, gamestring)
                 break
             elseif startswith(command, "newgame")
                 if occursin(";", command)
-                    println("newgame with game string not yet supported")
+                    gamestring = command[9:end]
+                    gametype_string = split(gamestring, ";")[1]
+                    gametype = gametype_from_string(gametype_string)
+                    board = handle_newgame_command(gametype)
+                    moves = split(gamestring, ";")[4:end]
+                    for move_string in moves
+                        action = action_from_move_string(board, move_string)
+                        do_action(board, action)
+                    end
+                else
+                    gametype_string = command[9:end]
+                    gametype = gametype_from_string(gametype_string)
+                    board = handle_newgame_command(gametype)
                 end
-                gametype_string = command[9:end]
-
-                gametype = gametype_from_string(gametype_string)
-                board = handle_newgame_command(gametype)
                 gamestring = GameString(board)
-
                 show(gamestring)
+
             elseif command == "options"
-                println("No options to configure")
             elseif startswith(command, "help")
                 println("Commands:")
                 println("info")
@@ -73,24 +80,37 @@ function start(board, gamestring)
                         knps = round(kilo_nodes / time_taken)
                         @printf("%6d%14d%12s%12.1f\n", depth, nodes, format_time(time_taken), knps)
                     end
-                elseif command == "bestmove"
-                    actions = validactions(board)
+                elseif startswith(command, "bestmove")
+                    type = split(command, " ")[2] == "time" ? :time : :depth
+                    if type == :depth
+                        depth = tryparse(Int, split(command, " ")[3])
+                        if depth === nothing
+                            error("please supply depth")
+                        end
 
-                    action = rand(filter(action -> !(action isa Climb), actions))
+                        # Ah yes, very sophisticated
+                        actions = validactions(board)
+                        action = rand(actions)
+                    else
+                        time_str = split(command, " ")[3]
+                        hours, minutes, seconds = trypase.(Int, split(time_str, ":"))
+                        if hours === nothing || minutes === nothing || seconds == nothing
+                            error("time $time_str is not in valid format hh:mm:ss")
+                        end
+                        seconds_total = seconds + minutes * 60 + hours * 3600
+
+                        # Ah yes, very sophisticated
+                        actions = validactions(board)
+                        action = rand(actions)
+                    end
+
                     show(action, board)
-                    do_action(board, action)
-                    update_gamestring(gamestring, board)
-                    show(gamestring)
 
                 elseif command == "show"
-                    show(board; show_locs=false)
+                    show(board; show_locs=false, simple=false)
                 elseif command == "pass"
-                    if Pass() in validactions(board)
-                        do_action(board, Pass())
-                        update_gamestring(gamestring, board)
-                    else
-                        error("pass not a valid action")
-                    end
+                    do_action(board, Pass())
+                    update_gamestring(gamestring, board)
                     show(gamestring)
                 elseif command == "validmoves"
                     actions = validactions(board)
