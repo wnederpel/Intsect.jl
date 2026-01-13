@@ -2,3 +2,5 @@
 alloc-profile.pb.gz
 profile.pb.gz
 .vscode/
+tmp/
+reference/
