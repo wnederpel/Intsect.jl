@@ -83,27 +83,57 @@ end
     no_placement_hs = board.workspaces.no_placement_hs
     clear!(no_placement_hs)
 
+    # Mark enemy pieces and all their neighbors as no-placement zones
     for_each_bit_set(their_pieces) do loc
         neighs = allneighs(loc)
         set!(no_placement_hs, loc)
-        for i in 1:6
-            set!(no_placement_hs, neighs[i])
-        end
+        # Unrolled neighbor loop for better performance
+        @inbounds set!(no_placement_hs, neighs[1])
+        @inbounds set!(no_placement_hs, neighs[2])
+        @inbounds set!(no_placement_hs, neighs[3])
+        @inbounds set!(no_placement_hs, neighs[4])
+        @inbounds set!(no_placement_hs, neighs[5])
+        @inbounds set!(no_placement_hs, neighs[6])
     end
 
+    # Mark my pieces as no-placement zones
     for_each_bit_set(my_pieces) do loc
         set!(no_placement_hs, loc)
     end
 
+    # Find valid placement locations (neighbors of my pieces not in no_placement_hs)
     for_each_bit_set(my_pieces) do loc
         neighs = allneighs(loc)
-        for i in 1:6
-            neighloc = neighs[i]
-            if !no_placement_hs[neighloc]
-                placement_loc = neighloc
-                set!(no_placement_hs, placement_loc)
-                f(placement_loc)
-            end
+        # Unrolled neighbor loop with inline checks
+        @inbounds neighloc = neighs[1]
+        if !no_placement_hs[neighloc]
+            set!(no_placement_hs, neighloc)
+            f(neighloc)
+        end
+        @inbounds neighloc = neighs[2]
+        if !no_placement_hs[neighloc]
+            set!(no_placement_hs, neighloc)
+            f(neighloc)
+        end
+        @inbounds neighloc = neighs[3]
+        if !no_placement_hs[neighloc]
+            set!(no_placement_hs, neighloc)
+            f(neighloc)
+        end
+        @inbounds neighloc = neighs[4]
+        if !no_placement_hs[neighloc]
+            set!(no_placement_hs, neighloc)
+            f(neighloc)
+        end
+        @inbounds neighloc = neighs[5]
+        if !no_placement_hs[neighloc]
+            set!(no_placement_hs, neighloc)
+            f(neighloc)
+        end
+        @inbounds neighloc = neighs[6]
+        if !no_placement_hs[neighloc]
+            set!(no_placement_hs, neighloc)
+            f(neighloc)
         end
     end
     return nothing
@@ -391,55 +421,97 @@ function ladybugmoves(board, startloc, move_to_set::HexSet)
     set_tile_on_board(board, startloc, EMPTY_TILE)
 
     visited_step_2 = board.workspaces.ladybug_visited_step_2
-    clear!(visited_step_2)
+    Intsect.clear!(visited_step_2)
 
     neighlocs = allneighs(startloc)
-    for i in 1:6
-        step_1_loc = neighlocs[i]
-        if get_tile_on_board(board, step_1_loc) == EMPTY_TILE
-            continue
-        end
-        if !canslidehigh(i, board, neighlocs, 1)
-            continue
-        end
 
+    # Step 1: Iterate over step_1 locations
+    @inbounds for i in 1:6
+        step_1_loc = neighlocs[i]
+        step_1_tile = get_tile_on_board(board, step_1_loc)
+
+        # Early exit: must be occupied
+        step_1_tile == EMPTY_TILE && continue
+
+        # Inline canslidehigh check for step 1
+        step_1_i_left = i == 1 ? 6 : i - 1
+        step_1_i_right = i == 6 ? 1 : i + 1
+        neighleft_tile = get_tile_on_board(board, neighlocs[step_1_i_left])
+        neighright_tile = get_tile_on_board(board, neighlocs[step_1_i_right])
+
+        # Extract heights efficiently using bitwise operations
+        step_1_height_raw = step_1_tile & 0x03
+        neighleft_height = neighleft_tile == EMPTY_TILE ? 0x00 : (neighleft_tile & 0x03) + 0x01
+        neighright_height = neighright_tile == EMPTY_TILE ? 0x00 : (neighright_tile & 0x03) + 0x01
+        step_1_height = step_1_height_raw + 0x01
+        max_height_1 = step_1_height + 0x01
+
+        (neighleft_height < max_height_1 || neighright_height < max_height_1) || continue
+
+        # Step 2: Iterate over step_2 locations
         step_2_locs = allneighs(step_1_loc)
-        for j in 1:6
+        @inbounds for j in 1:6
             step_2_loc = step_2_locs[j]
-            if get_tile_on_board(board, step_2_loc) == EMPTY_TILE
-                continue
-            end
-            if visited_step_2[step_2_loc]
-                continue
-            end
-            step_1_height = get_tile_height(get_tile_on_board(board, step_1_loc))
-            if !canslidehigh(j, board, step_2_locs, step_1_height + 1)
-                continue
-            end
+            step_2_tile = get_tile_on_board(board, step_2_loc)
+
+            # Early exits
+            step_2_tile == EMPTY_TILE && continue
+            visited_step_2[step_2_loc] && continue
+
+            # Inline canslidehigh check for step 2
+            step_2_j_left = j == 1 ? 6 : j - 1
+            step_2_j_right = j == 6 ? 1 : j + 1
+            step_2_left_tile = get_tile_on_board(board, step_2_locs[step_2_j_left])
+            step_2_right_tile = get_tile_on_board(board, step_2_locs[step_2_j_right])
+
+            step_2_height_raw = step_2_tile & 0x03
+            step_2_left_height =
+                step_2_left_tile == EMPTY_TILE ? 0x00 : (step_2_left_tile & 0x03) + 0x01
+            step_2_right_height =
+                step_2_right_tile == EMPTY_TILE ? 0x00 : (step_2_right_tile & 0x03) + 0x01
+            step_2_height = step_2_height_raw + 0x01
+            height_from_1_to_2 = step_1_height + 0x01
+
+            # Compute max inline to avoid function call
+            max_height_2 = step_2_height + 0x01
+            max_height_2 = max_height_2 > height_from_1_to_2 ? max_height_2 : height_from_1_to_2
+
+            (step_2_left_height < max_height_2 || step_2_right_height < max_height_2) || continue
 
             set!(visited_step_2, step_2_loc)
 
+            # Step 3: Iterate over step_3 locations (final landing spots)
             step_3_locs = allneighs(step_2_loc)
-
-            for k in 1:6
+            @inbounds for k in 1:6
                 step_3_loc = step_3_locs[k]
-                if get_tile_on_board(board, step_3_loc) != EMPTY_TILE
+                step_3_tile = get_tile_on_board(board, step_3_loc)
+
+                # Must land on empty, not already in move_to_set
+                step_3_tile != EMPTY_TILE && continue
+                move_to_set[step_3_loc] && continue
+
+                # Inline canslidehigh check for step 3
+                step_3_k_left = k == 1 ? 6 : k - 1
+                step_3_k_right = k == 6 ? 1 : k + 1
+                step_3_left_tile = get_tile_on_board(board, step_3_locs[step_3_k_left])
+                step_3_right_tile = get_tile_on_board(board, step_3_locs[step_3_k_right])
+
+                step_3_left_height =
+                    step_3_left_tile == EMPTY_TILE ? 0x00 : (step_3_left_tile & 0x03) + 0x01
+                step_3_right_height =
+                    step_3_right_tile == EMPTY_TILE ? 0x00 : (step_3_right_tile & 0x03) + 0x01
+                # step_3 is EMPTY (goalheight = 0), so max is just the incoming height
+                max_height_3 = step_2_height + 0x01
+
+                (step_3_left_height < max_height_3 || step_3_right_height < max_height_3) ||
                     continue
-                end
-                if move_to_set[step_3_loc]
-                    continue
-                end
-                step_2_height = get_tile_height(get_tile_on_board(board, step_2_loc))
-                if !canslidehigh(k, board, step_3_locs, step_2_height + 1)
-                    continue
-                end
 
                 set!(move_to_set, step_3_loc)
             end
         end
     end
-    remove!(move_to_set, startloc)
 
+    remove!(move_to_set, startloc)
     set_tile_on_board(board, startloc, tmp_tile)
 
     return nothing
@@ -537,20 +609,15 @@ function antmoves(board, startloc, move_to_set::HexSet)
         stack_arr = @alloc(Int, GRID_SIZE)
         stack_ptr = 1
 
-        # push
+        # push startloc and mark as visited
         stack_arr[stack_ptr] = startloc
         stack_ptr += 1
+        set!(move_to_set, startloc)
 
         while stack_ptr != 1
             # pop
             loc = stack_arr[stack_ptr - 1]
             stack_ptr -= 1
-
-            if move_to_set[loc]
-                continue
-            end
-
-            set!(move_to_set, loc)
 
             neighlocs = allneighs(loc)
             slide_neighs = get_slide_neighs(board, neighlocs)
@@ -559,8 +626,13 @@ function antmoves(board, startloc, move_to_set::HexSet)
                 slide_neigh_i = trailing_zeros(slide_neighs) + 1
                 slide_neighs &= slide_neighs - 1
 
-                @inbounds stack_arr[stack_ptr] = neighlocs[slide_neigh_i]
-                stack_ptr += 1
+                @inbounds neigh_loc = neighlocs[slide_neigh_i]
+                # Only push if not already visited
+                if !move_to_set[neigh_loc]
+                    set!(move_to_set, neigh_loc)
+                    @inbounds stack_arr[stack_ptr] = neigh_loc
+                    stack_ptr += 1
+                end
             end
         end
         set_tile_on_board(board, startloc, tmp_tile)
@@ -666,7 +738,7 @@ end
     # Number, the bits are used to indicate the presence of a piece
     occupied = 0
     for i in 6:-1:1
-        occupied = occupied << 1
+        occupied <<= 1
         @inbounds if get_tile_on_board(board, all_neighbours[i]) != EMPTY_TILE
             occupied |= 1
             # wrap around
