@@ -102,16 +102,19 @@ export MLGame
 export LPGame
 export MLPGame
 
-# Files
-include("enums.jl")
-include("constants.jl")
-include("structs.jl")
-include("game.jl")
-include("hex_set.jl")
+# Game core files
+include("game/enums.jl")
+include("game/constants.jl")
+include("game/structs.jl")
+include("game/game.jl")
+include("game/hex_set.jl")
 include("main.jl")
-include("show_methods.jl")
-include("move_generation.jl")
-include("perft.jl")
-include("hash_values.jl")
+include("game/show_methods.jl")
+include("game/move_generation.jl")
+include("game/perft.jl")
+include("game/hash_values.jl")
+
+# AI files
+include("ai/search.jl")
 
 end # module Intsect

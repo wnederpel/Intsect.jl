@@ -861,7 +861,7 @@ end
 const wQ::UInt8 = get_tile_from_string("wQ")
 const bQ::UInt8 = get_tile_from_string("bQ")
 
-@inline function check_gameover(board::Board; goal_loc::Int=INVALID_LOC, undoing::Bool=false)
+@inline function check_gameover(board::Board; undoing::Bool=false)
     wQ_loc = get_loc(board, wQ)
     bQ_loc = get_loc(board, bQ)
     # Piece might be underground, otherwise update the queen loc
@@ -883,32 +883,29 @@ const bQ::UInt8 = get_tile_from_string("bQ")
 
     if wQ_loc >= 0
         wQ_neighs = allneighs(wQ_loc)
-        if goal_loc in wQ_neighs
-            # only need to check for gameover if the goal loc is next to the white queen
-            for loc in wQ_neighs
-                if get_tile_on_board(board, loc) == EMPTY_TILE
-                    break
-                end
-                if loc == wQ_neighs[end]
-                    board.gameover = true
-                    board.victor = BLACK
-                end
+        # only need to check for gameover if the goal loc is next to the white queen
+        for loc in wQ_neighs
+            if get_tile_on_board(board, loc) == EMPTY_TILE
+                break
+            end
+            if loc == wQ_neighs[end]
+                board.gameover = true
+                board.victor = BLACK
             end
         end
     end
     if bQ_loc >= 0
         bQ_neighs = allneighs(bQ_loc)
-        if goal_loc in bQ_neighs
-            # only need to check for gameover if the goal loc is next to the black queen
-            for loc in bQ_neighs
-                if get_tile_on_board(board, loc) == EMPTY_TILE
-                    break
-                end
-                if loc == bQ_neighs[end]
-                    board.gameover = true
-                    board.victor = WHITE
-                end
+        # only need to check for gameover if the goal loc is next to the black queen
+        for loc in bQ_neighs
+            if get_tile_on_board(board, loc) == EMPTY_TILE
+                break
             end
+            if loc == bQ_neighs[end]
+                board.gameover = true
+                board.victor = WHITE
+            end
+            # end
         end
     end
     return nothing
