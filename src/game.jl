@@ -638,7 +638,7 @@ function undo_action(board::Board, pass::Pass)
 end
 
 function inverse_post_action_update(board::Board, action)
-    check_gameover(board)
+    check_gameover(board; undoing=true)
     inverse_post_action_pillbug_update(board)
     inverse_post_action_general_update(board)
 
@@ -843,8 +843,8 @@ end
 
 function inverse_post_action_hs_hash_update(board, pass::Pass) end
 
-function post_action_general_update(board::Board, action)
-    check_gameover(board)
+function post_action_general_update(board::Board, action::Action)
+    check_gameover(board; goal_loc=action.goal_loc)
     board.ply += 1
     if board.current_color == WHITE
         board.current_color = BLACK
@@ -861,7 +861,7 @@ end
 const wQ::UInt8 = get_tile_from_string("wQ")
 const bQ::UInt8 = get_tile_from_string("bQ")
 
-function check_gameover(board::Board)
+@inline function check_gameover(board::Board; goal_loc::Int=INVALID_LOC, undoing::Bool=false)
     wQ_loc = get_loc(board, wQ)
     bQ_loc = get_loc(board, bQ)
     # Piece might be underground, otherwise update the queen loc
@@ -876,22 +876,45 @@ function check_gameover(board::Board)
         board.queen_pos_black = bQ_loc
     end
 
-    if wQ_loc >= 0 && all(loc -> get_tile_on_board(board, loc) != EMPTY_TILE, allneighs(wQ_loc))
-        board.gameover = true
-        board.victor = BLACK
+    if undoing
+        # We only need to update the queen locs when undoing, no need to check for gameover
+        return nothing
     end
-    if bQ_loc >= 0 && all(loc -> get_tile_on_board(board, loc) != EMPTY_TILE, allneighs(bQ_loc))
-        if board.gameover
-            board.victor = DRAW
-        else
-            board.gameover = true
-            board.victor = WHITE
+
+    if wQ_loc >= 0
+        wQ_neighs = allneighs(wQ_loc)
+        if goal_loc in wQ_neighs
+            # only need to check for gameover if the goal loc is next to the white queen
+            for loc in wQ_neighs
+                if get_tile_on_board(board, loc) == EMPTY_TILE
+                    break
+                end
+                if loc == wQ_neighs[end]
+                    board.gameover = true
+                    board.victor = BLACK
+                end
+            end
+        end
+    end
+    if bQ_loc >= 0
+        bQ_neighs = allneighs(bQ_loc)
+        if goal_loc in bQ_neighs
+            # only need to check for gameover if the goal loc is next to the black queen
+            for loc in bQ_neighs
+                if get_tile_on_board(board, loc) == EMPTY_TILE
+                    break
+                end
+                if loc == bQ_neighs[end]
+                    board.gameover = true
+                    board.victor = WHITE
+                end
+            end
         end
     end
     return nothing
 end
 
-function check_draw(board)
+@inline function check_draw(board::Board)
     # Check the hash history at every other move back (every other move it's black or whites turn so hash is different)
     count = 0
     hash_value = get_hash_value(board)

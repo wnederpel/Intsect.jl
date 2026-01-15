@@ -753,6 +753,8 @@ Base+MLP;InProgress;white[5];wL;bL wL\;wM \wL;bM bL\;wA1 /wM;bA1 /bL;wQ wM/;bQ b
 
 (using a pre allocated cache, results are added by mutating old elements)
 
+Perft(4)         = 52.745.320
+
 Perft(5)         = 3.861.112.056
 KN/S             = 111.160
 memory per node  = 0.0 bytes

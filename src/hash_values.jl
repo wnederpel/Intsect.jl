@@ -1,9 +1,9 @@
 
-function get_location_hash_value(loc)
+@inline function get_location_hash_value(loc)
     return get_hash_value(EMPTY_TILE, loc)
 end
 
-function get_hash_value(tile, loc; height=0)
+@inline function get_hash_value(tile, loc; height=0)
     return HASH_VALUES[1 + (tile >> INDEX_SHIFT) + height * 36 + loc * 36 * 7]
 end
 
