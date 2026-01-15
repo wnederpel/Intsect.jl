@@ -1,6 +1,5 @@
 module Intsect
 
-using Revise
 using StaticArrays
 using EnumX
 using DataStructures
