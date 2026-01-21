@@ -81,6 +81,7 @@ function start(board, gamestring)
                         @printf("%6d%14d%12s%12.1f\n", depth, nodes, format_time(time_taken), knps)
                     end
                 elseif startswith(command, "bestmove")
+
                     type = split(command, " ")[2] == "time" ? :time : :depth
                     if type == :depth
                         depth = tryparse(Int, split(command, " ")[3])
@@ -88,20 +89,16 @@ function start(board, gamestring)
                             error("please supply depth")
                         end
 
-                        # Ah yes, very sophisticated
-                        actions = validactions(board)
-                        action = rand(actions)
+                        action = get_best_move(board, depth, 10)
                     else
                         time_str = split(command, " ")[3]
-                        hours, minutes, seconds = trypase.(Int, split(time_str, ":"))
+                        hours, minutes, seconds = tryparse.(Int, split(time_str, ":"))
                         if hours === nothing || minutes === nothing || seconds == nothing
                             error("time $time_str is not in valid format hh:mm:ss")
                         end
                         seconds_total = seconds + minutes * 60 + hours * 3600
 
-                        # Ah yes, very sophisticated
-                        actions = validactions(board)
-                        action = rand(actions)
+                        action = get_best_move(board, 3, seconds_total)
                     end
 
                     show(action, board)

@@ -844,7 +844,7 @@ end
 function inverse_post_action_hs_hash_update(board, pass::Pass) end
 
 function post_action_general_update(board::Board, action::Action)
-    check_gameover(board; goal_loc=action.goal_loc)
+    check_gameover(board)
     board.ply += 1
     if board.current_color == WHITE
         board.current_color = BLACK

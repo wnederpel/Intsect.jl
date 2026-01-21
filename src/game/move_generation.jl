@@ -34,23 +34,29 @@ function extract_valid_actions(board, move_buffer=nothing)
 end
 
 function validactions!(board::Board, move_buffer)
+    validactions!(board, move_buffer, board.current_color)
+    return nothing
+end
+
+function validactions!(board::Board, move_buffer, current_color)
+    # Having the current color as input allows to find the valid actions for the opponent too, useful for evaluation potentially
     board.action_index = 1
     if board.gameover
         return nothing
     end
 
-    need_to_place_queen = !board.queen_placed[board.current_color] && board.turn == 4
+    need_to_place_queen = !board.queen_placed[current_color] && board.turn == 4
     first_placement = board.ply == 1
     second_placement = board.ply == 2
 
     if need_to_place_queen
-        queenplacements(board, move_buffer)
+        queenplacements(board, move_buffer, current_color)
     elseif first_placement
-        firstplacements(board, move_buffer)
+        firstplacements(board, move_buffer, current_color)
     elseif second_placement
-        secondplacements(board, move_buffer)
+        secondplacements(board, move_buffer, current_color)
     else
-        validactions_general(board, move_buffer)
+        validactions_general(board, move_buffer, current_color)
     end
 
     return nothing
@@ -59,15 +65,15 @@ end
 """
 Valid actions for the default case
 """
-function validactions_general(board::Board, move_buffer)
-    add_placements(board, move_buffer)
+function validactions_general(board::Board, move_buffer, current_color)
+    add_placements(board, move_buffer, current_color)
 
-    if board.queen_placed[board.current_color]
+    if board.queen_placed[current_color]
         if board.general_pinned_update_required
             update_ispinned_general!(board)
             board.general_pinned_update_required = false
         end
-        add_moves(board, board.ispinned, move_buffer)
+        add_moves(board, board.ispinned, move_buffer, current_color)
     end
 
     if board.action_index == 1
@@ -78,8 +84,13 @@ function validactions_general(board::Board, move_buffer)
 end
 
 @inline function for_placement_locs(f::Function, board)
-    my_pieces = board.pieces[board.current_color]
-    their_pieces = board.pieces[other(board.current_color)]
+    # Only for testing
+    return for_placement_locs(f, board, board.current_color)
+end
+
+@inline function for_placement_locs(f::Function, board, current_color)
+    my_pieces = board.pieces[current_color]
+    their_pieces = board.pieces[other(current_color)]
     no_placement_hs = board.workspaces.no_placement_hs
     clear!(no_placement_hs)
 
@@ -139,9 +150,9 @@ end
     return nothing
 end
 
-function add_placements(board, move_buffer)
-    for_placement_locs(board) do placement_loc
-        for tile in board.placeable_tiles[board.current_color]
+function add_placements(board, move_buffer, current_color)
+    for_placement_locs(board, current_color) do placement_loc
+        for tile in board.placeable_tiles[current_color]
             if tile != EMPTY_TILE
                 add_action!(board, Placement(placement_loc, tile), move_buffer)
             end
@@ -155,7 +166,7 @@ const wM::UInt8 = get_tile_from_string("wM")
 const bP::UInt8 = get_tile_from_string("bP")
 const bM::UInt8 = get_tile_from_string("bM")
 
-function add_moves(board, ispinned, move_buffer)
+function add_moves(board, ispinned, move_buffer, current_color)
     # Moves will be stored in sets, then converted to actual moves
     move_to_set = board.workspaces.move_to_set
 
@@ -163,9 +174,9 @@ function add_moves(board, ispinned, move_buffer)
     # In the per location loop we will add these as needed
     wP_loc = get_loc(board, wP)
     bP_loc = get_loc(board, bP)
-    my_pillbug_loc = board.current_color == WHITE ? wP_loc : bP_loc
+    my_pillbug_loc = current_color == WHITE ? wP_loc : bP_loc
 
-    my_mosquito_loc = get_loc(board, board.current_color == WHITE ? wM : bM)
+    my_mosquito_loc = get_loc(board, current_color == WHITE ? wM : bM)
 
     pillbug_throw_from = board.workspaces.pillbug_throw_from
     pillbug_throw_to = board.workspaces.pillbug_throw_to
@@ -197,11 +208,11 @@ function add_moves(board, ispinned, move_buffer)
     end
 
     for bug in 0x01:0x08
-        if get_tile_bug_num(board.placeable_tiles[board.current_color][bug]) == 0
+        if get_tile_bug_num(board.placeable_tiles[current_color][bug]) == 0
             continue
         end
         for num in 0x00:MAX_NUMS[bug]
-            semi_tile = tile_from_info_as_index(board.current_color, bug, num)
+            semi_tile = tile_from_info_as_index(current_color, bug, num)
             @inbounds loc = board.tile_locs[semi_tile + 1]
 
             if loc == NOT_PLACED
@@ -259,8 +270,8 @@ end
 """
 valid actions for when the queen must be placed
 """
-function queenplacements(board, move_buffer)
-    queen_tile = board.current_color == WHITE ? wQ : bQ
+function queenplacements(board, move_buffer, current_color)
+    queen_tile = current_color == WHITE ? wQ : bQ
 
     for_placement_locs(board) do placement_loc
         add_action!(board, Placement(placement_loc, queen_tile), move_buffer)
@@ -271,8 +282,8 @@ end
 """
 valid actions for when the first move is made
 """
-function firstplacements(board, move_buffer)
-    for tile in board.placeable_tiles[board.current_color]
+function firstplacements(board, move_buffer, current_color)
+    for tile in board.placeable_tiles[current_color]
         if tile != EMPTY_TILE && get_tile_bug(tile) != Integer(Bug.QUEEN)
             add_action!(board, Placement(MID, tile), move_buffer)
         end
@@ -283,9 +294,9 @@ end
 """
 valid actions for second placement (first placement by black)
 """
-function secondplacements(board, move_buffer)
+function secondplacements(board, move_buffer, current_color)
     for loc in allneighs(MID)
-        for tile in board.placeable_tiles[board.current_color]
+        for tile in board.placeable_tiles[current_color]
             if tile != EMPTY_TILE && get_tile_bug(tile) != Integer(Bug.QUEEN)
                 add_action!(board, Placement(loc, tile), move_buffer)
             end
@@ -751,7 +762,7 @@ end
     return slidable
 end
 
-@inline function get_pinned_tiles!(board, last_goal_loc, last_moving_loc; inverse=false)
+@inline function get_pinned_tiles!(board::Board, last_goal_loc, last_moving_loc; inverse=false)
     return board.general_pinned_update_required = true
     # NOTE! the goal and moving loc have already happened!
     is_simple_goal, goal_neigh = is_simple_last_goal_loc(board, last_goal_loc, inverse)

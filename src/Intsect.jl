@@ -59,8 +59,8 @@ export get_tile_height
 export get_tile_bug
 export get_tile_bug_num
 export get_tile_color
-export get_pinned_tiles!
 export allneighs
+export get_best_move
 export allneighs_view
 export apply_direction
 export action_from_move_string
@@ -116,5 +116,6 @@ include("game/hash_values.jl")
 
 # AI files
 include("ai/search.jl")
+include("ai/evaluate.jl")
 
 end # module Intsect

@@ -65,7 +65,7 @@ const NUMMED_BUG_NAMES = [
 
 const MAX_NUMS::SVector{8,UInt8} = [2, 2, 1, 1, 0, 0, 0, 0]
 
-const PERFT_BUFFER::Vector = repeat([default_buffer(AllocBuffer)], 20)
+const PERFT_BUFFER::Vector = repeat([default_buffer(AllocBuffer)], 50)
 
 const PINNED_BUFFER::Vector = repeat([default_buffer(AllocBuffer)], 2)
 
