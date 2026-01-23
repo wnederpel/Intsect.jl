@@ -1,8 +1,8 @@
 using Intsect
 
 # Default settings
-depth = 3
-time_limit = 5.0
+depth = 4
+time_limit = 10.0
 gametype = MLPGame
 starting_position = 0
 

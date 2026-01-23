@@ -5,14 +5,7 @@ end
 
 function perft(n; output=true, type=MLPGame, game_string="Base+MLP;InProgress;white[1]")
     # https://github.com/jonthysell/Mzinga/wiki/Perft
-    board = handle_newgame_command(type)
-    movestrings = split(game_string, ";")
-    if length(movestrings) > 3
-        movestrings = movestrings[(begin + 3):end]
-        for movestring in movestrings
-            do_action(board, movestring)
-        end
-    end
+    board = from_game_string(game_string)
     if output
         show(board; simple=false)
     end

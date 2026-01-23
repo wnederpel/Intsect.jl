@@ -138,6 +138,20 @@ function set_loc(board::Board, tile::Integer, loc::Integer)
     return nothing
 end
 
+function from_game_string(game_string::String)
+    move_strings = split(game_string, ";")
+    type = gametype_from_string(move_strings[begin])
+
+    board = handle_newgame_command(type)
+    if length(move_strings) > 3
+        move_strings = move_strings[(begin + 3):end]
+        for move_string in move_strings
+            do_action(board, move_string)
+        end
+    end
+    return board
+end
+
 function handle_newgame_command(gametype::Type{T}) where {T<:Gametype}
     tiles = ones(UInt8, GRID_SIZE) .* EMPTY_TILE
     # initialize tile_locs at index NOT_PLACED, indication they are not placed
@@ -1117,6 +1131,18 @@ function get_all_actions()
     all_actions[(MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + 1):(end - 1)] = all_climbs
     all_actions[end] = Pass()
     return all_actions
+end
+
+function action_type(action_as_index)
+    if action_as_index < MAX_PLACEMENT_INDEX
+        return Placement
+    elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX
+        return Move
+    elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX
+        return Climb
+    else
+        return Pass
+    end
 end
 
 """

@@ -90,6 +90,8 @@ export get_loc
 export move_string_from_action
 export gamestring
 export undo
+export evaluate_board
+export from_game_string
 export get_pinned_tiles
 export format_with_dots
 export extract_valid_actions

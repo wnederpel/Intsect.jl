@@ -84,7 +84,7 @@ function play_next_move!(board::Board, best_move_func)
     action = best_move_func(board)
     println("Move: ", move_string_from_action(board, action))
     do_action(board, action)
-    show(board; show_locs=false, simple=true)
+    show(board; show_locs=false, simple=false)
 
     return true
 end
