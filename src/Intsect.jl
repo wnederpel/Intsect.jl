@@ -61,6 +61,7 @@ export get_tile_bug_num
 export get_tile_color
 export allneighs
 export get_best_move
+export start_match_player
 export allneighs_view
 export apply_direction
 export action_from_move_string
@@ -117,5 +118,8 @@ include("game/hash_values.jl")
 # AI files
 include("ai/search.jl")
 include("ai/evaluate.jl")
+
+# Match player
+include("match_player/player.jl")
 
 end # module Intsect
