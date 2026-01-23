@@ -165,13 +165,13 @@ function start_match_player(
 
             elseif command == "f"
                 # Play out 4 plies
-                println("\n=== Playing 4 plies ===")
-                play_n_plies!(board, best_move_func, 4)
+                println("\n=== Playing 5 plies ===")
+                play_n_plies!(board, best_move_func, 5)
 
             elseif command == "ff"
                 # Play out 8 plies
-                println("\n=== Playing 8 plies ===")
-                play_n_plies!(board, best_move_func, 8)
+                println("\n=== Playing 10 plies ===")
+                play_n_plies!(board, best_move_func, 10)
 
             elseif command == "show" || command == "s"
                 # Display current board
