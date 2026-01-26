@@ -1,35 +1,47 @@
 
 function get_best_move(board::Board, depth, time_limit_s)
     timed_out = Ref(false)
+    if time_limit_s <= 0
+        time_limit_s = 9999
+    end
     timer = Timer(time_limit_s) do _
         println("stopping search bc of time")
         timed_out[] = true
     end
 
-    best_move, best_score, _ = bf_search(board, board.current_color, timed_out, depth, depth)
+    nodes_processed = Ref(0)
+    alpha = Ref(-Inf)
+    beta = Ref(Inf)
+    best_move, best_score, full_path = search(
+        board, board.current_color, timed_out, depth, depth, nodes_processed
+    )
 
     close(timer)
+
+    println("done")
+    println("Nodes processed: $(nodes_processed[])")
 
     return ALL_ACTIONS[best_move]
 end
 
-function bf_search(
+function search(
     board::Board,
     my_color,
     timed_out::Ref{Bool},
     max_depth,
-    depth;
-    best_yet=pass_index(),
-    best_score=Inf,
+    depth,
+    nodes_processed::Ref{Int};
+    alpha_one_up::Float64=-Inf64,
+    beta_one_up::Float64=Inf64,
 )
+
     maximizing = board.current_color == my_color ? true : false
     score_at_depth = maximizing ? -Inf : Inf
     action_chosen_at_depth = pass_index()
     best_path = Int[]
-    if depth == 0
-        score = evaluate_board(board, my_color)
-        return action_chosen_at_depth, score, Int[]
-    end
+
+    final_lvl = depth == 1
+
     yield()
     if timed_out[]
         return best_yet, best_score, Int[]
@@ -40,27 +52,40 @@ function bf_search(
         validactions!(board, move_buffer)
         for action_i in 1:(board.action_index - 1)
             action_as_index = move_buffer[action_i]
-            if depth == max_depth
-                best_yet = action_chosen_at_depth
-                best_score = score_at_depth
-            end
 
             do_action(board, action_as_index)
-            _, score, sub_path = bf_search(
-                board,
-                my_color,
-                timed_out,
-                max_depth,
-                depth - 1;
-                best_yet=best_yet,
-                best_score=best_score,
-            )
+
+            nodes_processed[] += 1
+            if final_lvl
+                score = evaluate_board(board, my_color)
+                sub_path = Int[]
+            else
+                if maximizing
+                    alpha = score_at_depth
+                    beta = beta_one_up
+                else
+                    alpha = alpha_one_up
+                    beta = score_at_depth
+                end
+                _, score, sub_path = search(
+                    board,
+                    my_color,
+                    timed_out,
+                    max_depth,
+                    depth - 1,
+                    nodes_processed;
+                    alpha_one_up=alpha,
+                    beta_one_up=beta,
+                )
+            end
             undo(board)
 
             if (score > score_at_depth && maximizing) || (score < score_at_depth && !maximizing)
                 score_at_depth = score
                 action_chosen_at_depth = action_as_index
                 best_path = sub_path
+
+                # Printing things
                 if depth == max_depth
                     show(ALL_ACTIONS[action_chosen_at_depth], board)
                     # Show the full path being considered
@@ -77,10 +102,15 @@ function bf_search(
                     end
                     println()
                 end
+
+                if maximizing && beta_one_up <= score_at_depth
+                    break
+                elseif !maximizing && score_at_depth <= alpha_one_up
+                    break
+                end
             end
         end
     end
 
-
-    return action_chosen_at_depth, score_at_depth, vcat(action_chosen_at_depth, best_path)
+    return (action_chosen_at_depth, score_at_depth, vcat(action_chosen_at_depth, best_path))
 end

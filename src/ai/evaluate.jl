@@ -1,4 +1,4 @@
-function evaluate_board(board::Board, my_color::Integer)
+function evaluate_board(board::Board, my_color::Integer)::Float64
     @no_escape PERFT_BUFFER[end] begin
         white_moves = @alloc(eltype(Int), VALID_BUFFER_SIZE)
         validactions!(board, white_moves, WHITE)
