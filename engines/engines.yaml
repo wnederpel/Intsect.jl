@@ -1,0 +1,5 @@
+intsect:
+  - intsect-1.0.0-first-release.exe
+existing_engines:
+  - MzingaEngine.exe
+  - nokamute.exe

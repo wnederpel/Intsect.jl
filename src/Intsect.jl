@@ -124,4 +124,14 @@ include("ai/evaluate.jl")
 # Match player
 include("match_player/player.jl")
 
+module Arenant
+    using YAML
+
+    export run_arena
+
+    include("arenant/arenant.jl")
+end
+
+export Arenant
+
 end # module Intsect
