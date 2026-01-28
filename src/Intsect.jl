@@ -124,6 +124,16 @@ include("ai/evaluate.jl")
 # Match player
 include("match_player/player.jl")
 
+function julia_main()::Cint
+    try
+        start()
+        return 0
+    catch e
+        Base.invokelatest(Base.display_error, e, catch_backtrace())
+        return 1
+    end
+end
+
 module Arenant
     using YAML
 

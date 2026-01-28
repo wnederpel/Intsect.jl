@@ -1,5 +1,5 @@
 
-function get_best_move(board::Board, depth, time_limit_s)
+function get_best_move(board::Board, depth, time_limit_s; debug=true)
     timed_out = Ref(false)
     if time_limit_s <= 0
         time_limit_s = 9999
@@ -13,13 +13,21 @@ function get_best_move(board::Board, depth, time_limit_s)
     alpha = Ref(-Inf)
     beta = Ref(Inf)
     best_move, best_score, full_path = search(
-        board, board.current_color, timed_out, depth, depth, nodes_processed
+        board,
+        board.current_color,
+        timed_out,
+        depth,
+        depth,
+        nodes_processed,
+        debug;
     )
 
     close(timer)
 
-    println("done")
-    println("Nodes processed: $(nodes_processed[])")
+    if debug
+        println("done")
+        println("Nodes processed: $(nodes_processed[])")
+    end
 
     return ALL_ACTIONS[best_move]
 end
@@ -30,7 +38,8 @@ function search(
     timed_out::Ref{Bool},
     max_depth,
     depth,
-    nodes_processed::Ref{Int};
+    nodes_processed::Ref{Int},
+    debug::Bool;
     alpha_one_up::Float64=-Inf64,
     beta_one_up::Float64=Inf64,
 )
@@ -73,7 +82,8 @@ function search(
                     timed_out,
                     max_depth,
                     depth - 1,
-                    nodes_processed;
+                    nodes_processed,
+                    debug;
                     alpha_one_up=alpha,
                     beta_one_up=beta,
                 )
@@ -85,22 +95,24 @@ function search(
                 action_chosen_at_depth = action_as_index
                 best_path = sub_path
 
-                # Printing things
-                if depth == max_depth
-                    show(ALL_ACTIONS[action_chosen_at_depth], board)
-                    # Show the full path being considered
-                    full_path = vcat(action_as_index, best_path)
-                    println("Best path so far (score: $score_at_depth):")
-                    for (i, action_idx) in enumerate(full_path)
-                        print("  Move $i: ")
-                        show(ALL_ACTIONS[action_idx], board)
-                        do_action(board, action_idx)
+                if debug
+                    # Printing things
+                    if depth == max_depth
+                        show(ALL_ACTIONS[action_chosen_at_depth], board)
+                        # Show the full path being considered
+                        full_path = vcat(action_as_index, best_path)
+                        println("Best path so far (score: $score_at_depth):")
+                        for (i, action_idx) in enumerate(full_path)
+                            print("  Move $i: ")
+                            show(ALL_ACTIONS[action_idx], board)
+                            do_action(board, action_idx)
+                        end
+                        # Undo all the moves we made for display
+                        for _ in 1:length(full_path)
+                            undo(board)
+                        end
+                        println()
                     end
-                    # Undo all the moves we made for display
-                    for _ in 1:length(full_path)
-                        undo(board)
-                    end
-                    println()
                 end
 
                 if maximizing && beta_one_up <= score_at_depth

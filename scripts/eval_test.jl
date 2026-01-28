@@ -1,6 +1,6 @@
 using Intsect
 
-game_string = "Base+MLP;InProgress;Black[5];wA1;bA1 wA1/;wA2 wA1\\;bA2 bA1/;wQ /wA1;bA3 bA2/;wA3 -wA1;bQ bA3\\"
+game_string = raw"Base+MLP;InProgress;white[5];wL;bL wL\;wM \wL;bM bL\;wA1 /wM;bA1 /bL;wQ wM/;bQ bM-;wA2 wQ\;bA2 bA1\;wA2 /bA2;bA1 /wA1;wB1 wQ\;bP bA2-;wM wB1\;bB1 \bA2;wA3 -wQ;bS1 /bA1;wA3 -bS1"
 
 board = from_game_string(game_string)
 

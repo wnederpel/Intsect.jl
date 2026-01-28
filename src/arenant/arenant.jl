@@ -137,20 +137,26 @@ function run_arena()
     engines = YAML.load_file("engines/engines.yaml")
     intsect_engines = engines["intsect"]
     existing_engines = engines["existing_engines"]
+    
+    engines_dir = "engines"
+    
+    # Resolve paths relative to engines directory
+    intsect_paths = [joinpath(engines_dir, engine) for engine in intsect_engines]
+    existing_paths = [joinpath(engines_dir, engine) for engine in existing_engines]
 
-    for i in 1:(length(intsect_engines) - 1)
-        older_intsect = intsect_engines[i]
-        newer_intsect = intsect_engines[i + 1]
+    for i in 1:(length(intsect_paths) - 1)
+        older_intsect = intsect_paths[i]
+        newer_intsect = intsect_paths[i + 1]
         res = faceoff(older_intsect, newer_intsect)
     end
-    latest_intsect = intsect_engines[end]
-    for existing in existing_engines
+    latest_intsect = intsect_paths[end]
+    for existing in existing_paths
         res = faceoff(latest_intsect, existing)
     end
-    if length(intsect_engines) > 1
-        runner_up_intsect = intsect_engines[end - 1]
-        for existing in existing_engines
-            res = faceoff(latest_intsect, existing)
+    if length(intsect_paths) > 1
+        runner_up_intsect = intsect_paths[end - 1]
+        for existing in existing_paths
+            res = faceoff(runner_up_intsect, existing)
         end
     end
 
