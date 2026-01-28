@@ -70,8 +70,8 @@ function format_with_dots(n)
     return join(reverse(parts), '.')
 end
 
-const NOKAMUTE_PATH::String = "C:\\intsect\\external\\nokamute.exe"
-const MZINGA_PATH::String = "C:\\intsect\\external\\MzingaEngine.exe"
+const NOKAMUTE_PATH::String = "C:\\intsect\\engines\\nokamute.exe"
+const MZINGA_PATH::String = "C:\\intsect\\engines\\MzingaEngine.exe"
 
 """
     nokamute_valid_moves(game_string; exe=NOKAMUTE_PATH)
@@ -201,13 +201,6 @@ function compare_valid_moves_report(board, game_string, my_nodes, their_nodes; e
 end
 using Intsect
 
-"""
-    nokamute_perft_counts(game_string, maxdepth; exe="C:\\hive\\nokamute.exe")
-
-Run `nokamute.exe perft "GAMESTRING"` and parse rows:
-    depth  count  time  kn/s
-Returns Dict{Int,Int} of depth=>count, stopping at maxdepth.
-"""
 function nokamute_perft_counts(
     game_string::AbstractString, maxdepth::Integer; exe::AbstractString=NOKAMUTE_PATH
 )
