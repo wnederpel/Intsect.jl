@@ -1,6 +1,7 @@
 function handle_info_command()
-    println("id Intsect v0.1")
+    println("id Intsect v1.0")
     println("Mosquito;Ladybug;Pillbug")
+    println("ok")
     return nothing
 end
 
@@ -89,7 +90,7 @@ function start(board, gamestring)
                             error("please supply depth")
                         end
 
-                        action = get_best_move(board, depth, 10)
+                        action = get_best_move(board, depth, 10; debug=false)
                     else
                         time_str = split(command, " ")[3]
                         hours, minutes, seconds = tryparse.(Int, split(time_str, ":"))
@@ -98,10 +99,10 @@ function start(board, gamestring)
                         end
                         seconds_total = seconds + minutes * 60 + hours * 3600
 
-                        action = get_best_move(board, 3, seconds_total)
+                        action = get_best_move(board, 3, seconds_total; debug=false)
                     end
 
-                    show(action, board)
+                    println(move_string_from_action(board, action))
 
                 elseif command == "show"
                     show(board; show_locs=false, simple=false)
@@ -166,22 +167,6 @@ function start(board, gamestring)
     return nothing
 end
 
-function example()
-    gametype = MLPGame
-    board = handle_newgame_command(gametype)
-    gamestring = GameString()
-    show(gamestring)
-    println("ok")
-
-    action = action_from_move_string(board, "wL")
-    do_action(board, action)
-    update_gamestring(gamestring, board)
-    show(gamestring)
-    println("ok")
-
-    start(board, gamestring)
-    return nothing
-end
 
 # format seconds into ns / µs / ms / s with one decimal
 function format_time(t::Float64)::String

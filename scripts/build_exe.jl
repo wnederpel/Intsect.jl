@@ -1,5 +1,14 @@
 using PackageCompiler
 
+
+# Prompt user for a name
+print("Enter a name for this executable build: ")
+user_name = readline()
+user_name = strip(user_name)
+
+# Replace spaces with dashes
+folder_name = "intsect-" * replace(user_name, " " => "-")
+
 # Write temporary precompile script
 precompile_file = joinpath(@__DIR__, "..", "precompile_temp.jl")
 open(precompile_file, "w") do io
@@ -42,6 +51,34 @@ create_app(
 # Clean up temporary file
 rm(precompile_file; force=true)
 
-println("\n✓ Build complete!")
+# Copy to engines directory
+project_dir_ref = joinpath(@__DIR__, "..")
+engines_dir = joinpath(project_dir_ref, "engines")
+target_dir = joinpath(engines_dir, folder_name)
+
+println("\nCopying build to: $target_dir")
+if isdir(target_dir)
+    println("Warning: Directory already exists. Removing old version...")
+    rm(target_dir; recursive=true, force=true)
+end
+
+cp(output_dir, target_dir; force=true)
+
+# Create batch file launcher
+bat_file = joinpath(engines_dir, folder_name * ".bat")
+open(bat_file, "w") do io
+    write(
+        io,
+        """
+@echo off
+cd /d "%~dp0$folder_name\\bin"
+intsect.exe %*
+""",
+    )
+end
+
+println("✓ Build complete!")
 println("Executable location: intsect_exe\\bin\\intsect.exe")
-println("\nRun with: .\\intsect_exe\\bin\\intsect.exe")
+println("Engine directory: engines\\$folder_name")
+println("Launcher script: engines\\$folder_name.bat")
+println("\nRun with: .\\engines\\$folder_name.bat")

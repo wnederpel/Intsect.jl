@@ -5,7 +5,7 @@ function get_best_move(board::Board, depth, time_limit_s; debug=true)
         time_limit_s = 9999
     end
     timer = Timer(time_limit_s) do _
-        println("stopping search bc of time")
+        debug && println("stopping search bc of time")
         timed_out[] = true
     end
 
@@ -101,7 +101,7 @@ function search(
                         show(ALL_ACTIONS[action_chosen_at_depth], board)
                         # Show the full path being considered
                         full_path = vcat(action_as_index, best_path)
-                        println("Best path so far (score: $score_at_depth):")
+                        debug && println("Best path so far (score: $score_at_depth):")
                         for (i, action_idx) in enumerate(full_path)
                             print("  Move $i: ")
                             show(ALL_ACTIONS[action_idx], board)
@@ -111,7 +111,7 @@ function search(
                         for _ in 1:length(full_path)
                             undo(board)
                         end
-                        println()
+                        debug && println()
                     end
                 end
 
