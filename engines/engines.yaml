@@ -1,5 +1,6 @@
 intsect:
-  - intsect-first-release.bat
+  # - intsect-first-release.bat
+  - source
 existing_engines:
   - MzingaEngine.exe
   - nokamute.exe

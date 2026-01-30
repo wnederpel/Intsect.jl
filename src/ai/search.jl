@@ -1,5 +1,5 @@
 
-function get_best_move(board::Board, depth, time_limit_s; debug=true)
+function get_best_move(board::Board; depth=3, time_limit_s=10.0, debug=true)::Action
     timed_out = Ref(false)
     if time_limit_s <= 0
         time_limit_s = 9999
@@ -13,13 +13,7 @@ function get_best_move(board::Board, depth, time_limit_s; debug=true)
     alpha = Ref(-Inf)
     beta = Ref(Inf)
     best_move, best_score, full_path = search(
-        board,
-        board.current_color,
-        timed_out,
-        depth,
-        depth,
-        nodes_processed,
-        debug;
+        board, board.current_color, timed_out, depth, depth, nodes_processed, debug;
     )
 
     close(timer)
@@ -43,7 +37,6 @@ function search(
     alpha_one_up::Float64=-Inf64,
     beta_one_up::Float64=Inf64,
 )
-
     maximizing = board.current_color == my_color ? true : false
     score_at_depth = maximizing ? -Inf : Inf
     action_chosen_at_depth = pass_index()
@@ -53,7 +46,7 @@ function search(
 
     yield()
     if timed_out[]
-        return best_yet, best_score, Int[]
+        return action_chosen_at_depth, score_at_depth, Int[]
     end
 
     @no_escape PERFT_BUFFER[depth] begin

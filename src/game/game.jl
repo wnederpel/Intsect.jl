@@ -1012,7 +1012,7 @@ function gametype_from_string(gametype_string)
         return LPGame
     elseif gametype_string == "Base+MLP"
         return MLPGame
-    elseif gametype_string == "Base"
+    elseif gametype_string == "Base" || gametype_string == ""
         return BaseGame
     end
     return error("game type '$gametype_string' not yet supported")

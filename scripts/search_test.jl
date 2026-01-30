@@ -10,5 +10,5 @@ board = handle_newgame_command(MLPGame)
 
 show(board)
 
-best_action = get_best_move(board, 3, 1.0)
+best_action = get_best_move(board, 10, 1.0)
 show(best_action, board)

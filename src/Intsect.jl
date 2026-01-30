@@ -135,6 +135,7 @@ function julia_main()::Cint
 end
 
 module Arenant
+    using Intsect
     using YAML
 
     export run_arena

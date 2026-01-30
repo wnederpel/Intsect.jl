@@ -58,12 +58,13 @@ function start(board, gamestring)
                 println("newgame <gametype>")
                 println("play <action>")
                 println("show")
+                println("perf depth")
                 println("pass")
                 println("validmoves")
                 println("bestmove")
                 println("exit")
             elseif board === nothing
-                println("No board is setup, please start a new game first")
+                println("err No game in progress. Try 'newgame' to start a new game.")
             else
                 if startswith(command, "play")
                     move_string = command[6:end]
@@ -82,28 +83,36 @@ function start(board, gamestring)
                         @printf("%6d%14d%12s%12.1f\n", depth, nodes, format_time(time_taken), knps)
                     end
                 elseif startswith(command, "bestmove")
-
-                    type = split(command, " ")[2] == "time" ? :time : :depth
-                    if type == :depth
-                        depth = tryparse(Int, split(command, " ")[3])
-                        if depth === nothing
-                            error("please supply depth")
-                        end
-
-                        action = get_best_move(board, depth, 10; debug=false)
+                    action = nothing
+                    if command == "bestmove"
                     else
-                        time_str = split(command, " ")[3]
-                        hours, minutes, seconds = tryparse.(Int, split(time_str, ":"))
-                        if hours === nothing || minutes === nothing || seconds == nothing
-                            error("time $time_str is not in valid format hh:mm:ss")
+                        type = nothing
+                        try
+                            type = split(command, " ")[2] == "time" ? :time : :depth
+                        catch
+                            println("err: invalid command. Try 'bestmove time' or 'bestmove depth'")
                         end
-                        seconds_total = seconds + minutes * 60 + hours * 3600
+                        if type == :depth
+                            depth = tryparse(Int, split(command, " ")[3])
+                            if depth === nothing
+                                error("please supply depth")
+                            end
 
-                        action = get_best_move(board, 3, seconds_total; debug=false)
+                            action = get_best_move(board; depth=depth, debug=false)
+                        else
+                            time_str = split(command, " ")[3]
+                            hours, minutes, seconds = tryparse.(Int, split(time_str, ":"))
+                            if hours === nothing || minutes === nothing || seconds == nothing
+                                error("time $time_str is not in valid format hh:mm:ss")
+                            end
+                            seconds_total = seconds + minutes * 60 + hours * 3600
+
+                            action = get_best_move(board; time_limit_s=seconds_total, debug=false)
+                        end
                     end
-
-                    println(move_string_from_action(board, action))
-
+                    if action !== nothing
+                        println(move_string_from_action(board, action))
+                    end
                 elseif command == "show"
                     show(board; show_locs=false, simple=false)
                 elseif command == "pass"
@@ -166,7 +175,6 @@ function start(board, gamestring)
     end
     return nothing
 end
-
 
 # format seconds into ns / µs / ms / s with one decimal
 function format_time(t::Float64)::String
