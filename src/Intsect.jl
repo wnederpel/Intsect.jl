@@ -139,8 +139,11 @@ module Arenant
     using YAML
 
     export run_arena
+    export inspect_game
+    export play_one_match
 
     include("arenant/arenant.jl")
+    include("arenant/inspect_game.jl")
 end
 
 export Arenant

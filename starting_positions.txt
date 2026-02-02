@@ -1,0 +1,63 @@
+wL;bL wL\;wM \wL;bA1 bL\
+wL;bL wL\;wA1 \wL
+wP;bP wP\
+wL;bP wL/;wM /wL
+wL;bP wL/
+wL;bL wL-;wA1 -wL;bM bL-
+wG1;bL wG1\
+wL;bL /wL;wQ wL-
+wL;bG1 wL-;wM -wL
+wP;bL wP-;wQ -wP;bQ bL\;wA1 /wQ
+wP;bL wP-;wQ -wP
+wP;bL wP-;wQ -wP;bQ bL\
+wP;bG1 wP-
+wL;bL wL-;wM -wL;bQ bL\
+wL;bL wL-;wM -wL;bM bL-;wA1 wM\
+wL;bL /wL;wQ wL/
+wL;bL wL\;wM \wL;bM bL\;wA1 /wM
+wL;bL wL\;wM \wL;bM bL\;wA1 wL/;bQ bM/
+wL;bL wL\;wM \wL;bM bL\;wA1 wL/;bA1 bM/
+wL;bL wL\;wM \wL;bM bL\;wA1 /wM;bA1 bM/
+wL;bL wL/;wM /wL
+wP;bL wP\;wQ \wP;bM bL\;wA1 wQ/
+wP;bL wP\
+wP;bL wP\;wQ \wP
+wP;bL wP\;wQ \wP;bM bL\
+wL;bL wL-;wQ -wL;bM bL-
+wL;bL wL\;wQ -wL
+wL;bL /wL;wM wL/
+wL;bL wL\;wM \wL;bM bL\;wA1 \wM;bQ bM/
+wL;bL wL\;wM \wL;bM bL\;wA1 \wM
+wL;bL wL-;wA1 \wL;bQ bL/
+wL;bL wL-;wA1 \wL
+wL;bL wL\;wM \wL;bQ bL-
+wL;bL wL-;wM -wL;bM bL-;wA1 \wL
+wL;bL wL-;wM -wL;bQ bL\;wQ \wL
+wL;bG1 wL\;wM \wL
+wL;bG1 wL\
+wL;bL wL-;wA1 /wL
+wL;bL /wL;wA1 \wL
+wL;bL wL\;wM \wL;bM bL\;wA1 wL/;bQ /bL;wQ /wM
+wL;bL wL\;wM \wL;bM bL\
+wL;bL wL\;wM \wL;bM bL\;wA1 wL/
+wL;bL wL\;wM \wL;bM bL\;wA1 wL/;bQ /bL
+wL;bL wL\;wQ wL/
+wL;bL wL\;wA1 -wL
+wL;bL wL\;wA1 wL/;bM bL\;wQ -wL
+wL;bL wL\;wA1 wL/
+wL;bL wL\;wA1 wL/;bM bL\
+wL;bL wL-;wA1 -wL;bQ bL/
+wL;bL wL-;wM -wL;bA1 bL\
+wL;bL wL-;wM -wL
+wL;bL wL-;wA1 -wL;bQ bL\
+wL;bL wL-;wA1 -wL
+wL;bL wL\;wM \wL;bQ /bL;wA1 /wM;bA1 bL-
+wL;bL wL\;wM \wL
+wL;bL wL\;wM \wL;bM bL\;wA1 wL/;bQ /bL;wQ /wM;bA1 bM/
+wL;bL wL\;wM \wL;bQ /bL
+wL;bL wL\;wQ \wL;bM bL\
+wL;bL wL-;wQ -wL;bQ bL/
+wL;bL wL-;wQ -wL
+wL;bL wL\;wQ \wL;bQ /bL
+wL;bL wL\
+wL;bL wL\;wM \wL;bQ /bL;wQ wL/

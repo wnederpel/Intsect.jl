@@ -277,6 +277,9 @@ function action_from_move_string(board::Board, move_string)
         action = Pass()
         valid_actions = validactions(board)
         if !(action in valid_actions)
+            show(board)
+            show(valid_actions, board)
+            println(action)
             error("Invalid action: '$(move_string)' not present in valid actions")
         end
         return action
@@ -310,6 +313,9 @@ function action_from_move_string(board::Board, move_string)
                 "Processing movestring $move_string: the moving piece is underground and cannot move.",
             )
         end
+        if other_loc == UNDERGROUND
+            other_loc = find_tile_in_underworld(board, other_tile)
+        end
 
         goal_loc = other_loc
         if !isnothing(direction)
@@ -334,7 +340,9 @@ function action_from_move_string(board::Board, move_string)
     end
     valid_actions = validactions(board)
     if !(action in valid_actions)
-        # show_valid_actions(board)
+        show(board)
+        show(valid_actions, board)
+        println(action)
         error("Invalid action: '$(move_string)' not present in valid actions")
     end
     board.action_index = 1
@@ -388,7 +396,21 @@ function move_string_goal(board::Board, goal_loc; moving_loc=INVALID_LOC)
     for dir in instances(Direction.T)
         loc = apply_direction(goal_loc, dir)
         # println(loc)
-        if get_tile_on_board(board, loc) != EMPTY_TILE && loc != moving_loc
+        if get_tile_on_board(board, loc) != EMPTY_TILE
+            if loc == moving_loc
+                # We allow this only if the moving loc is up high
+                tile = get_tile_on_board(board, moving_loc)
+                if get_tile_height(tile) <= 0x01
+                    continue
+                end
+                # And if we allow it we use the tile below it
+                stack = board.underworld[moving_loc]
+                if !isempty(stack)
+                    tile = first(stack)
+                else
+                    continue
+                end
+            end
             goal_tile = get_tile_on_board(board, loc)
             # note, the dir is the direction from the goal_loc to the occupied neighbor
             # for the move_string, we want the direction from the occupied neighbor to the goal_loc
@@ -408,6 +430,8 @@ function move_string_goal(board::Board, goal_loc; moving_loc=INVALID_LOC)
         end
     end
     if move_string == "" && board.ply != 1
+        show(board)
+        println(goal_loc)
         error(
             "unable to find piece adjacent to tile at loc $moving_loc, and it's not the first round"
         )
@@ -427,13 +451,22 @@ function update_gamestring(gamestring, board::Board)
             error("Unknown victor $(board.victor)")
         end
     else
-        gamestring.gamestate = "InProgress"
+        if board.last_history_index == 1 && board.ply == 1
+            gamestring.gamestate = "NotStarted"
+        else
+            gamestring.gamestate = "InProgress"
+        end
     end
 
     gamestring.movestrings = ""
     # Build movestrings from most recent move back to start move
     history_index_save = board.last_history_index
     for history_index in reverse(1:(board.last_history_index))
+        if history_index > length(board.history)
+            show(board; simple=true)
+            error("history index $history_index out of bounds")
+            continue
+        end
         action = ALL_ACTIONS[board.history[history_index]]
         undo(board)
         movestring = move_string_from_action(board, action)
@@ -714,6 +747,11 @@ end
 
 function pre_action_update(board::Board, action)
     board.last_history_index += 1
+    if board.last_history_index == length(board.history)
+        # WTF are we even doing. Just stop the game from going further
+        board.gameover = true
+        board.victor = DRAW
+    end
     board.history[board.last_history_index] = action_index(action)
     return nothing
 end
@@ -1149,13 +1187,13 @@ end
 This returns a union of types and as such is not the best, moves should be linked to
 """
 function do_for_action(action_as_index, func)
-    if action_as_index < MAX_PLACEMENT_INDEX
+    if action_as_index <= MAX_PLACEMENT_INDEX
         action = ALL_PLACEMENTS[action_as_index]
         return func(action)
-    elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX
+    elseif action_as_index <= MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX
         action = ALL_MOVEMENTS[action_as_index - MAX_PLACEMENT_INDEX]
         return func(action)
-    elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX
+    elseif action_as_index <= MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX
         action = ALL_CLIMBS[action_as_index - (MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX)]
         return func(action)
     else

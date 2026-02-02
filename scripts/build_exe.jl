@@ -1,6 +1,5 @@
 using PackageCompiler
 
-
 # Prompt user for a name
 print("Enter a name for this executable build: ")
 user_name = readline()
@@ -23,11 +22,21 @@ board = from_game_string(game_string)
 
 perft(4, board)
 
-get_best_move(board, 4, -1; debug=false)
+get_best_move(board; time_limit_s=0.1, debug=false)
 
 println("Precompilation complete")
 """,
     )
+end
+
+println("Testing precompile script before compilation...")
+try
+    include(precompile_file)
+catch err
+    println("Precompile script failed:")
+    showerror(stdout, err, catch_backtrace())
+    println()
+    error("Aborting build due to precompile script failure.")
 end
 
 # Create the executable

@@ -3,4 +3,4 @@ intsect:
   - source
 existing_engines:
   - MzingaEngine.exe
-  - nokamute.exe
+  # - nokamute.exe  # Can't execute bestmove commands with non integer times. Too slow for CI.

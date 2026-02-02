@@ -94,14 +94,18 @@ function show_pinned(board::Board, show_locs::Bool=true)
     end
 end
 
-function Base.show(board::Board; show_locs::Bool=true, simple::Bool=true)
+function Base.show(board::Board; show_locs::Bool=true, simple::Bool=false)
     println("-----------------")
     if !simple
         show(GameString(board))
     else
         for i in 1:(board.last_history_index)
+            if i > 400
+                println("... (truncated)")
+                break
+            end
             action = ALL_ACTIONS[board.history[i]]
-            print(i, " ", ALL_ACTIONS[board.history[i]])
+            print(i, " ", action)
             if action isa Placement
                 tile_name = get_tile_name(action.tile)
                 print(" ", tile_name)
@@ -152,8 +156,26 @@ function Base.show(board::Board; show_locs::Bool=true, simple::Bool=true)
     for nummed_bug in NUMMED_BUG_NAMES
         wpiece = "w" * nummed_bug
         bpiece = "b" * nummed_bug
-        wloc = get_loc(board, get_tile_from_string(board, wpiece))
-        bloc = get_loc(board, get_tile_from_string(board, bpiece))
+        wtile = get_tile_from_string(board, wpiece)
+        btile = get_tile_from_string(board, bpiece)
+        wloc = get_loc(board, wtile)
+        bloc = get_loc(board, btile)
+        wheight = get_tile_height(wtile)
+        bleight = get_tile_height(btile)
+        if wheight > 1
+            wloc = string(wloc)
+            wloc *= "^" * string(wheight)
+        end
+        if bleight > 1
+            bloc = string(bloc)
+            bloc *= "^" * string(bleight)
+        end
+        if wloc == UNDERGROUND
+            wloc = (find_tile_in_underworld(board, wtile),)
+        end
+        if bloc == UNDERGROUND
+            bloc = (find_tile_in_underworld(board, btile),)
+        end
         if wloc != -1 && bloc != -1
             println("$wpiece : $wloc \t $bpiece : $bloc")
         elseif wloc != -1
@@ -164,6 +186,29 @@ function Base.show(board::Board; show_locs::Bool=true, simple::Bool=true)
     end
     println("-----------------")
 
+    return nothing
+end
+
+function find_tile_in_underworld(board, tile)
+    # Remove height information from the tile we're searching for
+    tile_without_height = tile & 0xFC
+
+    # Search through all locations
+    for loc in 0:(GRID_SIZE - 1)
+        # Check if this location has an underworld stack
+        if haskey(board.underworld, loc)
+            stack = board.underworld[loc]
+            # Search through the stack from bottom to top
+            for (depth, stacked_tile) in enumerate(stack)
+                stacked_tile_without_height = stacked_tile & 0xFC
+                if stacked_tile_without_height == tile_without_height
+                    return loc
+                end
+            end
+        end
+    end
+
+    # Tile not found in underworld
     return nothing
 end
 

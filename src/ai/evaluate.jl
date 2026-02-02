@@ -1,4 +1,14 @@
 function evaluate_board(board::Board, my_color::Integer)::Float64
+    if board.gameover
+        # Game is over, return extreme score
+        if board.victor == my_color
+            return Inf
+        elseif board.victor == DRAW
+            return 0.0
+        else
+            return -Inf
+        end
+    end
     @no_escape PERFT_BUFFER[end] begin
         white_moves = @alloc(eltype(Int), VALID_BUFFER_SIZE)
         validactions!(board, white_moves, WHITE)
@@ -39,10 +49,11 @@ function evaluate_board(
     board::Board,
     my_color::Integer,
     my_queen::Integer,
-    opponent_queen::Integer,
+    opp_queen::Integer,
     my_actions_tup::Tuple{AbstractArray,Int},
     opp_actions_tup::Tuple{AbstractArray,Int},
 )
+    opp_color = my_color == WHITE ? BLACK : WHITE
     #= 
     To be extended with other evaluations. Simple for now to just the search working.
     Pinned pieces (re compute what's pinned, it's good if pieces are not pinned, especially queen, ant, mosquito, ladybug, beetle (can be on top and unpinnable))
@@ -54,10 +65,11 @@ function evaluate_board(
 
     # Evaluate queen safety, having my queen safe is good, having opponent queen safe is bad
     score += evaluate_queen_safety(board, my_color, my_queen)
-    score -= evaluate_queen_safety(board, my_color == WHITE ? BLACK : WHITE, opponent_queen)
+    score -= evaluate_queen_safety(board, opp_color, opp_queen)
 
     # Having bugs on top of the hive is good if their mine, bad if opponent's
     score += top_of_hive_score(board, my_color)
+    score -= top_of_hive_score(board, my_color)
 
     return score
 end

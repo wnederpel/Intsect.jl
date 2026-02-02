@@ -39,7 +39,7 @@ const INVALID_LOC::Int = -2
 const UNDERGROUND::Int = -3
 
 const VALID_BUFFER_SIZE::Int = 400
-const HISTORY_BUFFER_SIZE::Int = 400
+const HISTORY_BUFFER_SIZE::Int = 600
 
 const WHITE::UInt8 = 1
 const BLACK::UInt8 = 2
