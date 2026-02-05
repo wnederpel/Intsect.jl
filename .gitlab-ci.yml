@@ -1,0 +1,11 @@
+stages:
+  - arenant
+
+arenant:
+  stage: arenant
+  image: julia
+  script: 
+    - julia --project=. -e "using Pkg; Pkg.instantiate()"
+    - julia --project=. -e "include(\"scripts/arenant.jl\")"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"

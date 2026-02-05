@@ -1,6 +1,6 @@
 using Intsect
 
-time_limit = 0.1
+time_limit = 0.05
 debug = false
 Arenant.run_arena(; debug=debug, time_limit_s=time_limit)
 Arenant.play_one_match(
