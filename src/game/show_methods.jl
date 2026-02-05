@@ -247,14 +247,17 @@ function Base.show(tile::UInt8)
     return nothing
 end
 
+function gamestring_to_string(gamestring::GameString)
+    return nothing
+    return gamestring.gametype *
+           ";" *
+           gamestring.gamestate *
+           ";" *
+           gamestring.player *
+           gamestring.movestrings
+end
+
 function Base.show(gamestring::GameString)
-    println(
-        gamestring.gametype *
-        ";" *
-        gamestring.gamestate *
-        ";" *
-        gamestring.player *
-        gamestring.movestrings,
-    )
+    println(gamestring_to_string(gamestring))
     return nothing
 end

@@ -48,7 +48,7 @@ version = "1.11.0"
 deps = ["Bumper", "DataStructures", "EnumX", "InteractiveUtils", "Printf", "StaticArrays", "YAML"]
 path = "."
 uuid = "34e19417-f492-4f7b-a0e0-4ee794aee443"
-version = "0.1.0"
+version = "1.0.0"
 
 [[deps.JLLWrappers]]
 deps = ["Artifacts", "Preferences"]
