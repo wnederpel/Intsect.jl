@@ -101,8 +101,9 @@ function start(board, gamestring)
                             action = get_best_move(board; depth=depth, debug=false)
                         else
                             time_str = split(command, " ")[3]
-                            hours, minutes, seconds = tryparse.(Int, split(time_str, ":"))
-                            if hours === nothing || minutes === nothing || seconds == nothing
+                            println(tryparse.(Float64, split(time_str, ":")))
+                            hours, minutes, seconds = tryparse.(Float64, split(time_str, ":"))
+                            if hours === nothing || minutes === nothing || seconds === nothing
                                 error("time $time_str is not in valid format hh:mm:ss")
                             end
                             seconds_total = seconds + minutes * 60 + hours * 3600

@@ -1,6 +1,6 @@
 intsect:
-  - intsect-first-release.bat
+  # - intsect-first-release.bat
   - source
 existing_engines:
   - MzingaEngine.exe
-  # - nokamute.exe  # Can't execute bestmove commands with non integer times. Too slow for CI.
+  - nokamute.exe

@@ -248,7 +248,6 @@ function Base.show(tile::UInt8)
 end
 
 function gamestring_to_string(gamestring::GameString)
-    return nothing
     return gamestring.gametype *
            ";" *
            gamestring.gamestate *

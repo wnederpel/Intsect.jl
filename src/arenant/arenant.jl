@@ -20,9 +20,10 @@ function play_one_match(
     engine1_name = split(basename(engine1_path), '.')[1]
     engine2_name = split(basename(engine2_path), '.')[1]
     println("White: $engine1_name vs Black: $engine2_name")
-    is_source1 = engine1_path == "engines\\source"
-    is_source2 = engine2_path == "engines\\source"
+    is_source1 = engine1_path == "engines\\source" || engine1_path == "./engines/source"
+    is_source2 = engine2_path == "engines\\source" || engine2_path == "./engines/source"
     is_source = [is_source1, is_source2]
+    engine_paths = [engine1_path, engine2_path]
 
     # Start both engines
     debug && println("[DEBUG] Starting engine 1...")
@@ -92,6 +93,8 @@ function play_one_match(
     current_color = "White"
     other_engine = engine2
     move_history = String[]
+    source_board_1 = boards[1]
+    source_board_2 = boards[2]
 
     # Play until game over
     while true
@@ -101,7 +104,13 @@ function play_one_match(
         # Ask current engine for best move with time limit
         debug && println("[DEBUG] Requesting bestmove from $current_color")
         if !is_source[current_engine_i]
-            write(current_engine, "bestmove time 00:00:0$time_limit_s\n")
+            # Check if current engine is nokamute.exe
+            current_engine_path = engine_paths[current_engine_i]
+            if endswith(lowercase(current_engine_path), "nokamute.exe")
+                write(current_engine, "bestmove seconds $time_limit_s\n")
+            else
+                write(current_engine, "bestmove time 00:00:0$time_limit_s\n")
+            end
             flush(current_engine)
             debug && println("[DEBUG] Bestmove request sent, waiting for response...")
 
@@ -117,7 +126,7 @@ function play_one_match(
                 end
             end
         else
-            board = boards[current_engine_i]
+            board = current_engine_i == 1 ? source_board_1 : source_board_2
             debug && println("[DEBUG] Bestmove request sent, waiting for response...")
             action = get_best_move(board; time_limit_s=time_limit_s, debug=false)
             best_move = move_string_from_action(board, action)
@@ -132,6 +141,30 @@ function play_one_match(
 
         push!(move_history, best_move)
 
+        # Update source boards with the move
+        do_action(source_board_1, best_move)
+        do_action(source_board_2, best_move)
+
+        # Check for endgame on the source board
+        if source_board_1.gameover
+            println("=== Game Over ===")
+            show(GameString(source_board_1))
+            if source_board_1.victor == WHITE
+                println("Winner: White ($engine1_name)\n")
+            elseif source_board_1.victor == BLACK
+                println("Winner: Black ($engine2_name)\n")
+            else
+                println("Draw between $engine1_name and $engine2_name\n")
+            end
+            if !is_source1
+                close(engine1)
+            end
+            if !is_source2
+                close(engine2)
+            end
+            return source_board_1.victor
+        end
+
         # Update game state
         game_state = game_state * ";" * best_move
 
@@ -139,9 +172,9 @@ function play_one_match(
         debug && println("[DEBUG] Sending play command to both engines: $best_move")
         for engine in [current_engine, other_engine]
             engine_i = engine == engine1 ? 1 : 2
-            debug && println("[DEBUG] Sending play to engine $engine_i")
             if !is_source[engine_i]
                 write(engine, "play $best_move\n")
+                debug && println("[DEBUG] Sending play to engine $engine_i")
                 flush(engine)
                 # Wait for ok
                 while !eof(engine)
@@ -150,53 +183,12 @@ function play_one_match(
                     if startswith(line, "ok")
                         break
                     end
-                    # read the game over state from the game string
-                    game_state = split(line, ";")[2]
-                    if game_state != "WhiteWins" &&
-                        game_state != "BlackWins" &&
-                        game_state != "Draw"
-                        continue
-                    end
-                    println("=== Game Over ===")
-                    println("Final game state: $line")
-                    if game_state == "WhiteWins"
-                        println("Winner: White ($engine1_name)\n")
-                        if !is_source1
-                            close(engine1)
-                        end
-                        if !is_source2
-                            close(engine2)
-                        end
-                        return 1  # Engine 1 wins
-                    elseif game_state == "BlackWins"
-                        println("Winner: Black ($engine2_name)\n")
-                        if !is_source1
-                            close(engine1)
-                        end
-                        if !is_source2
-                            close(engine2)
-                        end
-                        return 2  # Engine 2 wins
-                    else
-                        println("Draw between $engine1_name and $engine2_name\n")
-                        if !is_source1
-                            close(engine1)
-                        end
-                        if !is_source2
-                            close(engine2)
-                        end
-                        return 0  # Draw
-                    end
                 end
             else
-                board = boards[engine_i]
-                do_action(board, best_move)
                 debug && println("[DEBUG] Engine $engine_i play response: ok")
             end
         end
         debug && println("[DEBUG] Play commands complete")
-
-        debug && show(board)
 
         # Switch players
         if current_engine == engine1
@@ -247,13 +239,13 @@ function read_positions(filepath::String)
 end
 
 """
-    faceoff(engine1_path, engine2_path; time_limit=1.0, positions_file="unique_positions.txt", debug=false)
+    faceoff(engine1_path, engine2_path; time_limit=1.0, positions_file="starting_positions.txt", debug=false)
 
 Plays two engines against each other through all starting positions, with each engine playing both colors.
 - engine1_path: Path to first engine executable
 - engine2_path: Path to second engine executable
 - time_limit: Thinking time per move in seconds (default: 1.0)
-- positions_file: File containing starting positions (default: "unique_positions.txt")
+- positions_file: File containing starting positions (default: "starting_positions.txt")
 - debug: Print debug statements (default: false)
 
 Returns a summary of results.
@@ -262,7 +254,7 @@ function faceoff(
     engine1_path::String,
     engine2_path::String;
     time_limit_s=1,
-    positions_file="unique_positions.txt",
+    positions_file="./starting_positions.txt",
     debug=false,
 )
     engine1_name = split(basename(engine1_path), '.')[1]
@@ -276,13 +268,7 @@ function faceoff(
     positions = read_positions(positions_file)
 
     # Track results
-    results = Dict(
-        "engine1_as_white" => 0,
-        "engine2_as_white" => 0,
-        "draws" => 0,
-        "total_games" => 0,
-        "errors" => 0,
-    )
+    results = Dict("engine1" => 0, "engine2" => 0, "draws" => 0, "total_games" => 0, "errors" => 0)
 
     errors_log = String[]
 
@@ -297,10 +283,10 @@ function faceoff(
                 engine1_path, engine2_path, time_limit_s; starting_position=position, debug=false
             )
 
-            if result1 == 1
-                results["engine1_as_white"] += 1
-            elseif result1 == 2
-                results["engine2_as_white"] += 1  # Engine2 won as Black
+            if result1 == WHITE
+                results["engine1"] += 1
+            elseif result1 == BLACK
+                results["engine2"] += 1  # Engine2 won as Black
             else
                 results["draws"] += 1
             end
@@ -320,10 +306,10 @@ function faceoff(
                 engine2_path, engine1_path, time_limit_s; starting_position=position, debug=false
             )
 
-            if result2 == 1
-                results["engine2_as_white"] += 1
-            elseif result2 == 2
-                results["engine1_as_white"] += 1  # Engine1 won as Black
+            if result2 == WHITE
+                results["engine2"] += 1
+            elseif result2 == BLACK
+                results["engine1"] += 1  # Engine1 won as Black
             else
                 results["draws"] += 1
             end
@@ -338,7 +324,6 @@ function faceoff(
         end
     end
 
-    # Print final summary
     println("\n" * "="^70)
     println("RESULTS")
     println("="^70)
@@ -347,8 +332,8 @@ function faceoff(
     println("Errors encountered: $(results["errors"])")
     println()
 
-    engine1_total = results["engine1_as_white"]
-    engine2_total = results["engine2_as_white"]
+    engine1_total = results["engine1"]
+    engine2_total = results["engine2"]
     draws = results["draws"]
     total = results["total_games"]
 
@@ -378,15 +363,15 @@ function faceoff(
 end
 
 function run_arena(; debug=false, time_limit_s=0.05)
-    engines = YAML.load_file("engines/engines.yaml")
+    engines = YAML.load_file("./engines/engines.yaml")
     intsect_engines = engines["intsect"]
     existing_engines = engines["existing_engines"]
 
     engines_dir = "engines"
 
     # Resolve paths relative to engines directory
-    intsect_paths = [joinpath(engines_dir, engine) for engine in intsect_engines]
-    existing_paths = [joinpath(engines_dir, engine) for engine in existing_engines]
+    intsect_paths = [joinpath(".", engines_dir, engine) for engine in intsect_engines]
+    existing_paths = [joinpath(".", engines_dir, engine) for engine in existing_engines]
 
     for i in 1:(length(intsect_paths) - 1)
         older_intsect = intsect_paths[i]

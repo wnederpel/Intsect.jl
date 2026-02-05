@@ -1,8 +1,3 @@
-wL;bL wL\;wM \wL;bA1 bL\
-wL;bL wL\;wA1 \wL
-wP;bP wP\
-wL;bP wL/;wM /wL
-wL;bP wL/
 wL;bL wL-;wA1 -wL;bM bL-
 wG1;bL wG1\
 wL;bL /wL;wQ wL-
@@ -11,6 +6,11 @@ wP;bL wP-;wQ -wP;bQ bL\;wA1 /wQ
 wP;bL wP-;wQ -wP
 wP;bL wP-;wQ -wP;bQ bL\
 wP;bG1 wP-
+wL;bL wL\;wM \wL;bA1 bL\
+wL;bL wL\;wA1 \wL
+wP;bP wP\
+wL;bP wL/;wM /wL
+wL;bP wL/
 wL;bL wL-;wM -wL;bQ bL\
 wL;bL wL-;wM -wL;bM bL-;wA1 wM\
 wL;bL /wL;wQ wL/
