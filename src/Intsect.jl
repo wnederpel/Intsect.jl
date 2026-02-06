@@ -124,13 +124,33 @@ include("ai/evaluate.jl")
 # Match player
 include("match_player/player.jl")
 
-function julia_main()::Cint
+function @main(ARGS)
     try
         start()
         return 0
     catch e
         Base.invokelatest(Base.display_error, e, catch_backtrace())
         return 1
+    end
+end
+
+# Precompilation for juliac builds
+if Base.generating_output()
+    # Precompile frequently used functions with representative workload
+    try
+        # Load a complex mid-game position
+        game_string = raw"Base+MLP;InProgress;white[5];wL;bL wL\;wM \wL;bM bL\;wA1 /wM;bA1 /bL;wQ wM/;bQ bM-;wA2 wQ\;bA2 bA1\;wA2 /bA2;bA1 /wA1;wB1 wQ\;bP bA2-;wM wB1\;bB1 \bA2;wA3 -wQ;bS1 /bA1;wA3 -bS1"
+        board = from_game_string(game_string)
+
+        # Precompile perft (move generation)
+        perft(4, board)
+
+        # Precompile search/evaluation
+        get_best_move(board; time_limit_s=0.1, debug=false)
+
+        println("Precompilation complete")
+    catch e
+        println("Warning: Precompilation failed - ", e)
     end
 end
 

@@ -1,4 +1,45 @@
 """
+    shutdown_engine(proc, engine_name; timeout_s=2.0, debug=false)
+
+Attempts a graceful shutdown of an engine process, then forces termination if needed.
+"""
+function shutdown_engine(proc, engine_name; timeout_s=2.0, debug=false)
+    if proc === nothing
+        return nothing
+    end
+    try
+        write(proc, "quit\n")
+        flush(proc)
+    catch
+        # Ignore write errors if the process already exited.
+    end
+    try
+        close(proc.in)
+    catch
+        # Ignore close errors if stdin is already closed.
+    end
+
+    wait_task = @async wait(proc)
+    start_time = time()
+    while !istaskdone(wait_task) && (time() - start_time) < timeout_s
+        sleep(0.05)
+    end
+    if !istaskdone(wait_task)
+        debug && println("[DEBUG] Forcing engine shutdown: $engine_name")
+        try
+            kill(proc)
+        catch
+            # Ignore kill errors if the process already exited.
+        end
+        try
+            wait(proc)
+        catch
+            # Ignore wait errors after kill.
+        end
+    end
+end
+
+"""
     play_one_match(engine1_path, engine2_path, time_limit; starting_position="", debug=false)
 
 Plays two UHP engines against each other from a given starting position until one wins.
@@ -20,8 +61,8 @@ function play_one_match(
     engine1_name = split(basename(engine1_path), '.')[1]
     engine2_name = split(basename(engine2_path), '.')[1]
     println("White: $engine1_name vs Black: $engine2_name")
-    is_source1 = engine1_path == "engines\\source" || engine1_path == "./engines/source"
-    is_source2 = engine2_path == "engines\\source" || engine2_path == "./engines/source"
+    is_source1 = contains(engine1_path, "source")
+    is_source2 = contains(engine2_path, "source")
     is_source = [is_source1, is_source2]
     engine_paths = [engine1_path, engine2_path]
 
@@ -104,9 +145,9 @@ function play_one_match(
         # Ask current engine for best move with time limit
         debug && println("[DEBUG] Requesting bestmove from $current_color")
         if !is_source[current_engine_i]
-            # Check if current engine is nokamute.exe
+            # Check if current engine is nokamute, either windows or linux version
             current_engine_path = engine_paths[current_engine_i]
-            if endswith(lowercase(current_engine_path), "nokamute.exe")
+            if contains(lowercase(current_engine_path), "nokamute")
                 write(current_engine, "bestmove seconds $time_limit_s\n")
             else
                 write(current_engine, "bestmove time 00:00:0$time_limit_s\n")
@@ -157,10 +198,10 @@ function play_one_match(
                 println("Draw between $engine1_name and $engine2_name\n")
             end
             if !is_source1
-                close(engine1)
+                shutdown_engine(engine1, engine1_name; debug=debug)
             end
             if !is_source2
-                close(engine2)
+                shutdown_engine(engine2, engine2_name; debug=debug)
             end
             return source_board_1.victor
         end
@@ -205,10 +246,10 @@ function play_one_match(
     end
 
     if !is_source1
-        close(engine1)
+        shutdown_engine(engine1, engine1_name; debug=debug)
     end
     if !is_source2
-        close(engine2)
+        shutdown_engine(engine2, engine2_name; debug=debug)
     end
     return nothing
 end
@@ -239,6 +280,46 @@ function read_positions(filepath::String)
 end
 
 """
+    format_results_block(results, positions, engine1_name, engine2_name)
+
+Formats the RESULTS block as a string.
+"""
+function format_results_block(results, positions, engine1_name, engine2_name)
+    io = IOBuffer()
+
+    println(io, "\n" * "="^70)
+    println(io, "RESULTS")
+    println(io, "="^70)
+    println(io, "Total games played: $(results["total_games"])")
+    println(io, "Total positions: $(length(positions))")
+    println(io, "Errors encountered: $(results["errors"])")
+    println(io)
+
+    engine1_total = results["engine1"]
+    engine2_total = results["engine2"]
+    draws = results["draws"]
+    total = results["total_games"]
+
+    if total > 0
+        println(io, "Engine 1 ($engine1_name):")
+        println(
+            io, "  Wins: $engine1_total / $total ($(round(engine1_total/total*100, digits=1))%)"
+        )
+        println(io)
+        println(io, "Engine 2 ($engine2_name):")
+        println(
+            io, "  Wins: $engine2_total / $total ($(round(engine2_total/total*100, digits=1))%)"
+        )
+        println(io)
+        println(io, "Draws: $draws / $total ($(round(draws/total*100, digits=1))%)")
+    else
+        println(io, "No games completed successfully")
+    end
+
+    return String(take!(io))
+end
+
+"""
     faceoff(engine1_path, engine2_path; time_limit=1.0, positions_file="starting_positions.txt", debug=false)
 
 Plays two engines against each other through all starting positions, with each engine playing both colors.
@@ -256,6 +337,7 @@ function faceoff(
     time_limit_s=1,
     positions_file="./starting_positions.txt",
     debug=false,
+    results_path=nothing,
 )
     engine1_name = split(basename(engine1_path), '.')[1]
     engine2_name = split(basename(engine2_path), '.')[1]
@@ -324,29 +406,13 @@ function faceoff(
         end
     end
 
-    println("\n" * "="^70)
-    println("RESULTS")
-    println("="^70)
-    println("Total games played: $(results["total_games"])")
-    println("Total positions: $(length(positions))")
-    println("Errors encountered: $(results["errors"])")
-    println()
+    results_block = format_results_block(results, positions, engine1_name, engine2_name)
+    print(results_block)
 
-    engine1_total = results["engine1"]
-    engine2_total = results["engine2"]
-    draws = results["draws"]
-    total = results["total_games"]
-
-    if total > 0
-        println("Engine 1 ($engine1_name):")
-        println("  Wins: $engine1_total / $total ($(round(engine1_total/total*100, digits=1))%)")
-        println()
-        println("Engine 2 ($engine2_name):")
-        println("  Wins: $engine2_total / $total ($(round(engine2_total/total*100, digits=1))%)")
-        println()
-        println("Draws: $draws / $total ($(round(draws/total*100, digits=1))%)")
-    else
-        println("No games completed successfully")
+    if results_path !== nothing
+        open(results_path, "w") do io
+            write(io, results_block)
+        end
     end
 
     if !isempty(errors_log)
@@ -362,8 +428,8 @@ function faceoff(
     return results
 end
 
-function run_arena(; debug=false, time_limit_s=0.05)
-    engines = YAML.load_file("./engines/engines.yaml")
+function run_arena(; debug=false, time_limit_s=0.05, engines_file="./engines/engines.yaml")
+    engines = YAML.load_file(engines_file)
     intsect_engines = engines["intsect"]
     existing_engines = engines["existing_engines"]
 

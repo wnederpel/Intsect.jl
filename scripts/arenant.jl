@@ -1,7 +1,7 @@
 using Intsect
 
 time_limit = 0.05
-debug = false
+debug = true
 Arenant.run_arena(; debug=debug, time_limit_s=time_limit)
 # Arenant.play_one_match(
 #     "engines\\source",

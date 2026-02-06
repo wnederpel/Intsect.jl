@@ -70,8 +70,8 @@ function format_with_dots(n)
     return join(reverse(parts), '.')
 end
 
-const NOKAMUTE_PATH::String = "C:\\intsect\\engines\\nokamute.exe"
-const MZINGA_PATH::String = "C:\\intsect\\engines\\MzingaEngine.exe"
+const NOKAMUTE_PATH::String = joinpath(@__DIR__, "..", "..", "engines", Sys.iswindows() ? "nokamute.exe" : "nokamute")
+const MZINGA_PATH::String = joinpath(@__DIR__, "..", "..", "engines", Sys.iswindows() ? "MzingaEngine.exe" : "MzingaEngine")
 
 """
     nokamute_valid_moves(game_string; exe=NOKAMUTE_PATH)
