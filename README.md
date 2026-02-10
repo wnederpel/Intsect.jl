@@ -2,6 +2,6 @@
 
 Welcome to Intsect! 
 
-This is a hobby project with the aim to create the best hive bot yet.
+This is a hobby project with the aim to create the best hive bot yet. In Julia.
 
 This README is to be expanded.
