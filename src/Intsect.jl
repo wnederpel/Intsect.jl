@@ -6,6 +6,7 @@ using DataStructures
 using Bumper
 using InteractiveUtils
 using Printf
+using UnsafeArrays
 
 # structs
 export Board
@@ -16,6 +17,7 @@ export Pass
 export GameString
 export Action
 export HexSet
+export SuggestedActions
 
 # constants
 export GRID_SIZE
@@ -43,6 +45,7 @@ export Direction
 export set!
 export remove!
 export toggle!
+export add!
 export example
 export start
 export perft
@@ -118,6 +121,7 @@ include("game/perft.jl")
 include("game/hash_values.jl")
 
 # AI files
+include("ai/suggested_actions.jl")
 include("ai/search.jl")
 include("ai/evaluate.jl")
 
@@ -133,9 +137,9 @@ function @main(ARGS)
         return 1
     end
 end
-
 # Precompilation for juliac builds
 if Base.generating_output()
+    using Intsect
     # Precompile frequently used functions with representative workload
     try
         # Load a complex mid-game position
@@ -148,7 +152,6 @@ if Base.generating_output()
         # Precompile search/evaluation
         get_best_move(board; time_limit_s=0.1, debug=false)
 
-        println("Precompilation complete")
     catch e
         println("Warning: Precompilation failed - ", e)
     end

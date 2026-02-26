@@ -1,8 +1,12 @@
 using Intsect
 
-gamestring = raw"Base+MLP;InProgress;White[54];wL;bP wL/;wQ wL\;bM bP/;wA1 -wL;bQ bM\;wA2 wQ\;bA1 bQ/;wA2 bA1-;bL \bA1;wA3 -wA1;bA2 bL/;wA3 bA2-;bA3 -bA2;wA2 bQ\;bG1 \bA2;wA1 -bA3;bG1 wA1\;wG1 -wL;bM -wA1;wA2 \bA3;bG2 bG1\;wA3 bQ\;bA2 \wA2;wQ wG1\;bA1 wA3\;wQ /wG1;bB1 bL\;wP wG1\;bG3 bB1/;wG1 bP\;bQ -bP;wG2 wP\;bQ /bG1;wG2 wL\;wL bG2\;wG3 wG2\;bP /bQ;wQ /bP;bQ -bP;wG3 bP\;bS1 -bQ;wQ bS1\;bB2 bG3/;wS1 wP\;bS2 bB2\;wS1 /bA1;bS1 wQ\;wG3 \bP;bA2 wA2/;wS2 wG2\;bA1 \bA2;wA3 -wG3;bA1 \wA3;wS1 wP\;bA3 -wQ;wG3 bP\;bM -wA2;bS1 /wP;bA2 wA2-;wS2 /bS1;bA2 wA2/;wS2 bA3\;bS1 /wS2;wB1 /wP;bA2 wA2-;wG2 \bP;bA2 wA2/;wG2 wG3\;bA2 wA2-;wG2 \bP;bB2 bS2/;wG2 wG3\;bA2 wA2/;wG2 \bP;bB2 bS2-;wS1 bQ\;bB2 bS2/;wM wP\;bM -bA2;wB2 wG3\;bA3 \bA2;wM wQ\;bA3 -bB2;wQ /wA3;bQ /bG1;wL bQ\;bG2 -bA3;wG3 bG1\;wL wA3\;wB1 bP\;bA2 -wQ;wL bQ\;bA3 wG1-;wB1 bP;bB1 wG3;wB2 wB1\;bA3 wG1\;wS1 wP\;bA2 /wS1;wL wB2\;bA3 bL\;wB1 bQ;bA2 -wQ;wS1 /bP;wB2 wA3\\"
+gamestring = raw"Base+MLP;InProgress;White[26];wL;bL wL\;wM \wL;bM bL\;wA1 wL/;bQ /bL;wQ /wM;bA1 bM/;wM bM\;bA2 /bQ;wA1 -bA2;bB1 bA1-;wP \wL;bA3 bB1\;wB1 wL/;bA3 -bQ;wA2 -wP;bB2 \bB1;wA2 bB1\;bA2 \wB1;wB1 bA2;bB2 \bA1;wA2 bB2/;bB1 bA1\;wB2 /wM;bA1 wB1/;wQ -wP;bA1 -wQ;wS1 /wA1;bA1 \wQ;wA3 wM\;bA1 wB1/;wA3 bA1/;bB1 wM;wA2 bB2-;bB1 bB1/;wG1 wM\;bB1 wM;wB2 bB1;bS1 \bA3;wS1 -bS1;pass;wS2 /wG1;pass;wS2 bA3\;pass;wA1 wB1\;pass;wL wB2/"
 
 board = from_game_string(gamestring)
 show(board)
 show_valid_actions(board)
-do_action(board, action_from_move_string(board, "wB1 bQ\\"))
+
+do_action(board, "pass")
+
+show(board)
+show_valid_actions(board)

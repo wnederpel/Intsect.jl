@@ -70,3 +70,5 @@ const PERFT_BUFFER::Vector = repeat([default_buffer(AllocBuffer)], 50)
 const PINNED_BUFFER::Vector = repeat([default_buffer(AllocBuffer)], 2)
 
 const NO_HASH::UInt64 = UInt64(0)
+
+const PV_STORE_SIZE::Int = 30

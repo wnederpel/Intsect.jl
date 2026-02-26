@@ -10,6 +10,7 @@ EnumX = "4e289a0a-7415-4d19-859d-a7e5c4648b56"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+UnsafeArrays = "c4a57d5a-5b31-53a6-b365-19f8c011fbd6"
 YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 
 [compat]
@@ -18,6 +19,7 @@ InteractiveUtils = "1.11.0"
 JSON = "1.4.0"
 ModelContextProtocol = "0.4.0"
 Printf = "1.11.0"
+UnsafeArrays = "1.0.8"
 YAML = "0.4.16"
 
 [extras]

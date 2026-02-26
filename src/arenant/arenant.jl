@@ -60,6 +60,7 @@ function play_one_match(
 )
     engine1_name = split(basename(engine1_path), '.')[1]
     engine2_name = split(basename(engine2_path), '.')[1]
+    engine_names = [engine1_name, engine2_name]
     println("White: $engine1_name vs Black: $engine2_name")
     is_source1 = contains(engine1_path, "source")
     is_source2 = contains(engine2_path, "source")
@@ -137,13 +138,17 @@ function play_one_match(
     source_board_1 = boards[1]
     source_board_2 = boards[2]
 
+    max_moves = 500
     # Play until game over
-    while true
+    while move_number < max_moves
         move_number += 1
         debug && println("[DEBUG] Move $move_number starting, $current_color to play")
 
         # Ask current engine for best move with time limit
-        debug && println("[DEBUG] Requesting bestmove from $current_color")
+        debug && println(
+            "[DEBUG] Requesting bestmove from $current_color $(engine_names[current_engine_i])"
+        )
+        move_start_time = time()
         if !is_source[current_engine_i]
             # Check if current engine is nokamute, either windows or linux version
             current_engine_path = engine_paths[current_engine_i]
@@ -174,7 +179,11 @@ function play_one_match(
             debug && println("[DEBUG] $current_color response: $best_move")
             debug && println("[DEBUG] $current_color response: ok")
         end
+        move_elapsed_s = time() - move_start_time
         debug && println("[DEBUG] Bestmove received: $best_move")
+        debug && println(
+            "[DEBUG] $current_color $(engine_names[current_engine_i]) thought for $(round(move_elapsed_s; digits=3))s",
+        )
 
         if isempty(best_move)
             break
@@ -199,9 +208,27 @@ function play_one_match(
             end
             if !is_source1
                 shutdown_engine(engine1, engine1_name; debug=debug)
+            else
+                # Show store utilization
+                # search_fill = Intsect.count_store_fill(source_board_1.search_store)
+                # println("Search store utilization: $(round(search_fill, digits=2))mb")
+                # move_fill = Intsect.count_store_fill(source_board_1.move_store)
+                # println("Move store utilization: $(round(move_fill, digits=2))mb")
+                # pinned_fill = Intsect.count_store_fill(source_board_1.pinned_store)
+                # println("Pinned store utilization: $(round(pinned_fill, digits=2))mb")
+                # println()
             end
             if !is_source2
                 shutdown_engine(engine2, engine2_name; debug=debug)
+            else
+                # Show store utilization
+                # search_fill = Intsect.count_store_fill(source_board_2.search_store)
+                # println("Search store utilization: $(round(search_fill, digits=2))mb")
+                # move_fill = Intsect.count_store_fill(source_board_2.move_store)
+                # println("Move store utilization: $(round(move_fill, digits=2))mb")
+                # pinned_fill = Intsect.count_store_fill(source_board_2.pinned_store)
+                # println("Pinned store utilization: $(round(pinned_fill, digits=2))mb")
+                # println()
             end
             return source_board_1.victor
         end
@@ -245,13 +272,17 @@ function play_one_match(
         end
     end
 
+    if move_number >= max_moves
+        println("=== Game aborted after $max_moves moves (forced draw) ===")
+    end
+
     if !is_source1
         shutdown_engine(engine1, engine1_name; debug=debug)
     end
     if !is_source2
         shutdown_engine(engine2, engine2_name; debug=debug)
     end
-    return nothing
+    return DRAW
 end
 
 """
@@ -315,6 +346,7 @@ function format_results_block(results, positions, engine1_name, engine2_name)
     else
         println(io, "No games completed successfully")
     end
+    println(io, "="^70)
 
     return String(take!(io))
 end
@@ -338,6 +370,7 @@ function faceoff(
     positions_file="./starting_positions.txt",
     debug=false,
     results_path=nothing,
+    full_debug=false,
 )
     engine1_name = split(basename(engine1_path), '.')[1]
     engine2_name = split(basename(engine2_path), '.')[1]
@@ -362,7 +395,11 @@ function faceoff(
         # Game 1: Engine1 as White, Engine2 as Black
         try
             result1 = play_one_match(
-                engine1_path, engine2_path, time_limit_s; starting_position=position, debug=false
+                engine1_path,
+                engine2_path,
+                time_limit_s;
+                starting_position=position,
+                debug=full_debug,
             )
 
             if result1 == WHITE
@@ -374,18 +411,28 @@ function faceoff(
             end
             results["total_games"] += 1
         catch e
-            e isa InterruptException && rethrow()
-            debug && rethrow()
-            results["errors"] += 1
-            error_msg = "Position $pos_idx, Game 1 (Engine1 White): $(sprint(showerror, e))"
-            push!(errors_log, error_msg)
-            @warn error_msg
+            if e isa InterruptException
+                println("InterruptException received, logging results so far first.")
+                results_block = format_results_block(results, positions, engine1_name, engine2_name)
+                print(results_block)
+                rethrow()
+            else
+                debug && rethrow()
+                results["errors"] += 1
+                error_msg = "Position $pos_idx, Game 1 (Engine1 White): $(sprint(showerror, e))"
+                push!(errors_log, error_msg)
+                @warn error_msg
+            end
         end
 
         # Game 2: Engine2 as White, Engine1 as Black
         try
             result2 = play_one_match(
-                engine2_path, engine1_path, time_limit_s; starting_position=position, debug=false
+                engine2_path,
+                engine1_path,
+                time_limit_s;
+                starting_position=position,
+                debug=full_debug,
             )
 
             if result2 == WHITE
@@ -397,12 +444,23 @@ function faceoff(
             end
             results["total_games"] += 1
         catch e
-            e isa InterruptException && rethrow()
-            debug && rethrow()
-            results["errors"] += 1
-            error_msg = "Position $pos_idx, Game 2 (Engine2 White): $(sprint(showerror, e))"
-            push!(errors_log, error_msg)
-            @warn error_msg
+            if e isa InterruptException
+                println("InterruptException received, logging results so far first.")
+                results_block = format_results_block(results, positions, engine1_name, engine2_name)
+                print(results_block)
+                rethrow()
+            else
+                debug && rethrow()
+                results["errors"] += 1
+                error_msg = "Position $pos_idx, Game 2 (Engine2 White): $(sprint(showerror, e))"
+                push!(errors_log, error_msg)
+                @warn error_msg
+            end
+        end
+
+        if pos_idx > 5 && pos_idx % 10 == 0
+            results_block = format_results_block(results, positions, engine1_name, engine2_name)
+            print(results_block)
         end
     end
 
@@ -428,10 +486,15 @@ function faceoff(
     return results
 end
 
-function run_arena(; debug=false, time_limit_s=0.05, engines_file="./engines/engines.yaml")
+function run_arena(;
+    debug=false, time_limit_s=0.05, engines_file="./engines/engines.yaml", full_debug=false
+)
     engines = YAML.load_file(engines_file)
     intsect_engines = engines["intsect"]
     existing_engines = engines["existing_engines"]
+    if existing_engines === nothing
+        existing_engines = String[]
+    end
 
     engines_dir = "engines"
 
@@ -442,16 +505,30 @@ function run_arena(; debug=false, time_limit_s=0.05, engines_file="./engines/eng
     for i in 1:(length(intsect_paths) - 1)
         older_intsect = intsect_paths[i]
         newer_intsect = intsect_paths[i + 1]
-        faceoff(older_intsect, newer_intsect; time_limit_s=time_limit_s, debug=debug)
+        faceoff(
+            older_intsect,
+            newer_intsect;
+            time_limit_s=time_limit_s,
+            debug=debug,
+            full_debug=full_debug,
+        )
     end
     latest_intsect = intsect_paths[end]
     for existing in existing_paths
-        faceoff(latest_intsect, existing; time_limit_s=time_limit_s, debug=debug)
+        faceoff(
+            latest_intsect, existing; time_limit_s=time_limit_s, debug=debug, full_debug=full_debug
+        )
     end
     if length(intsect_paths) > 1
         runner_up_intsect = intsect_paths[end - 1]
         for existing in existing_paths
-            faceoff(runner_up_intsect, existing; time_limit_s=time_limit_s, debug=debug)
+            faceoff(
+                runner_up_intsect,
+                existing;
+                time_limit_s=time_limit_s,
+                debug=debug,
+                full_debug=full_debug,
+            )
         end
     end
 

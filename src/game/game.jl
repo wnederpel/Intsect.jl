@@ -128,12 +128,12 @@ end
 end
 
 @inline function get_loc(board::Board, tile::Integer)
-    # Indexed by UInt8 >>> 2 (so a normal tile, withouth height info), zero indexed
+    # Indexed by UInt8 >>> 2 (so a normal tile, without height info), zero indexed
     return @inbounds board.tile_locs[(tile >>> INDEX_SHIFT) + 1]
 end
 
 function set_loc(board::Board, tile::Integer, loc::Integer)
-    # Indexed by UInt8 >>> 2 (so a normal tile, withouth height info), zero indexed
+    # Indexed by UInt8 >>> 2 (so a normal tile, without height info), zero indexed
     @inbounds board.tile_locs[(tile >>> INDEX_SHIFT) + 1] = loc
     return nothing
 end
@@ -163,8 +163,8 @@ function handle_newgame_command(gametype::Type{T}) where {T<:Gametype}
             tile_locs[index_from_tile] = INVALID_LOC
         end
     end
-    newboard = Board(tiles, tile_locs, gametype)
-    return newboard
+    new_board = Board(tiles, tile_locs, gametype)
+    return new_board
 
     return error("starting new game.. not implemented")
 end
@@ -272,6 +272,28 @@ function get_tile_from_string(tile_string)
     return tile_from_info(color, bug, num)
 end
 
+function for_each_tile(f::Function, board, color)
+    for bug in 0x01:0x08
+        if get_tile_bug_num(board.placeable_tiles[color][bug]) == 0
+            # This just means that the tile is not yet placed apparently
+            continue
+        end
+        for num in 0x00:MAX_NUMS[bug]
+            semi_tile = tile_from_info_as_index(color, bug, num)
+            @inbounds loc = board.tile_locs[semi_tile + 1]
+
+            if loc == NOT_PLACED
+                break
+            end
+            if loc == UNDERGROUND || loc == INVALID_LOC
+                continue
+            end
+            tile = get_tile_on_board(board, loc)
+            f(tile, loc)
+        end
+    end
+end
+
 function action_from_move_string(board::Board, move_string)
     if move_string == "pass"
         action = Pass()
@@ -370,6 +392,7 @@ end
 function move_string_from_action(board::Board, action::Move)
     moving_tile = get_tile_on_board(board, action.moving_loc)
     if moving_tile == EMPTY_TILE
+        show(board)
         error(
             "no tile to move at loc $(action.moving_loc) for move from $(action.moving_loc) to $(action.goal_loc)",
         )
@@ -488,12 +511,12 @@ end
 
 function compute_all_neighs(loc)
     return (
-        apply_direction(loc, Direction.NE),
         apply_direction(loc, Direction.E),
         apply_direction(loc, Direction.SE),
         apply_direction(loc, Direction.SW),
         apply_direction(loc, Direction.W),
         apply_direction(loc, Direction.NW),
+        apply_direction(loc, Direction.NE),
     )
 end
 
@@ -503,6 +526,10 @@ const ALL_ALL_NEIGHS::SVector{GRID_SIZE,Tuple{Int,Int,Int,Int,Int,Int}} = map(
 
 @inline function allneighs(loc)
     return @inbounds view(ALL_ALL_NEIGHS, loc + 1)[1]
+end
+
+@inline function are_neighs(loc1, loc2)
+    return loc1 in allneighs(loc2)
 end
 
 function do_action(board::Board, string::AbstractString)
@@ -550,7 +577,10 @@ function do_action(board::Board, move::Move)
         # println(ALL_ACTIONS[getindex.(board.last_moves, 1)])
         # println(getindex.(board.last_moves, 2))
         # println(board.last_moves_index)
+        println("showing simple")
         show(board; simple=true)
+        println("showing normal")
+        show(board)
         error(
             "processing move $(move_string_from_action(board, move)); no tile to move at loc $(move.moving_loc)",
         )
@@ -692,14 +722,6 @@ function inverse_post_action_update(board::Board, action)
     # This assumes the color is already back at the color that made the change!!
     inverse_post_action_hs_hash_update(board, action)
 
-    if !(action isa Pass)
-        goal_loc_normal, moving_loc_normal = get_last_changed_locs(action)
-        # since we are trying to undo this move pas it as a move from goal -> moving loc
-        # nothing looks strange but get pinned tiles expect goal loc first then moving loc
-
-        get_pinned_tiles!(board, moving_loc_normal, goal_loc_normal; inverse=true)
-    end
-
     return nothing
 end
 
@@ -733,10 +755,6 @@ function post_action_update(board::Board, action::Action)
     post_action_hs_hash_update(board, action)
     post_action_pillbug_update(board, action)
     post_action_general_update(board, action)
-    if !(action isa Pass)
-        goal_loc, moving_loc = get_last_changed_locs(action)
-        get_pinned_tiles!(board, goal_loc, moving_loc)
-    end
     return nothing
 end
 
@@ -932,7 +950,6 @@ const bQ::UInt8 = get_tile_from_string("bQ")
         # We only need to update the queen locs when undoing, no need to check for gameover
         return nothing
     end
-
     if wQ_loc >= 0
         wQ_neighs = allneighs(wQ_loc)
         # only need to check for gameover if the goal loc is next to the white queen
@@ -1076,10 +1093,10 @@ Some functionality for pre defining all actions to reduce allocations
 The total number of idices = 256 ^ 2 + 256 ^ 2 + 256 * 36 = 140288 < 2^32
 so we can use 32 bit integers as indices
 """
-const MAX_PLACEMENT_INDEX = GRID_SIZE * 36
-const MAX_MOVEMENT_INDEX = GRID_SIZE * GRID_SIZE
-const MAX_CLIMB_INDEX = GRID_SIZE * GRID_SIZE
-const MAX_PASS_INDEX = 1
+const MAX_PLACEMENT_INDEX::Int32 = GRID_SIZE * 36
+const MAX_MOVEMENT_INDEX::Int32 = GRID_SIZE * GRID_SIZE
+const MAX_CLIMB_INDEX::Int32 = GRID_SIZE * GRID_SIZE
+const MAX_PASS_INDEX::Int32 = 1
 
 @inline function action_index(placement::Placement)
     return placement_index(placement.goal_loc, placement.tile)
@@ -1101,19 +1118,19 @@ end
     return (tile >>> INDEX_SHIFT) * GRID_SIZE + loc + 1
 end
 
-const MOVEMENT_INDEX_OFFSET = MAX_PLACEMENT_INDEX + 1
+const MOVEMENT_INDEX_OFFSET::Int32 = MAX_PLACEMENT_INDEX + 1
 @inline function movement_index(moving_loc::Integer, goal_loc::Integer)
     return @fastmath MOVEMENT_INDEX_OFFSET + moving_loc * GRID_SIZE + goal_loc
 end
 
-const CLIMB_INDEX_OFFSET = MAX_MOVEMENT_INDEX + MAX_PLACEMENT_INDEX + 1
+const CLIMB_INDEX_OFFSET::Int32 = MAX_MOVEMENT_INDEX + MAX_PLACEMENT_INDEX + 1
 @inline function climb_index(moving_loc::Integer, goal_loc::Integer)
     return @fastmath CLIMB_INDEX_OFFSET + moving_loc * GRID_SIZE + goal_loc
 end
 
-const PASS_INDEX_OFFSET = MAX_MOVEMENT_INDEX + MAX_PLACEMENT_INDEX + MAX_CLIMB_INDEX + 1
+const PASS_INDEX_OFFSET::Int32 = MAX_MOVEMENT_INDEX + MAX_PLACEMENT_INDEX + MAX_CLIMB_INDEX + 1
 
-@inline function pass_index()
+@inline function pass_index()::Int32
     return PASS_INDEX_OFFSET
 end
 
@@ -1166,17 +1183,18 @@ function get_all_actions()
     all_actions[begin:MAX_PLACEMENT_INDEX] = all_placements
     all_actions[(MAX_PLACEMENT_INDEX + 1):(MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX)] =
         all_movements
-    all_actions[(MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + 1):(end - 1)] = all_climbs
-    all_actions[end] = Pass()
+    all_actions[(MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + 1):(MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX)] =
+        all_climbs
+    all_actions[MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX + MAX_PASS_INDEX] = Pass()
     return all_actions
 end
 
 function action_type(action_as_index)
-    if action_as_index < MAX_PLACEMENT_INDEX
+    if action_as_index <= MAX_PLACEMENT_INDEX
         return Placement
-    elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX
+    elseif action_as_index <= MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX
         return Move
-    elseif action_as_index < MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX
+    elseif action_as_index <= MAX_PLACEMENT_INDEX + MAX_MOVEMENT_INDEX + MAX_CLIMB_INDEX
         return Climb
     else
         return Pass
@@ -1186,7 +1204,7 @@ end
 """
 This returns a union of types and as such is not the best, moves should be linked to
 """
-function do_for_action(action_as_index, func)
+@inline function do_for_action(action_as_index, func)
     if action_as_index <= MAX_PLACEMENT_INDEX
         action = ALL_PLACEMENTS[action_as_index]
         return func(action)

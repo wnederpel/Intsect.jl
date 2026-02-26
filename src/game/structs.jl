@@ -45,11 +45,22 @@ struct Workspaces
     pillbug_throw_to::HexSet
     mosquito_throw_from::HexSet
     mosquito_throw_to::HexSet
+    suggested_moves_moving_loc::HexSet
+    suggested_moves_goal_loc::HexSet
 end
 
 function make_ws()
     return Workspaces(
-        HexSet(), HexSet(), HexSet(), HexSet(), HexSet(), HexSet(), HexSet(), HexSet()
+        HexSet(),
+        HexSet(),
+        HexSet(),
+        HexSet(),
+        HexSet(),
+        HexSet(),
+        HexSet(),
+        HexSet(),
+        HexSet(),
+        HexSet(),
     )
 end
 
@@ -61,6 +72,17 @@ struct PinnedStoreEntry
     location_hash::UInt64
     pinned_pieces_hs::HexSet
 end
+struct SearchStoreEntry
+    # You only need some top part of the hash if you already use some bottom part for the index
+    full_hash::UInt64
+    # These can be reduced to Float16's probably
+    score::Float32
+    depth::Float32
+    action_chosen::Int32
+    # Make this into a UInt8 enum type thing
+    type::Symbol
+    refutation_move::Int32
+end
 
 function PinnedStoreEntry()
     return PinnedStoreEntry(NO_HASH, HexSet())
@@ -68,20 +90,42 @@ end
 function MoveStoreEntry()
     return MoveStoreEntry(NO_HASH, HexSet())
 end
+function SearchStoreEntry()
+    return SearchStoreEntry(NO_HASH, 0.0f32, -1.0f32, pass_index(), :incomplete, -1)
+end
 
-function get_store_size(move_store_size_mb, entry_size)
-    n = (move_store_size_mb * 1024 * 1024) ÷ entry_size
+function get_store_size(store_size_mb, entry_size)
+    n = (store_size_mb * 1024 * 1024) ÷ entry_size
     n_pow2 = 1 << (floor(Int, log2(n)))
     return n_pow2
 end
 
-move_store_size_mb = 4
-const MOVE_STORE_SIZE::Int = get_store_size(move_store_size_mb, sizeof(MoveStoreEntry))
+const MOVE_STORE_SIZE_MB::Int = 4
+const MOVE_STORE_SIZE::Int = get_store_size(MOVE_STORE_SIZE_MB, sizeof(MoveStoreEntry))
 const MOVE_STORE_MASK::Int = MOVE_STORE_SIZE - 1
 
-pinned_store_size_mb = 4
-const PINNED_STORE_SIZE::Int = get_store_size(pinned_store_size_mb, sizeof(PinnedStoreEntry))
+const PINNED_STORE_SIZE_MB::Int = 4
+const PINNED_STORE_SIZE::Int = get_store_size(PINNED_STORE_SIZE_MB, sizeof(PinnedStoreEntry))
 const PINNED_STORE_MASK::Int = PINNED_STORE_SIZE - 1
+
+const SEARCH_STORE_SIZE_MB::Int = 64
+const SEARCH_STORE_SIZE::Int = get_store_size(SEARCH_STORE_SIZE_MB, sizeof(SearchStoreEntry))
+const SEARCH_STORE_MASK::Int = SEARCH_STORE_SIZE - 1
+
+function count_store_fill(store::Vector{T}) where {T}
+    count_mb = 0
+    entries = 0
+    for entry in store
+        if :location_hash in fieldnames(T) && entry.location_hash != NO_HASH
+            entries += 1
+            count_mb += sizeof(T)
+        elseif :full_hash in fieldnames(T) && entry.full_hash != NO_HASH
+            entries += 1
+            count_mb += sizeof(T)
+        end
+    end
+    return count_mb / (1024 * 1024)
+end
 
 """
 Contains all information of the current board state
@@ -110,7 +154,7 @@ mutable struct Board
     just_moved_loc::Int
     current_color::UInt8
     queen_placed::MVector{2,Bool}
-    ply::Int
+    ply::UInt16
     turn::Int
     gameover::Bool
     victor::Int
@@ -133,6 +177,8 @@ mutable struct Board
     location_hash::UInt64
     move_store::Vector{MoveStoreEntry}
     pinned_store::Vector{PinnedStoreEntry}
+    search_store::Vector{SearchStoreEntry}
+    pv_store::MVector{PV_STORE_SIZE,MVector{PV_STORE_SIZE,Int32}}
     workspaces::Workspaces
     gametype::Type{<:Gametype}
 end
@@ -145,6 +191,10 @@ function Board(tiles, tile_locs, gametype)
     pinned_store = Vector{PinnedStoreEntry}(undef, PINNED_STORE_SIZE)
     for i in 1:PINNED_STORE_SIZE
         pinned_store[i] = PinnedStoreEntry()
+    end
+    search_store = Vector{SearchStoreEntry}(undef, SEARCH_STORE_SIZE)
+    for i in 1:SEARCH_STORE_SIZE
+        search_store[i] = SearchStoreEntry()
     end
     return Board(
         tiles,
@@ -188,6 +238,10 @@ function Board(tiles, tile_locs, gametype)
         UInt64(0),
         move_store,
         pinned_store,
+        search_store,
+        MVector{PV_STORE_SIZE,MVector{PV_STORE_SIZE,Int32}}(
+            ntuple(_ -> MVector{PV_STORE_SIZE,Int32}(fill(Int32(-1), PV_STORE_SIZE)), PV_STORE_SIZE)
+        ),
         make_ws(),
         gametype,
     )

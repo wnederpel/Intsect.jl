@@ -82,9 +82,9 @@ function play_next_move!(board::Board, best_move_func)
     println("\n--- $current_player to move (ply $(board.ply)) ---")
 
     action = best_move_func(board)
-    println("Move: ", move_string_from_action(board, action))
+    show(action, board)
     do_action(board, action)
-    show(board; show_locs=false, simple=false)
+    show(board; show_locs=true, simple=false)
 
     return true
 end
@@ -144,78 +144,63 @@ function start_match_player(
     current_position_index = starting_position
 
     println("Starting from position $starting_position")
-    show(board; show_locs=false, simple=true)
+    show(board; show_locs=true, simple=true)
     println("ok")
 
     while true
         command = readline()
 
-        try
-            if command == "" || command == "next" || command == "n"
-                # Play next move
-                play_next_move!(board, best_move_func)
+        if command == "" || command == "next" || command == "n"
+            # Play next move
+            play_next_move!(board, best_move_func)
 
-            elseif command in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-                # Reset to starting position
-                pos_index = parse(Int, command)
-                board = deepcopy(positions[pos_index + 1])
-                current_position_index = pos_index
-                println("\nReset to starting position $pos_index")
-                show(board; show_locs=false, simple=true)
+        elseif command in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+            # Reset to starting position
+            pos_index = parse(Int, command)
+            board = deepcopy(positions[pos_index + 1])
+            current_position_index = pos_index
+            println("\nReset to starting position $pos_index")
+            show(board; show_locs=true, simple=true)
 
-            elseif command == "f"
-                # Play out 4 plies
-                println("\n=== Playing 5 plies ===")
-                play_n_plies!(board, best_move_func, 5)
+        elseif command == "f"
+            # Play out 4 plies
+            println("\n=== Playing 5 plies ===")
+            play_n_plies!(board, best_move_func, 5)
 
-            elseif command == "ff"
-                # Play out 8 plies
-                println("\n=== Playing 10 plies ===")
-                play_n_plies!(board, best_move_func, 10)
+        elseif command == "ff"
+            # Play out 8 plies
+            println("\n=== Playing 10 plies ===")
+            play_n_plies!(board, best_move_func, 10)
 
-            elseif command == "show" || command == "s"
-                # Display current board
-                show(board; show_locs=false, simple=true)
+        elseif command == "show" || command == "s"
+            # Display current board
+            show(board; show_locs=true, simple=true)
 
-            elseif command == "help" || command == "h" || command == "?"
-                println("\nCommands:")
-                println("  Enter       - Play next move")
-                println("  0-9         - Reset to starting position N")
-                println("  f           - Play out 4 plies")
-                println("  ff          - Play out 8 plies")
-                println("  show        - Display current board")
-                println("  help        - Show this help message")
-                println("  q/quit/exit - Exit match player")
+        elseif command == "help" || command == "h" || command == "?"
+            println("\nCommands:")
+            println("  Enter       - Play next move")
+            println("  0-9         - Reset to starting position N")
+            println("  f           - Play out 4 plies")
+            println("  ff          - Play out 8 plies")
+            println("  b           - undo")
+            println("  show        - Display current board")
+            println("  help        - Show this help message")
+            println("  q/quit/exit - Exit match player")
 
-            elseif command == "q" || command == "quit" || command == "exit"
-                println("Exiting match player")
-                break
+        elseif command == "q" || command == "quit" || command == "exit"
+            println("Exiting match player")
+            break
+            println("  q/quit/exit - Exit match player")
+        elseif command == "b" || command == "back" || command == "undo"
+            undo_action!(board)
+            println("\nUndid last move")
+            show(board; show_locs=true, simple=true)
 
-            else
-                println("Unknown command: '$command' (type 'help' for commands)")
-            end
-
-            println("ok")
-
-        catch e
-            if isa(e, ErrorException)
-                println("err " * e.msg)
-            else
-                io = IOBuffer()
-                showerror(io, e)
-                println("An error occurred: ", String(take!(io)))
-
-                # Show abbreviated stack trace
-                full_backtrace = catch_backtrace()
-                short_backtrace = full_backtrace[begin:min(begin + 10, end)]
-
-                seekstart(io)
-                truncate(io, 0)
-                Base.show_backtrace(io, short_backtrace)
-                println(String(take!(io)))
-            end
-            println("ok")
+        else
+            println("Unknown command: '$command' (type 'help' for commands)")
         end
+
+        println("ok")
     end
 
     return nothing

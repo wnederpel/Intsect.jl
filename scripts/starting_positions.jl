@@ -174,7 +174,7 @@ println("="^60)
 println("Extracting Unique Starting Positions from Hive Games")
 println("="^60)
 
-unique_positions, position_order = extract_unique_positions(path, 120, 2)
+unique_positions, position_order = extract_unique_positions(path, 120, 8)
 
 # Save to file - simple format (semicolon-separated moves)
 output_file = joinpath("C:\\intsect", "starting_positions.txt")

@@ -14,7 +14,7 @@ function validactions_indices(board)
     return valid_actions
 end
 
-function validactions(board)
+function validactions(board)::AbstractVector{Action}
     return ALL_ACTIONS[validactions_indices(board)]
 end
 
@@ -66,15 +66,12 @@ end
 Valid actions for the default case
 """
 function validactions_general(board::Board, move_buffer, current_color)
-    add_placements(board, move_buffer, current_color)
-
     if board.queen_placed[current_color]
-        if board.general_pinned_update_required
-            update_ispinned_general!(board)
-            board.general_pinned_update_required = false
-        end
+        update_ispinned_general!(board)
         add_moves(board, board.ispinned, move_buffer, current_color)
     end
+
+    add_placements(board, move_buffer, current_color)
 
     if board.action_index == 1
         add_action!(board, Pass(), move_buffer)
@@ -209,6 +206,7 @@ function add_moves(board, ispinned, move_buffer, current_color)
 
     for bug in 0x01:0x08
         if get_tile_bug_num(board.placeable_tiles[current_color][bug]) == 0
+            # This just means that the tile is not yet placed apparently
             continue
         end
         for num in 0x00:MAX_NUMS[bug]
@@ -762,57 +760,6 @@ end
     return slidable
 end
 
-@inline function get_pinned_tiles!(board::Board, last_goal_loc, last_moving_loc; inverse=false)
-    return board.general_pinned_update_required = true
-    # NOTE! the goal and moving loc have already happened!
-    is_simple_goal, goal_neigh = is_simple_last_goal_loc(board, last_goal_loc, inverse)
-    is_simple_moving, moving_neigh = is_simple_last_moving_loc(
-        board, last_moving_loc, last_goal_loc
-    )
-    if is_simple_goal && is_simple_moving
-        return update_ispinned_simple!(
-            board, last_goal_loc, goal_neigh, last_moving_loc, moving_neigh
-        )
-        # TODO speed: implement the commented code
-        # Maybe that speeds things up, for now just returning that a full update is required is faster
-        # elseif is_last_change_elbow(board)
-        #     update_ispinned_elbow!(board)
-        #     return nothing
-    end
-end
-
-@inline function is_simple_last_goal_loc(board, last_goal_loc, inverse)
-    # if the update comes from an inverse update, the last_goal_loc might be invalid (i.e. removal from moving loc, inverse placement, no relevant goal loc)
-    if inverse && last_goal_loc < 0
-        return true, INVALID_LOC
-    end
-    # there now is a tile at goal loc, if it has one neighbor is has created no cycles and a simple update can be done
-    one_neigh, that_neigh = has_one_neigh_and_get(board, last_goal_loc)
-    return one_neigh, that_neigh
-end
-
-@inline function is_simple_last_moving_loc(board, last_moving_loc, last_goal_loc)
-    if last_moving_loc < 0
-        return true, INVALID_LOC
-    end
-    # So a tile has moved avoid from last_moving_loc
-
-    # If it is not emtpy rn (tile was on top), nothing changes at the moving loc, return true, invalid_loc as if it was a placement
-    if get_tile_on_board(board, last_moving_loc) != EMPTY_TILE
-        return true, INVALID_LOC
-    end
-
-    # If it is now empty and it had one neigh and that neigh is now free
-    # make sure to avoid the last_goal_loc in the neigh check as that is the tile that just moved away from the movingloc
-    # only avoid the last_goal_loc if it is not on top of some other tile and it exists
-    skip_loc = INVALID_LOC
-    if last_goal_loc >= 0 && get_tile_height_unsafe(get_tile_on_board(board, last_goal_loc)) == 0x01
-        skip_loc = last_goal_loc
-    end
-    one_neigh, that_neigh = has_one_neigh_and_get(board, last_moving_loc; skip_loc=skip_loc)
-    return one_neigh && has_one_neigh(board, that_neigh), that_neigh
-end
-
 @inline function has_one_neigh_and_get(board, loc; skip_loc=INVALID_LOC)
     neighlocs = allneighs(loc)
     neighs = 0
@@ -833,27 +780,6 @@ end
         return false, INVALID_LOC
     end
     return true, neigh
-end
-
-@inline function has_one_neigh(board, loc)
-    return has_one_neigh_and_get(board, loc)[1]
-end
-
-@inline function update_ispinned_simple!(
-    board, last_goal_loc, goal_neigh, last_moving_loc, moving_neigh
-)
-    if moving_neigh >= 0
-        remove!(board.ispinned, moving_neigh)
-    end
-
-    # If the goal_loc exists,
-    # Then, at the goal loc, the neigh becomes stuck and you are unstuck
-    if last_goal_loc >= 0
-        remove!(board.ispinned, last_goal_loc)
-        set!(board.ispinned, goal_neigh)
-    end
-
-    return nothing
 end
 
 @inline function get_last_changed_locs(board)
@@ -924,8 +850,10 @@ GetArticulationPoints(i, d)
 
         if board.queen_pos_white >= 0
             start_loc = board.queen_pos_white
-        else
+        elseif board.queen_pos_black >= 0
             start_loc = board.queen_pos_black
+        else
+            start_loc = MID
         end
         get_pinned_tiles_general!(board, visited, depth_dict, low_dict, parent_dict, start_loc, 0)
     end

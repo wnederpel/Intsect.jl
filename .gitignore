@@ -7,3 +7,4 @@ reference/
 precompile_temp.jl
 intsect_exe/
 engines/intsect*/
+build

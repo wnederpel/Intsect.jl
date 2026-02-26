@@ -4,9 +4,11 @@ using Profile: Profile
 
 depth = 5
 # gamestring = raw"Base+MLP;InProgress;white[5]"
-gamestring = raw"Base+MLP;InProgress;white[5];wL;bL wL\;wM \wL;bM bL\;wA1 /wM;bA1 /bL;wQ wM/;bQ bM-;wA2 wQ\;bA2 bA1\;wA2 /bA2;bA1 /wA1;wB1 wQ\;bP bA2-;wM wB1\;bB1 \bA2;wA3 -wQ;bS1 /bA1;wA3 -bS1"
-perft(depth; game_string=gamestring, output=true)
-
+# gamestring = raw"Base+MLP;InProgress;white[11];wB1;bS1 wB1-;wQ /wB1;bQ bS1/;wG1 -wB1;bG1 bS1-;wM -wQ;bM bQ-;wP /wQ;bP bQ/;wL -wG1;bL bG1-;wA1 wQ\;bB1 \bQ;wS1 wA1-;bA1 -bB1;wA2 -wP;bA2 bP-;wA2 wS1/;bA2 /bA1"
+gamestring = raw"Base+MLP;InProgress;Black[3];wA1;bA1 wA1/;wB1 wA1\;bA2 bA1/;wG1 /wA1;bQ bA1-;wQ -wG1;bA2 bQ\\"
+for i in 1:depth
+    perft(i; game_string=gamestring, output=true)
+end
 # Profile.clear()
 # Profile.@profile perft(depth; game_string=gamestring, output=false)
 # PProf.pprof()
