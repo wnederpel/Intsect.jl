@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Julia
+        uses: julia-actions/setup-julia@v1
+        with:
+          version: '1.12'
+
+      - name: Install build tools (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang make
+
+      - name: Instantiate Julia environment
+        run: julia --project=. -e "using Pkg; Pkg.instantiate()"
+
+      - name: Add JuliaC
+        run: julia --project=. -e "using Pkg; Pkg.add(\"JuliaC\")"
+
+      - name: Build with JuliaC
+        run: |
+          julia --project=. --startup-file=no -e "using JuliaC; JuliaC.main(ARGS)" -- \
+            --output-exe intsect \
+            --bundle engines/intsect-${{ runner.os }}-build \
+            --trim=safe \
+            ../intsect.jl
+
+      - name: Run tests
+        run: julia --project=. -e "using Pkg; Pkg.test()"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: intsect-${{ runner.os }}-build
+          path: engines/intsect-${{ runner.os }}-build/
