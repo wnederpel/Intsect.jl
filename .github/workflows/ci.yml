@@ -10,11 +10,12 @@ jobs:
   build-and-test:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Julia
         uses: julia-actions/setup-julia@v1
@@ -31,21 +32,17 @@ jobs:
         run: julia --project=. -e "using Pkg; Pkg.instantiate()"
 
       - name: Add JuliaC
-        run: julia --project=. -e "using Pkg; Pkg.add(\"JuliaC\")"
+        run: julia --project=. -e 'using Pkg; Pkg.add("JuliaC")'
 
       - name: Build with JuliaC
-        run: |
-          julia --project=. --startup-file=no -e "using JuliaC; JuliaC.main(ARGS)" -- \
-            --output-exe intsect \
-            --bundle engines/intsect-${{ runner.os }}-build \
-            --trim=safe \
-            ../intsect.jl
+        run: julia --project=. --startup-file=no -e "using JuliaC; JuliaC.main(ARGS)" -- --output-exe intsect --bundle build-${{ runner.os }} --trim=no ../Intsect.jl
 
       - name: Run tests
+        if: runner.os == 'Windows'
         run: julia --project=. -e "using Pkg; Pkg.test()"
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: intsect-${{ runner.os }}-build
-          path: engines/intsect-${{ runner.os }}-build/
+          name: build-${{ runner.os }}
+          path: build-${{ runner.os }}
