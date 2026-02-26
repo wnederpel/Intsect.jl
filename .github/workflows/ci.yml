@@ -39,6 +39,8 @@ jobs:
         run: julia --project=. -e "using Pkg; Pkg.test()"
 
       - name: Build with JuliaC
+        env:
+          JULIA_CPU_TARGET: generic
         run: julia --project=. --startup-file=no -e "using JuliaC; JuliaC.main(ARGS)" -- --output-exe intsect --bundle build-${{ runner.os }} --trim=no ../Intsect.jl
 
       - name: Upload build artifact
