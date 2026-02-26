@@ -10,6 +10,5 @@ include("bb_tests.jl")
 include("perft_diff_test.jl")
 include("ladybug_tests.jl")
 include("pillbug_tests.jl")
-include("suggested_actions_test.jl")
 
 @run_package_tests verbose = true

@@ -70,8 +70,12 @@ function format_with_dots(n)
     return join(reverse(parts), '.')
 end
 
-const NOKAMUTE_PATH::String = joinpath(@__DIR__, "..", "..", "engines", Sys.iswindows() ? "nokamute.exe" : "nokamute")
-const MZINGA_PATH::String = joinpath(@__DIR__, "..", "..", "engines", Sys.iswindows() ? "MzingaEngine.exe" : "MzingaEngine")
+const NOKAMUTE_PATH::String = joinpath(
+    @__DIR__, "..", "..", "engines", Sys.iswindows() ? "nokamute.exe" : "nokamute"
+)
+const MZINGA_PATH::String = joinpath(
+    @__DIR__, "..", "..", "engines", Sys.iswindows() ? "MzingaEngine.exe" : "MzingaEngine"
+)
 
 """
     nokamute_valid_moves(game_string; exe=NOKAMUTE_PATH)
@@ -132,7 +136,6 @@ function compare_valid_moves_report(board, game_string, my_nodes, their_nodes; e
     your_indices = collect(list_actions!(board, buf))
     your_moves = Set(move_to_str(board, i) for i in your_indices)
     if length(your_moves) != my_nodes
-        show(board)
         println(
             "Warning: your reported perft count $my_nodes does not match your valid move count $(length(your_moves))",
         )

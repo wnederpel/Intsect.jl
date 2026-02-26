@@ -169,7 +169,6 @@ end
     pillbug_throws_to = HexSet()
     pillbugmoves_throw(board, wP_loc, ispinned, pillbug_throws_from, pillbug_throws_to)
 
-    show(board)
     # pill bug can only throw bQ and wQ
     remove!(pillbug_throws_from, bQ_loc)
     remove!(pillbug_throws_from, wQ_loc)
