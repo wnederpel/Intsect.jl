@@ -41,7 +41,8 @@ jobs:
       - name: Build with JuliaC
         env:
           JULIA_CPU_TARGET: generic
-        run: julia --project=. --startup-file=no -e "using JuliaC; JuliaC.main(ARGS)" -- --output-exe intsect --bundle build-${{ runner.os }} --trim=no ../Intsect.jl
+          JULIA_CC: "gcc -Wl,--no-as-needed -lm"
+        run: julia --project=. --startup-file=no -e "using JuliaC; JuliaC.main(ARGS)" -- --output-exe intsect-${{ runner.os }} --trim=no ../Intsect.jl
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
