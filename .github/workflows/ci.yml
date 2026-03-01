@@ -49,3 +49,20 @@ jobs:
         with:
           name: build-${{ runner.os }}
           path: build-${{ runner.os }}
+
+  arenant-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Julia
+        uses: julia-actions/setup-julia@v1
+        with:
+          version: '1.12'
+
+      - name: Instantiate Julia environment
+        run: julia --project=. -e "using Pkg; Pkg.instantiate()"
+
+      - name: Run Arenant
+        run: julia --project=. --startup-file=no -e "using Intsect; Intsect.Arenant.run_arena(debug=false, time_limit_s=0.1, full_debug=false)"
