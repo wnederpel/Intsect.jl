@@ -5,4 +5,4 @@ tmp/
 reference/
 precompile_temp.jl
 intsect_exe/
-engines/intsect*/
+# engines/*/

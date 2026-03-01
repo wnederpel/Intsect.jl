@@ -86,7 +86,7 @@ function iterative_deepening(
         end
     end
     if best_move == Int32(-1)
-        best_move = action_index(rand(validactions(board), 1))
+        best_move = action_index(rand(validactions(board), 1)[begin])
         debug && println("No valid moves found, returning a random move")
         debug && show(best_move, board)
         # No valid moves, just return a pass

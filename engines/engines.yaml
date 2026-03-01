@@ -1,6 +1,8 @@
 intsect:
-  - intsect.bat intsect-first-build
-  - source
+  # - intsect.bat 2026-03-01_1_negamax
+  # - intsect.bat 2026-03-01_2_suggested_actions
+  - intsect.bat 2026-03-01_3_transposition_table
+  # - source
 existing_engines:
-  # - MzingaEngine.exe
-  # - nokamute.exe
+  - MzingaEngine.exe
+  - nokamute.exe

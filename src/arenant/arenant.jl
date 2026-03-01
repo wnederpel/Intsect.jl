@@ -286,7 +286,7 @@ function play_one_match(
     if !is_source2
         shutdown_engine(engine2, engine2_name; debug=debug)
     end
-    return DRAW
+    return Intsect.DRAW
 end
 
 """
@@ -501,6 +501,7 @@ function run_arena(;
         return nothing
     end
 
+    # Play each intsect engine against the next one
     for i in 1:(length(intsect_specs) - 1)
         older_intsect = intsect_specs[i]
         newer_intsect = intsect_specs[i + 1]
@@ -512,12 +513,14 @@ function run_arena(;
             full_debug=full_debug,
         )
     end
+    # Make all existing engines fight the latest intsect
     latest_intsect = intsect_specs[end]
     for existing in existing_specs
         faceoff(
             latest_intsect, existing; time_limit_s=time_limit_s, debug=debug, full_debug=full_debug
         )
     end
+    # And check if the new engine is better against the existing engines than the previous build
     if length(intsect_specs) > 1
         runner_up_intsect = intsect_specs[end - 1]
         for existing in existing_specs
