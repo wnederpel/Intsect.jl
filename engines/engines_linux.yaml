@@ -1,6 +1,0 @@
-intsect:
-  # - intsect-linux-build.sh
-  - source
-existing_engines:
-  - MzingaEngine
-  - nokamute

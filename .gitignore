@@ -1,4 +1,3 @@
-.idea/
 alloc-profile.pb.gz
 profile.pb.gz
 .vscode/
@@ -7,5 +6,3 @@ reference/
 precompile_temp.jl
 intsect_exe/
 engines/intsect*/
-build
-/*.dll.a
