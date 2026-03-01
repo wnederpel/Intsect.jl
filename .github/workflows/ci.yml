@@ -42,10 +42,10 @@ jobs:
         env:
           JULIA_CPU_TARGET: generic
           JULIA_CC: "gcc -Wl,--no-as-needed -lm"
-        run: julia --project=. --startup-file=no -e "using JuliaC; JuliaC.main(ARGS)" -- --output-exe intsect-${{ runner.os }} --trim=no ../Intsect.jl
+        run: julia --project=. --startup-file=no -e "using JuliaC; JuliaC.main(ARGS)" -- --output-exe intsect --bundle build-${{ runner.os }} --trim=no ../Intsect.jl
 
-      - name: Upload executable artifact
+      - name: Upload build dir
         uses: actions/upload-artifact@v4
         with:
-          name: intsect-${{ runner.os }}
-          path: intsect-${{ runner.os }}
+          name: build-${{ runner.os }}
+          path: build-${{ runner.os }}
