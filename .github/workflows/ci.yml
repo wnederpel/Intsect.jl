@@ -65,4 +65,4 @@ jobs:
         run: julia --project=. -e "using Pkg; Pkg.instantiate()"
 
       - name: Run Arenant
-        run: julia --project=. --startup-file=no -e "using Intsect; Intsect.Arenant.run_arena(debug=false, time_limit_s=0.1, full_debug=false)"
+        run: julia --project=. --startup-file=no -e "using Intsect; Intsect.Arenant.run_arena(debug=false, time_limit_s=0.01, full_debug=false)"
