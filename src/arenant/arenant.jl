@@ -323,7 +323,7 @@ function format_results_block(results, positions, engine1_name, engine2_name)
     io = IOBuffer()
 
     println(io, "\n" * "="^70)
-    println(io, "RESULTS")
+    println(io, "RESULTS $engine1_name vs $engine2_name")
     println(io, "="^70)
     println(io, "Total games played: $(results["total_games"])")
     println(io, "Total positions: $(length(positions))")
@@ -336,12 +336,12 @@ function format_results_block(results, positions, engine1_name, engine2_name)
     total = results["total_games"]
 
     if total > 0
-        println(io, "Engine 1 ($engine1_name):")
+        println(io, "$engine1_name:")
         println(
             io, "  Wins: $engine1_total / $total ($(round(engine1_total/total*100, digits=1))%)"
         )
         println(io)
-        println(io, "Engine 2 ($engine2_name):")
+        println(io, "$engine2_name:")
         println(
             io, "  Wins: $engine2_total / $total ($(round(engine2_total/total*100, digits=1))%)"
         )
@@ -464,7 +464,7 @@ function faceoff(
     print(results_block)
 
     if results_path !== nothing
-        open(results_path, "w") do io
+        open(results_path, "a") do io
             write(io, results_block)
         end
     end
@@ -483,8 +483,17 @@ function faceoff(
 end
 
 function run_arena(;
-    debug=false, time_limit_s=0.05, engines_file="./engines/engines.yaml", full_debug=false
+    debug=false,
+    time_limit_s=0.05,
+    engines_file="./engines/engines.yaml",
+    full_debug=false,
+    results_path=nothing,
 )
+    if results_path !== nothing
+        open(results_path, "w") do _
+        end
+    end
+
     engines = YAML.load_file(engines_file)
     intsect_engines = engines["intsect"]
     existing_engines = engines["existing_engines"]
@@ -511,13 +520,19 @@ function run_arena(;
             time_limit_s=time_limit_s,
             debug=debug,
             full_debug=full_debug,
+            results_path=results_path,
         )
     end
     # Make all existing engines fight the latest intsect
     latest_intsect = intsect_specs[end]
     for existing in existing_specs
         faceoff(
-            latest_intsect, existing; time_limit_s=time_limit_s, debug=debug, full_debug=full_debug
+            latest_intsect,
+            existing;
+            time_limit_s=time_limit_s,
+            debug=debug,
+            full_debug=full_debug,
+            results_path=results_path,
         )
     end
     # And check if the new engine is better against the existing engines than the previous build
@@ -530,6 +545,7 @@ function run_arena(;
                 time_limit_s=time_limit_s,
                 debug=debug,
                 full_debug=full_debug,
+                results_path=results_path,
             )
         end
     end

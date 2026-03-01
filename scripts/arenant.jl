@@ -2,8 +2,8 @@ using Intsect
 
 time_limit = 0.1
 debug = false
-full_debug = true
-Arenant.run_arena(; debug=debug, time_limit_s=time_limit, full_debug=full_debug)
+full_debug = false
+Arenant.run_arena(; debug=debug, time_limit_s=time_limit, full_debug=full_debug, results_path="./arenant_results.txt")
 # Arenant.play_one_match(
 #     "engines\\source",
 #     "engines\\nokamute.exe",
