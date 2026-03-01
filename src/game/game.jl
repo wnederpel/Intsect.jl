@@ -299,9 +299,11 @@ function action_from_move_string(board::Board, move_string)
         action = Pass()
         valid_actions = validactions(board)
         if !(action in valid_actions)
-            show(board)
-            show(valid_actions, board)
-            println(action)
+            if !SUPPRESS_ACTION_ERROR_OUTPUT[]
+                show(board)
+                show(valid_actions, board)
+                println(action)
+            end
             error("Invalid action: '$(move_string)' not present in valid actions")
         end
         return action
@@ -362,9 +364,11 @@ function action_from_move_string(board::Board, move_string)
     end
     valid_actions = validactions(board)
     if !(action in valid_actions)
-        show(board)
-        show(valid_actions, board)
-        println(action)
+        if !SUPPRESS_ACTION_ERROR_OUTPUT[]
+            show(board)
+            show(valid_actions, board)
+            println(action)
+        end
         error("Invalid action: '$(move_string)' not present in valid actions")
     end
     board.action_index = 1

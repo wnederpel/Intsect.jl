@@ -1,6 +1,8 @@
 using Test, TestItems, TestItemRunner
 using Intsect
 
+Intsect.SUPPRESS_ACTION_ERROR_OUTPUT[] = true
+
 include("move_generation_test_basic.jl")
 include("move_generation_test_special.jl")
 include("placement_generation_test.jl")

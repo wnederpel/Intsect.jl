@@ -262,7 +262,12 @@ recurses on the first child that also mismatches, until depth==1.
 Returns true on match, false if a mismatch path was found (and printed).
 """
 function diff_perft!(
-    board, game_string::AbstractString, depth::Integer; exe=NOKAMUTE_PATH, stop_on_first::Bool=true
+    board,
+    game_string::AbstractString,
+    depth::Integer;
+    exe=NOKAMUTE_PATH,
+    stop_on_first::Bool=true,
+    debug=false,
 )
     # your count
     my_nodes = perft(depth, board)
@@ -273,7 +278,7 @@ function diff_perft!(
 
     their_nodes = nk[depth]
     if my_nodes == their_nodes
-        println("OK depth $depth => $my_nodes")
+        debug && println("OK depth $depth => $my_nodes")
         return true
     end
 
@@ -333,6 +338,7 @@ function verify_perft(
     type=MLPGame,
     exe=NOKAMUTE_PATH,
     stop_on_first::Bool=true,
+    debug=false,
 )::Bool
     board = handle_newgame_command(type)
 
@@ -346,12 +352,12 @@ function verify_perft(
     end
     # show(board; simple=false)
     for d in 1:maxdepth
-        println("=== depth $d ===")
-        ok = diff_perft!(board, game_string, d; exe, stop_on_first=stop_on_first)
+        debug && println("=== depth $d ===")
+        ok = diff_perft!(board, game_string, d; exe, stop_on_first=stop_on_first, debug=debug)
         if !ok
             return false
         end
     end
-    println("All depths 1..$maxdepth matched.")
+    debug && println("All depths 1..$maxdepth matched.")
     return true
 end
