@@ -1,3 +1,11 @@
+
+struct EngineSpec
+    name::String
+    cmd::Union{Cmd,Nothing}
+    is_source::Bool
+    path_hint::String
+end
+
 """
     shutdown_engine(proc, engine_name; timeout_s=2.0, debug=false)
 
@@ -40,11 +48,11 @@ function shutdown_engine(proc, engine_name; timeout_s=2.0, debug=false)
 end
 
 """
-    play_one_match(engine1_path, engine2_path, time_limit; starting_position="", debug=false)
+    play_one_match(engine1, engine2, time_limit; starting_position="", debug=false)
 
 Plays two UHP engines against each other from a given starting position until one wins.
-- engine1_path: Path to first engine executable
-- engine2_path: Path to second engine executable  
+- engine1: EngineSpec for first engine
+- engine2: EngineSpec for second engine
 - time_limit: Thinking time per move in seconds
 - starting_position: Starting moves separated by semicolons (default: empty for new game)
 - debug: Print debug statements (default: false)
@@ -52,32 +60,28 @@ Plays two UHP engines against each other from a given starting position until on
 Returns 1 if engine1 wins, 2 if engine2 wins, 0 for draw.
 """
 function play_one_match(
-    engine1_path::String,
-    engine2_path::String,
-    time_limit_s::Real;
-    starting_position="",
-    debug=false,
+    engine1::EngineSpec, engine2::EngineSpec, time_limit_s::Real; starting_position="", debug=false
 )
-    engine1_name = split(basename(engine1_path), '.')[1]
-    engine2_name = split(basename(engine2_path), '.')[1]
+    engine1_name = engine1.name
+    engine2_name = engine2.name
     engine_names = [engine1_name, engine2_name]
     println("White: $engine1_name vs Black: $engine2_name")
-    is_source1 = contains(engine1_path, "source")
-    is_source2 = contains(engine2_path, "source")
+    is_source1 = engine1.is_source
+    is_source2 = engine2.is_source
     is_source = [is_source1, is_source2]
-    engine_paths = [engine1_path, engine2_path]
+    engine_paths = [engine1.path_hint, engine2.path_hint]
 
     # Start both engines
     debug && println("[DEBUG] Starting engine 1...")
     if !is_source1
-        engine1 = open(`$engine1_path`, "r+")
+        engine1 = open(engine1.cmd, "r+")
     else
         engine1 = nothing
     end
     debug && println("[DEBUG] Engine 1 started")
     debug && println("[DEBUG] Starting engine 2...")
     if !is_source2
-        engine2 = open(`$engine2_path`, "r+")
+        engine2 = open(engine2.cmd, "r+")
     else
         engine2 = nothing
     end
@@ -352,11 +356,11 @@ function format_results_block(results, positions, engine1_name, engine2_name)
 end
 
 """
-    faceoff(engine1_path, engine2_path; time_limit=1.0, positions_file="starting_positions.txt", debug=false)
+    faceoff(engine1, engine2; time_limit=1.0, positions_file="starting_positions.txt", debug=false)
 
 Plays two engines against each other through all starting positions, with each engine playing both colors.
-- engine1_path: Path to first engine executable
-- engine2_path: Path to second engine executable
+- engine1: EngineSpec for first engine
+- engine2: EngineSpec for second engine
 - time_limit: Thinking time per move in seconds (default: 1.0)
 - positions_file: File containing starting positions (default: "starting_positions.txt")
 - debug: Print debug statements (default: false)
@@ -364,16 +368,16 @@ Plays two engines against each other through all starting positions, with each e
 Returns a summary of results.
 """
 function faceoff(
-    engine1_path::String,
-    engine2_path::String;
+    engine1::EngineSpec,
+    engine2::EngineSpec;
     time_limit_s=1,
     positions_file="./starting_positions.txt",
     debug=false,
     results_path=nothing,
     full_debug=false,
 )
-    engine1_name = split(basename(engine1_path), '.')[1]
-    engine2_name = split(basename(engine2_path), '.')[1]
+    engine1_name = engine1.name
+    engine2_name = engine2.name
     println("\n" * "="^70)
     println("Faceoff between:")
     println("Engine 1: $engine1_name")
@@ -395,11 +399,7 @@ function faceoff(
         # Game 1: Engine1 as White, Engine2 as Black
         try
             result1 = play_one_match(
-                engine1_path,
-                engine2_path,
-                time_limit_s;
-                starting_position=position,
-                debug=full_debug,
+                engine1, engine2, time_limit_s; starting_position=position, debug=full_debug
             )
 
             if result1 == WHITE
@@ -428,11 +428,7 @@ function faceoff(
         # Game 2: Engine2 as White, Engine1 as Black
         try
             result2 = play_one_match(
-                engine2_path,
-                engine1_path,
-                time_limit_s;
-                starting_position=position,
-                debug=full_debug,
+                engine2, engine1, time_limit_s; starting_position=position, debug=full_debug
             )
 
             if result2 == WHITE
@@ -498,13 +494,16 @@ function run_arena(;
 
     engines_dir = "engines"
 
-    # Resolve paths relative to engines directory
-    intsect_paths = [joinpath(".", engines_dir, engine) for engine in intsect_engines]
-    existing_paths = [joinpath(".", engines_dir, engine) for engine in existing_engines]
+    intsect_specs = parse_engine_list(intsect_engines; engines_dir=engines_dir)
+    existing_specs = parse_engine_list(existing_engines; engines_dir=engines_dir)
+    if isempty(intsect_specs)
+        @warn "No valid intsect engines found; check engines.yaml entries."
+        return nothing
+    end
 
-    for i in 1:(length(intsect_paths) - 1)
-        older_intsect = intsect_paths[i]
-        newer_intsect = intsect_paths[i + 1]
+    for i in 1:(length(intsect_specs) - 1)
+        older_intsect = intsect_specs[i]
+        newer_intsect = intsect_specs[i + 1]
         faceoff(
             older_intsect,
             newer_intsect;
@@ -513,15 +512,15 @@ function run_arena(;
             full_debug=full_debug,
         )
     end
-    latest_intsect = intsect_paths[end]
-    for existing in existing_paths
+    latest_intsect = intsect_specs[end]
+    for existing in existing_specs
         faceoff(
             latest_intsect, existing; time_limit_s=time_limit_s, debug=debug, full_debug=full_debug
         )
     end
-    if length(intsect_paths) > 1
-        runner_up_intsect = intsect_paths[end - 1]
-        for existing in existing_paths
+    if length(intsect_specs) > 1
+        runner_up_intsect = intsect_specs[end - 1]
+        for existing in existing_specs
             faceoff(
                 runner_up_intsect,
                 existing;
@@ -533,4 +532,51 @@ function run_arena(;
     end
 
     return nothing
+end
+
+function parse_engine_entry(entry::String; engines_dir="engines")
+    entry_str = strip(entry)
+    if isempty(entry_str)
+        return nothing
+    end
+    if entry_str == "source"
+        return EngineSpec("source", nothing, true, "source")
+    end
+
+    parts = split(entry_str)
+    if length(parts) >= 2 && (parts[1] == "intsect" || parts[1] == "intsect.bat")
+        folder = strip(join(parts[2:end], " "))
+        if isempty(folder)
+            @warn "intsect entry missing folder: $entry"
+            return nothing
+        end
+        folder_path = isabspath(folder) ? folder : joinpath(".", engines_dir, folder)
+        folder_path = abspath(folder_path)
+        exe_path = joinpath(folder_path, "bin", "intsect.exe")
+        if !isdir(folder_path) || !isfile(exe_path)
+            @warn "Skipping intsect entry; folder or exe missing: $folder_path"
+            return nothing
+        end
+        bat_path = joinpath(".", engines_dir, "intsect.bat")
+        bat_cmd = `$(bat_path) $(folder_path)`
+        engine_name = "intsect-" * basename(folder_path)
+        return EngineSpec(engine_name, bat_cmd, false, exe_path)
+    end
+
+    path = isabspath(entry_str) ? entry_str : joinpath(".", engines_dir, entry_str)
+    path = normpath(path)
+    cmd = `$(path)`
+    name = split(basename(path), ".")[1]
+    return EngineSpec(name, cmd, false, path)
+end
+
+function parse_engine_list(entries; engines_dir="engines")
+    specs = EngineSpec[]
+    for entry in entries
+        spec = parse_engine_entry(string(entry); engines_dir=engines_dir)
+        if spec !== nothing
+            push!(specs, spec)
+        end
+    end
+    return specs
 end
