@@ -184,10 +184,8 @@ function minimax(
             suggested_moves_buffer,
         )
 
-        # for i in 1:idx
-        #     action_as_index = ordered_move_buffer[i]
-        for i in 1:(board.action_index - 1)
-            action_as_index = move_buffer[i]
+        for i in 1:idx
+            action_as_index = ordered_move_buffer[i]
 
             do_action(board, action_as_index)
 
