@@ -133,7 +133,7 @@ function minimax(
             elseif search_entry.type == :upperbound && stored_score <= alpha
                 return stored_score, stored_refutation_move
             end
-        # end
+        end
     end
 
     # maximizing = board.current_color == WHITE
