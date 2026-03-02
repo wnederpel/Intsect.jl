@@ -2,6 +2,7 @@ function handle_info_command()
     println("id Intsect v1.0")
     println("Mosquito;Ladybug;Pillbug")
     println("ok")
+    flush(stdout)
     return nothing
 end
 
@@ -29,6 +30,7 @@ function start(board, gamestring)
                 end
             elseif command == "exit"
                 println("ok")
+                flush(stdout)
                 break
             elseif startswith(command, "newgame")
                 if occursin(";", command)
@@ -112,6 +114,7 @@ function start(board, gamestring)
                     end
                     if action !== nothing
                         println(move_string_from_action(board, action))
+                        flush(stdout)
                     end
                 elseif command == "show"
                     show(board; show_locs=false, simple=false)
@@ -142,6 +145,7 @@ function start(board, gamestring)
                 end
             end
             println("ok")
+            flush(stdout)
         catch e
             if isa(e, ErrorException)
                 println("err " * e.msg)
@@ -171,6 +175,7 @@ function start(board, gamestring)
             end
             show(gamestring)
             println("ok")
+            flush(stdout)
         end
     end
     return nothing
