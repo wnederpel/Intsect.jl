@@ -576,10 +576,11 @@ function parse_engine_entry(entry::String; engines_dir="engines")
             @warn "Skipping intsect entry; folder or exe missing: $folder_path"
             return nothing
         end
-        bat_path = joinpath(".", engines_dir, "intsect.bat")
-        bat_cmd = `$(bat_path) $(folder_path)`
+        # Run the exe directly instead of through intsect.bat to avoid
+        # cmd.exe buffering stdout, which causes hangs in CI pipe I/O.
+        exe_cmd = `$(exe_path)`
         engine_name = "intsect-" * basename(folder_path)
-        return EngineSpec(engine_name, bat_cmd, false, exe_path)
+        return EngineSpec(engine_name, exe_cmd, false, exe_path)
     end
 
     path = isabspath(entry_str) ? entry_str : joinpath(".", engines_dir, entry_str)
