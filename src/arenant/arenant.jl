@@ -16,7 +16,7 @@ function shutdown_engine(proc, engine_name; timeout_s=2.0, debug=false)
         return nothing
     end
     try
-        write(proc, "quit\n")
+        write(proc, "exit\n")
         flush(proc)
     catch
         # Ignore write errors if the process already exited.
@@ -576,13 +576,10 @@ function parse_engine_entry(entry::String; engines_dir="engines")
             @warn "Skipping intsect entry; folder or exe missing: $folder_path"
             return nothing
         end
-        # Run the exe directly instead of through intsect.bat to avoid
-        # cmd.exe buffering stdout, which causes hangs in CI pipe I/O.
-        # Add the exe's bin/ directory to PATH so DLLs are found.
-        bin_dir = joinpath(folder_path, "bin")
-        exe_cmd = addenv(`$(exe_path)`, "PATH" => bin_dir * ";" * ENV["PATH"])
+        bat_path = joinpath(".", engines_dir, "intsect.bat")
+        bat_cmd = `$(bat_path) $(folder_path)`
         engine_name = "intsect-" * basename(folder_path)
-        return EngineSpec(engine_name, exe_cmd, false, exe_path)
+        return EngineSpec(engine_name, bat_cmd, false, exe_path)
     end
 
     path = isabspath(entry_str) ? entry_str : joinpath(".", engines_dir, entry_str)

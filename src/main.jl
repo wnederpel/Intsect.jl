@@ -18,7 +18,17 @@ end
 function start(board, gamestring)
     while true
         prev_board = board
-        command = readline()
+        local command
+        try
+            command = readline()
+        catch e
+            # stdin closed or pipe broken — exit gracefully
+            break
+        end
+        # EOF on stdin returns ""; exit cleanly
+        if isempty(command) && eof(stdin)
+            break
+        end
         try
             if command == "info"
                 handle_info_command()
@@ -147,7 +157,10 @@ function start(board, gamestring)
             println("ok")
             flush(stdout)
         catch e
-            if isa(e, ErrorException)
+            if e isa Base.IOError
+                # Pipe broken — exit silently
+                break
+            elseif isa(e, ErrorException)
                 println("err " * e.msg)
             else
                 io = IOBuffer()
