@@ -578,7 +578,9 @@ function parse_engine_entry(entry::String; engines_dir="engines")
         end
         # Run the exe directly instead of through intsect.bat to avoid
         # cmd.exe buffering stdout, which causes hangs in CI pipe I/O.
-        exe_cmd = `$(exe_path)`
+        # Add the exe's bin/ directory to PATH so DLLs are found.
+        bin_dir = joinpath(folder_path, "bin")
+        exe_cmd = addenv(`$(exe_path)`, "PATH" => bin_dir * ";" * ENV["PATH"])
         engine_name = "intsect-" * basename(folder_path)
         return EngineSpec(engine_name, exe_cmd, false, exe_path)
     end
