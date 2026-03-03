@@ -6,6 +6,58 @@ struct EngineSpec
     path_hint::String
 end
 
+function spawn_engine(cmd::Cmd)
+    # Merge stderr into stdout so startup failures are visible to the parent.
+    return open(pipeline(cmd; stderr=stdout), "r+")
+end
+
+function read_until_ok(proc, engine_name; timeout_s=5.0, debug=false, context="")
+    start_time = time()
+    last_line = ""
+    while (time() - start_time) < timeout_s
+        if Base.process_exited(proc)
+            break
+        end
+        if bytesavailable(proc) > 0
+            line = strip(readline(proc))
+            debug && println("[DEBUG] $engine_name $context: $line")
+            last_line = line
+            if startswith(line, "ok")
+                return true
+            end
+        else
+            sleep(0.01)
+        end
+    end
+    @warn "Timeout waiting for ok" engine_name context last_line
+    return false
+end
+
+function read_bestmove(proc, engine_name; timeout_s=5.0, debug=false)
+    start_time = time()
+    best_move = ""
+    last_line = ""
+    while (time() - start_time) < timeout_s
+        if Base.process_exited(proc)
+            break
+        end
+        if bytesavailable(proc) > 0
+            line = strip(readline(proc))
+            debug && println("[DEBUG] $engine_name response: $line")
+            last_line = line
+            if startswith(line, "ok")
+                return best_move
+            elseif !isempty(line)
+                best_move = line
+            end
+        else
+            sleep(0.01)
+        end
+    end
+    @warn "Timeout waiting for bestmove" engine_name last_line
+    return best_move
+end
+
 """
     shutdown_engine(proc, engine_name; timeout_s=2.0, debug=false)
 
@@ -74,14 +126,14 @@ function play_one_match(
     # Start both engines
     debug && println("[DEBUG] Starting engine 1...")
     if !is_source1
-        engine1 = open(engine1.cmd, "r+")
+        engine1 = spawn_engine(engine1.cmd)
     else
         engine1 = nothing
     end
     debug && println("[DEBUG] Engine 1 started")
     debug && println("[DEBUG] Starting engine 2...")
     if !is_source2
-        engine2 = open(engine2.cmd, "r+")
+        engine2 = spawn_engine(engine2.cmd)
     else
         engine2 = nothing
     end
@@ -94,13 +146,7 @@ function play_one_match(
             debug && println("[DEBUG] Engine $i is source")
         else
             debug && println("[DEBUG] Reading greeting from engine $i")
-            while !eof(engine)
-                line = readline(engine)
-                debug && println("[DEBUG] Engine $i: $line")
-                if startswith(line, "ok")
-                    break
-                end
-            end
+            read_until_ok(engine, engine_names[i]; timeout_s=10.0, debug=debug, context="greeting")
         end
     end
     debug && println("[DEBUG] Greetings complete")
@@ -122,13 +168,7 @@ function play_one_match(
             write(engine, "newgame $game_state\n")
             flush(engine)
             # Wait for ok
-            while !eof(engine)
-                line = readline(engine)
-                debug && println("[DEBUG] Engine $i response: $line")
-                if startswith(line, "ok")
-                    break
-                end
-            end
+            read_until_ok(engine, engine_names[i]; timeout_s=10.0, debug=debug, context="newgame")
         end
     end
     debug && println("[DEBUG] Newgame commands complete")
@@ -165,16 +205,13 @@ function play_one_match(
             debug && println("[DEBUG] Bestmove request sent, waiting for response...")
 
             # Read the best move
-            best_move = ""
-            while !eof(current_engine)
-                line = strip(readline(current_engine))
-                debug && println("[DEBUG] $current_color response: $line")
-                if startswith(line, "ok")
-                    break
-                else
-                    best_move = line
-                end
-            end
+            response_timeout_s = max(5.0, time_limit_s + 2.0)
+            best_move = read_bestmove(
+                current_engine,
+                engine_names[current_engine_i];
+                timeout_s=response_timeout_s,
+                debug=debug,
+            )
         else
             board = current_engine_i == 1 ? source_board_1 : source_board_2
             debug && println("[DEBUG] Bestmove request sent, waiting for response...")
@@ -249,13 +286,9 @@ function play_one_match(
                 debug && println("[DEBUG] Sending play to engine $engine_i")
                 flush(engine)
                 # Wait for ok
-                while !eof(engine)
-                    line = readline(engine)
-                    debug && println("[DEBUG] Engine $engine_i play response: $line")
-                    if startswith(line, "ok")
-                        break
-                    end
-                end
+                read_until_ok(
+                    engine, engine_names[engine_i]; timeout_s=10.0, debug=debug, context="play"
+                )
             else
                 debug && println("[DEBUG] Engine $engine_i play response: ok")
             end
