@@ -5,7 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch
+  workflow_dispatch: {}
 
 jobs:
   build-and-test:
@@ -56,6 +56,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Set up Julia
         uses: julia-actions/setup-julia@v1
@@ -65,8 +67,27 @@ jobs:
       - name: Instantiate Julia environment
         run: julia --project=. -e "using Pkg; Pkg.instantiate()"
 
+      - name: Verify engine executables exist
+        run: |
+          $engines = @("2026-03-01_1_negamax", "2026-03-01_2_suggested_actions", "2026-03-01_3_transposition_table")
+          foreach ($engine in $engines) {
+            $exePath = "engines/$engine/bin/intsect.exe"
+            if (Test-Path $exePath) {
+              $fileInfo = Get-ItemProperty $exePath
+              Write-Output "✓ Found: $exePath (Size: $($fileInfo.Length) bytes)"
+              if ($fileInfo.Length -lt 1000) {
+                Write-Warning "⚠ File seems too small - might be LFS pointer file"
+                Get-Content $exePath -First 5
+              }
+            } else {
+              Write-Error "✗ Missing: $exePath"
+              exit 1
+            }
+          }
+        shell: pwsh
+
       - name: Run Arenant
-        run: julia --project=. --startup-file=no -e 'using Intsect; Intsect.Arenant.run_arena(debug=false, time_limit_s=0.01, full_debug=false, results_path="./arenant_results.txt")'
+        run: julia --project=. --startup-file=no -e 'using Intsect; Intsect.Arenant.run_arena(debug=false, time_limit_s=0.01, full_debug=true, results_path="./arenant_results.txt")'
 
       - name: Upload arenant results
         uses: actions/upload-artifact@v4
