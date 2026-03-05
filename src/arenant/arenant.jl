@@ -18,15 +18,11 @@ function read_until_ok(proc, engine_name; timeout_s=5.0, debug=false, context=""
         if Base.process_exited(proc)
             break
         end
-        if bytesavailable(proc) > 0
-            line = strip(readline(proc))
-            debug && println("[DEBUG] $engine_name $context: $line")
-            last_line = line
-            if startswith(line, "ok")
-                return true
-            end
-        else
-            sleep(0.01)
+        line = strip(readline(proc))
+        debug && println("[DEBUG] $engine_name $context: $line")
+        last_line = line
+        if startswith(line, "ok")
+            return true
         end
     end
     @warn "Timeout waiting for ok" engine_name context last_line
@@ -41,17 +37,13 @@ function read_bestmove(proc, engine_name; timeout_s=5.0, debug=false)
         if Base.process_exited(proc)
             break
         end
-        if bytesavailable(proc) > 0
-            line = strip(readline(proc))
-            debug && println("[DEBUG] $engine_name response: $line")
-            last_line = line
-            if startswith(line, "ok")
-                return best_move
-            elseif !isempty(line)
-                best_move = line
-            end
-        else
-            sleep(0.01)
+        line = strip(readline(proc))
+        debug && println("[DEBUG] $engine_name response: $line")
+        last_line = line
+        if startswith(line, "ok")
+            return best_move
+        elseif !isempty(line)
+            best_move = line
         end
     end
     @warn "Timeout waiting for bestmove" engine_name last_line
@@ -124,20 +116,20 @@ function play_one_match(
     engine_paths = [engine1.path_hint, engine2.path_hint]
 
     # Start both engines
-    debug && println("[DEBUG] Starting engine 1...")
-    if !is_source1
-        engine1 = spawn_engine(engine1.cmd)
-    else
-        engine1 = nothing
-    end
-    debug && println("[DEBUG] Engine 1 started")
-    debug && println("[DEBUG] Starting engine 2...")
-    if !is_source2
-        engine2 = spawn_engine(engine2.cmd)
-    else
-        engine2 = nothing
-    end
-    debug && println("[DEBUG] Engine 2 started")
+    # debug && println("[DEBUG] Starting engine 1...")
+    # if !is_source1
+    #     engine1 = spawn_engine(engine1.cmd)
+    # else
+    #     engine1 = nothing
+    # end
+    # debug && println("[DEBUG] Engine 1 started")
+    # debug && println("[DEBUG] Starting engine 2...")
+    # if !is_source2
+    #     engine2 = spawn_engine(engine2.cmd)
+    # else
+    #     engine2 = nothing
+    # end
+    # debug && println("[DEBUG] Engine 2 started")
 
     # Read initial greeting from both engines until "ok"
     debug && println("[DEBUG] Reading initial greetings...")
@@ -145,8 +137,25 @@ function play_one_match(
         if is_source[i]
             debug && println("[DEBUG] Engine $i is source")
         else
+            debug && println("[DEBUG] Starting engine $i...")
+            if i == 2
+                if !is_source2
+                    engine2 = spawn_engine(engine2.cmd)
+                else
+                    engine2 = nothing
+                end
+                engine = engine2
+            else
+                if !is_source1
+                    engine1 = spawn_engine(engine1.cmd)
+                else
+                    engine1 = nothing
+                end
+                engine = engine1
+            end
+            debug && println("[DEBUG] Engine $i started")
             debug && println("[DEBUG] Reading greeting from engine $i")
-            read_until_ok(engine, engine_names[i]; timeout_s=10.0, debug=debug, context="greeting")
+            read_until_ok(engine, engine_names[i]; timeout_s=50.0, debug=debug, context="greeting")
         end
     end
     debug && println("[DEBUG] Greetings complete")
@@ -596,7 +605,7 @@ function parse_engine_entry(entry::String; engines_dir="engines")
     end
 
     parts = split(entry_str)
-    if length(parts) >= 2 && (parts[1] == "intsect" || parts[1] == "intsect.bat")
+    if length(parts) >= 2 && (parts[1] == "intsect")
         folder = strip(join(parts[2:end], " "))
         if isempty(folder)
             @warn "intsect entry missing folder: $entry"
@@ -611,6 +620,8 @@ function parse_engine_entry(entry::String; engines_dir="engines")
         end
         bat_path = joinpath(".", engines_dir, "intsect.bat")
         bat_cmd = `$(bat_path) $(folder_path)`
+        exe_cmd = `$exe_path`
+        println("running $exe_path")
         engine_name = "intsect-" * basename(folder_path)
         return EngineSpec(engine_name, bat_cmd, false, exe_path)
     end

@@ -13,9 +13,6 @@ if not exist "%INTSECT_EXE%" (
     exit /b 1
 )
 
-rem Add engine bin dir to PATH so DLLs are found
-set "PATH=%INTSECT_ROOT%\bin;%PATH%"
-
 shift
 rem Run exe as the last command; stdin/stdout are inherited from the parent pipe.
 "%INTSECT_EXE%" %*
