@@ -126,13 +126,13 @@ function minimax(
         stored_suggested_move = search_entry.action_chosen
         stored_refutation_move = search_entry.refutation_move
         if search_entry.depth > depth - 0.05f0
-            if search_entry.type == :exact && !is_pv_node
-                return stored_score, stored_refutation_move
-            elseif search_entry.type == :lowerbound && stored_score >= beta
-                return stored_score, stored_refutation_move
-            elseif search_entry.type == :upperbound && stored_score <= alpha
-                return stored_score, stored_refutation_move
-            end
+            # if search_entry.type == :exact && !is_pv_node
+            #     return stored_score, stored_refutation_move
+            # elseif search_entry.type == :lowerbound && stored_score >= beta
+            #     return stored_score, stored_refutation_move
+            # elseif search_entry.type == :upperbound && stored_score <= alpha
+            #     return stored_score, stored_refutation_move
+            # end
         end
     end
 
@@ -184,8 +184,10 @@ function minimax(
             suggested_moves_buffer,
         )
 
-        for i in 1:idx
-            action_as_index = ordered_move_buffer[i]
+        # for i in 1:idx
+        #     action_as_index = ordered_move_buffer[i]
+        for i in 1:(board.action_index - 1)
+            action_as_index = move_buffer[i]
 
             do_action(board, action_as_index)
 
