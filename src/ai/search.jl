@@ -221,6 +221,29 @@ function minimax(
             if score > score_at_depth || score_at_depth == -Inf32
                 score_at_depth = score
                 action_chosen_at_depth = action_as_index
+
+                if score_at_depth > alpha
+                    # This is a pv move
+                    alpha = score_at_depth
+
+                    board.pv_store[steps_below_initial_ply + 1][steps_below_initial_ply + 1] =
+                        action_as_index
+                    if final_lvl
+                        # Terminate PV — no children to copy from
+                        if steps_below_initial_ply + 2 <= PV_STORE_SIZE
+                            board.pv_store[steps_below_initial_ply + 1][steps_below_initial_ply + 2] = Int32(
+                                -1
+                            )
+                        end
+                    else
+                        board.pv_store[steps_below_initial_ply + 1][(steps_below_initial_ply + 2):end] = board.pv_store[steps_below_initial_ply + 2][(steps_below_initial_ply + 2):end]
+                    end
+                    if debug
+                        search_debug_print(
+                            board, initial_ply, score_at_depth, action_chosen_at_depth
+                        )
+                    end
+                end
             end
 
             if beta <= score_at_depth
@@ -228,27 +251,6 @@ function minimax(
                 type = :lowerbound
                 killer_move_by_me = action_as_index
                 break
-            end
-
-            if score_at_depth > alpha
-                # This is a pv move
-                alpha = score_at_depth
-
-                board.pv_store[steps_below_initial_ply + 1][steps_below_initial_ply + 1] =
-                    action_as_index
-                if final_lvl
-                    # Terminate PV — no children to copy from
-                    if steps_below_initial_ply + 2 <= PV_STORE_SIZE
-                        board.pv_store[steps_below_initial_ply + 1][steps_below_initial_ply + 2] = Int32(
-                            -1
-                        )
-                    end
-                else
-                    board.pv_store[steps_below_initial_ply + 1][(steps_below_initial_ply + 2):end] = board.pv_store[steps_below_initial_ply + 2][(steps_below_initial_ply + 2):end]
-                end
-                if debug
-                    search_debug_print(board, initial_ply, score_at_depth, action_chosen_at_depth)
-                end
             end
 
             if timed_out[]

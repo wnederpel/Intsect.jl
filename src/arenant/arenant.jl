@@ -115,22 +115,6 @@ function play_one_match(
     is_source = [is_source1, is_source2]
     engine_paths = [engine1.path_hint, engine2.path_hint]
 
-    # Start both engines
-    # debug && println("[DEBUG] Starting engine 1...")
-    # if !is_source1
-    #     engine1 = spawn_engine(engine1.cmd)
-    # else
-    #     engine1 = nothing
-    # end
-    # debug && println("[DEBUG] Engine 1 started")
-    # debug && println("[DEBUG] Starting engine 2...")
-    # if !is_source2
-    #     engine2 = spawn_engine(engine2.cmd)
-    # else
-    #     engine2 = nothing
-    # end
-    # debug && println("[DEBUG] Engine 2 started")
-
     # Read initial greeting from both engines until "ok"
     debug && println("[DEBUG] Reading initial greetings...")
     for (i, engine) in enumerate([engine1, engine2])
