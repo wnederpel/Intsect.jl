@@ -71,7 +71,6 @@ function iterative_deepening(
                 debug,
                 board.pv_store[1][1];
                 suggested_moves=sa,
-                is_pv_node=true,
             )
             new_best_move = board.pv_store[1][1]
             if new_best_move != best_move
@@ -88,7 +87,7 @@ function iterative_deepening(
     if best_move == Int32(-1)
         best_move = action_index(rand(validactions(board), 1)[begin])
         debug && println("No valid moves found, returning a random move")
-        debug && show(best_move, board)
+        debug && show(ALL_ACTIONS[best_move], board)
         # No valid moves, just return a pass
     end
 
@@ -107,9 +106,9 @@ function minimax(
     debug::Bool,
     pv_move::Int32;
     suggested_moves::SuggestedActions,
-    is_pv_node::Bool=false,
     alpha::Float32=-Inf32,
     beta::Float32=Inf32,
+    pv_node::Bool=true,
 )
     final_lvl = depth < 1.5
     if board.gameover || depth < 0.5
@@ -125,15 +124,14 @@ function minimax(
         stored_score = search_entry.score
         stored_suggested_move = search_entry.action_chosen
         stored_refutation_move = search_entry.refutation_move
-        if search_entry.depth > depth - 0.05f0
-            if search_entry.type == :exact && !is_pv_node
+        if search_entry.depth > depth - 0.5f0 && !pv_node
+            if search_entry.type == :exact
                 return stored_score, stored_refutation_move
             elseif search_entry.type == :lowerbound && stored_score >= beta
                 return stored_score, stored_refutation_move
-            elseif search_entry.type == :upperbound && stored_score <= alpha
-                return stored_score, stored_refutation_move
             end
         end
+        add!(suggested_moves, stored_suggested_move)
     end
 
     # maximizing = board.current_color == WHITE
@@ -147,8 +145,6 @@ function minimax(
         # Yield to allow timer to trigger
         yield()
     end
-
-    @assert steps_below_initial_ply + 1 == buffer_idx
 
     killer_move_by_me = Int32(-1)
     buffer = depth <= length(PERFT_BUFFER) ? PERFT_BUFFER[buffer_idx] : default_buffer(AllocBuffer)
@@ -204,11 +200,11 @@ function minimax(
                 buffer_idx + 1,
                 nodes_processed,
                 debug,
-                board.pv_store[1][steps_below_initial_ply + 2];
+                board.pv_store[1][steps_below_initial_ply + 2]; # PV move to try first at next depth
                 alpha=-beta,
                 beta=-alpha,
                 suggested_moves=killer_moves_by_opp, # These are good moves the opp might be able to make
-                is_pv_node=(is_pv_node && action_as_index == pv_move),
+                pv_node=pv_node && (i == 1),
             )
             score = -returned_score
             if killer_move_by_opp != Int32(-1)
@@ -255,18 +251,12 @@ function minimax(
 
             if timed_out[]
                 # If we are timed out we stop after one iteration 
-                type = :incomplete
                 break
             end
         end
     end
 
-    if (
-        is_pv_node ||
-        current_hash != search_entry.full_hash ||
-        type == :exact ||
-        search_entry.depth < depth + 0.05
-    )
+    if (type == :exact || search_entry.depth < depth + 0.5)
         # Much to improve with transpositions tables.
         # https://deepwiki.com/search/does-stock-fish-have-a-tt-and_9a5e715f-a810-42f7-8ffb-901171686393
         # https://www.chessprogramming.org/Triangular_PV-table
