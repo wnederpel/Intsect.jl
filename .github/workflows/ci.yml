@@ -70,7 +70,7 @@ jobs:
         run: julia --project=. -e "using Pkg; Pkg.instantiate()"
 
       - name: Run Arenant
-        run: julia --project=. --startup-file=no -e 'using Intsect; Intsect.Arenant.run_arena(debug=false, time_limit_s=0.025, full_debug=false, results_path="./arenant_results.txt")'
+        run: julia --project=. --startup-file=no -e 'using Intsect; Intsect.Arenant.run_arena(debug=false, time_limit_s=0.05, full_debug=false, results_path="./arenant_results.txt")'
 
       - name: Print Arenant results
         shell: pwsh
