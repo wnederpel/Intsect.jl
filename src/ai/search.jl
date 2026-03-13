@@ -51,8 +51,7 @@ function iterative_deepening(
         for depth in 1:iterative_deepening_depth
             debug && println("iterative deepening at depth $depth")
             debug && println("best, second best = $best_move, $second_best")
-            depth = Float32(depth)
-            extension_budget = depth * 0.5f0
+            extension_budget = depth ÷ 2
 
             buffer_idx = 1
             buff = @alloc(eltype(Int32), VALID_BUFFER_SIZE)
@@ -98,9 +97,9 @@ function minimax(
     board::Board,
     initial_ply::UInt16,
     timed_out::Ref{Bool},
-    depth::Float32,
-    initial_depth::Float32,
-    extension_budget::Float32,
+    depth::Int,
+    initial_depth::Int,
+    extension_budget::Int,
     buffer_idx::Int,
     nodes_processed::Ref{Int},
     debug::Bool,
@@ -110,8 +109,8 @@ function minimax(
     beta::Float32=Inf32,
     pv_node::Bool=true,
 )
-    final_lvl = depth < 1.5
-    if board.gameover || depth < 0.5
+    final_lvl = depth <= 1
+    if board.gameover || depth <= 0
         score = evaluate_board(board; debug=false)
         return score, Int32(-1)
     end
@@ -124,7 +123,7 @@ function minimax(
         stored_score = search_entry.score
         stored_suggested_move = search_entry.action_chosen
         stored_refutation_move = search_entry.refutation_move
-        if search_entry.depth > depth - 0.5f0 && !pv_node
+        if search_entry.depth >= depth && !pv_node
             if search_entry.type == :exact
                 return stored_score, stored_refutation_move
             elseif search_entry.type == :lowerbound && stored_score >= beta
@@ -187,7 +186,7 @@ function minimax(
 
             nodes_processed[] += 1
 
-            new_depth = depth - 1.0f0
+            new_depth = depth - 1
             # Here we can do search extensions, but the evaluation seems to jump between even and odd ply This needs to be compensated somehow
             # Maybe this is a general problem with the evaluation at the moment..
             returned_score, killer_move_by_opp = minimax(
@@ -256,12 +255,17 @@ function minimax(
         end
     end
 
-    if (type == :exact || search_entry.depth < depth + 0.5)
+    if (type == :exact || search_entry.depth <= depth)
         # Much to improve with transpositions tables.
         # https://deepwiki.com/search/does-stock-fish-have-a-tt-and_9a5e715f-a810-42f7-8ffb-901171686393
         # https://www.chessprogramming.org/Triangular_PV-table
         entry = SearchStoreEntry(
-            current_hash, score_at_depth, depth, action_chosen_at_depth, type, killer_move_by_me
+            current_hash,
+            score_at_depth,
+            Int32(depth),
+            action_chosen_at_depth,
+            type,
+            killer_move_by_me,
         )
         board.search_store[(current_hash & SEARCH_STORE_MASK) + 1] = entry
     end

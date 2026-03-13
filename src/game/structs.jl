@@ -77,7 +77,7 @@ struct SearchStoreEntry
     full_hash::UInt64
     # These can be reduced to Float16's probably
     score::Float32
-    depth::Float32
+    depth::Int32
     action_chosen::Int32
     # Make this into a UInt8 enum type thing
     type::Symbol
@@ -91,7 +91,7 @@ function MoveStoreEntry()
     return MoveStoreEntry(NO_HASH, HexSet())
 end
 function SearchStoreEntry()
-    return SearchStoreEntry(NO_HASH, 0.0f32, -1.0f32, pass_index(), :incomplete, -1)
+    return SearchStoreEntry(NO_HASH, 0.0f32, Int32(-1), pass_index(), :incomplete, -1)
 end
 
 function get_store_size(store_size_mb, entry_size)
