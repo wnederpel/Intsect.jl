@@ -106,6 +106,7 @@ Returns 1 if engine1 wins, 2 if engine2 wins, 0 for draw.
 function play_one_match(
     engine1::EngineSpec, engine2::EngineSpec, time_limit_s::Real; starting_position="", debug=false
 )
+    start = time()
     engine1_name = engine1.name
     engine2_name = engine2.name
     engine_names = [engine1_name, engine2_name]
@@ -139,7 +140,10 @@ function play_one_match(
             end
             debug && println("[DEBUG] Engine $i started")
             debug && println("[DEBUG] Reading greeting from engine $i")
+            start_read = time()
             read_until_ok(engine, engine_names[i]; timeout_s=50.0, debug=debug, context="greeting")
+            finish_read = time()
+            println("time rading greeting = $(finish_read - start_read)")
         end
     end
     debug && println("[DEBUG] Greetings complete")
@@ -161,7 +165,10 @@ function play_one_match(
             write(engine, "newgame $game_state\n")
             flush(engine)
             # Wait for ok
+            start_read = time()
             read_until_ok(engine, engine_names[i]; timeout_s=10.0, debug=debug, context="newgame")
+            finish_read = time()
+            println("time rading newgame = $(finish_read - start_read)")
         end
     end
     debug && println("[DEBUG] Newgame commands complete")
@@ -199,12 +206,15 @@ function play_one_match(
 
             # Read the best move
             response_timeout_s = max(5.0, time_limit_s + 2.0)
+            start_read = time()
             best_move = read_bestmove(
                 current_engine,
                 engine_names[current_engine_i];
                 timeout_s=response_timeout_s,
                 debug=debug,
             )
+            finish_read = time()
+            println("time reading best move = $(finish_read - start_read)")
         else
             board = current_engine_i == 1 ? source_board_1 : source_board_2
             debug && println("[DEBUG] Bestmove request sent, waiting for response...")
@@ -231,6 +241,9 @@ function play_one_match(
 
         # Check for endgame on the source board
         if source_board_1.gameover
+            finish = time()
+            println("time taking = $(finish - start)")
+            println("optimal time = $(source_board_1.ply * time_limit_s)")
             println("=== Game Over ===")
             show(GameString(source_board_1))
             if source_board_1.victor == WHITE
@@ -537,9 +550,9 @@ function run_arena(;
     end
 
     # Play each intsect engine against the next one
-    for i in 1:(length(intsect_specs) - 1)
+    for i in 1:(length(intsect_specs)-1)
         older_intsect = intsect_specs[i]
-        newer_intsect = intsect_specs[i + 1]
+        newer_intsect = intsect_specs[i+1]
         faceoff(
             older_intsect,
             newer_intsect;
@@ -563,7 +576,7 @@ function run_arena(;
     end
     # And check if the new engine is better against the existing engines than the previous build
     if length(intsect_specs) > 1
-        runner_up_intsect = intsect_specs[end - 1]
+        runner_up_intsect = intsect_specs[end-1]
         for existing in existing_specs
             faceoff(
                 runner_up_intsect,
