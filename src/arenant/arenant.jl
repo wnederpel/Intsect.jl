@@ -11,6 +11,23 @@ function spawn_engine(cmd::Cmd)
     return open(pipeline(cmd; stderr=stdout), "r+")
 end
 
+"""
+    spawn_and_greet(spec::EngineSpec; debug=false)
+
+Spawns an engine process and reads the initial greeting.
+Returns the process handle, or nothing if the engine is a source engine.
+"""
+function spawn_and_greet(spec::EngineSpec; debug=false)
+    if spec.is_source
+        return nothing
+    end
+    proc = spawn_engine(spec.cmd)
+    debug && println("[DEBUG] Reading greeting from $(spec.name)")
+    start_read = time()
+    read_until_ok(proc, spec.name; timeout_s=50.0, debug=debug, context="greeting")
+    return proc
+end
+
 function read_until_ok(proc, engine_name; timeout_s=5.0, debug=false, context="")
     start_time = time()
     last_line = ""
@@ -22,6 +39,8 @@ function read_until_ok(proc, engine_name; timeout_s=5.0, debug=false, context=""
         debug && println("[DEBUG] $engine_name $context: $line")
         last_line = line
         if startswith(line, "ok")
+            finish_read = time()
+            debug && println("[DEBUG] time $context = $(finish_read - start_time)")
             return true
         end
     end
@@ -41,6 +60,8 @@ function read_bestmove(proc, engine_name; timeout_s=5.0, debug=false)
         debug && println("[DEBUG] $engine_name response: $line")
         last_line = line
         if startswith(line, "ok")
+            finish_read = time()
+            debug && println("[DEBUG] time reading best move = $(finish_read - start_time)")
             return best_move
         elseif !isempty(line)
             best_move = line
@@ -104,7 +125,13 @@ Plays two UHP engines against each other from a given starting position until on
 Returns 1 if engine1 wins, 2 if engine2 wins, 0 for draw.
 """
 function play_one_match(
-    engine1::EngineSpec, engine2::EngineSpec, time_limit_s::Real; starting_position="", debug=false
+    engine1::EngineSpec,
+    engine2::EngineSpec,
+    time_limit_s::Real;
+    starting_position="",
+    debug=false,
+    engine1_proc=nothing,
+    engine2_proc=nothing,
 )
     start = time()
     engine1_name = engine1.name
@@ -116,37 +143,25 @@ function play_one_match(
     is_source = [is_source1, is_source2]
     engine_paths = [engine1.path_hint, engine2.path_hint]
 
-    # Read initial greeting from both engines until "ok"
-    debug && println("[DEBUG] Reading initial greetings...")
-    for (i, engine) in enumerate([engine1, engine2])
-        if is_source[i]
-            debug && println("[DEBUG] Engine $i is source")
+    # Use pre-spawned procs or spawn new ones
+    owns_engine1 = false
+    owns_engine2 = false
+    if !is_source1
+        if engine1_proc !== nothing
+            engine1 = engine1_proc
         else
-            debug && println("[DEBUG] Starting engine $i...")
-            if i == 2
-                if !is_source2
-                    engine2 = spawn_engine(engine2.cmd)
-                else
-                    engine2 = nothing
-                end
-                engine = engine2
-            else
-                if !is_source1
-                    engine1 = spawn_engine(engine1.cmd)
-                else
-                    engine1 = nothing
-                end
-                engine = engine1
-            end
-            debug && println("[DEBUG] Engine $i started")
-            debug && println("[DEBUG] Reading greeting from engine $i")
-            start_read = time()
-            read_until_ok(engine, engine_names[i]; timeout_s=50.0, debug=debug, context="greeting")
-            finish_read = time()
-            println("time rading greeting = $(finish_read - start_read)")
+            engine1 = spawn_and_greet(engine1; debug=debug)
+            owns_engine1 = true
         end
     end
-    debug && println("[DEBUG] Greetings complete")
+    if !is_source2
+        if engine2_proc !== nothing
+            engine2 = engine2_proc
+        else
+            engine2 = spawn_and_greet(engine2; debug=debug)
+            owns_engine2 = true
+        end
+    end
 
     # Start a new game - Base+MLP is standard Hive with all expansions
     if isempty(starting_position)
@@ -165,10 +180,7 @@ function play_one_match(
             write(engine, "newgame $game_state\n")
             flush(engine)
             # Wait for ok
-            start_read = time()
             read_until_ok(engine, engine_names[i]; timeout_s=10.0, debug=debug, context="newgame")
-            finish_read = time()
-            println("time rading newgame = $(finish_read - start_read)")
         end
     end
     debug && println("[DEBUG] Newgame commands complete")
@@ -206,15 +218,12 @@ function play_one_match(
 
             # Read the best move
             response_timeout_s = max(5.0, time_limit_s + 2.0)
-            start_read = time()
             best_move = read_bestmove(
                 current_engine,
                 engine_names[current_engine_i];
                 timeout_s=response_timeout_s,
                 debug=debug,
             )
-            finish_read = time()
-            println("time reading best move = $(finish_read - start_read)")
         else
             board = current_engine_i == 1 ? source_board_1 : source_board_2
             debug && println("[DEBUG] Bestmove request sent, waiting for response...")
@@ -242,8 +251,6 @@ function play_one_match(
         # Check for endgame on the source board
         if source_board_1.gameover
             finish = time()
-            println("time taking = $(finish - start)")
-            println("optimal time = $(source_board_1.ply * time_limit_s)")
             println("=== Game Over ===")
             show(GameString(source_board_1))
             if source_board_1.victor == WHITE
@@ -253,29 +260,11 @@ function play_one_match(
             else
                 println("Draw between $engine1_name and $engine2_name\n")
             end
-            if !is_source1
+            if owns_engine1
                 shutdown_engine(engine1, engine1_name; debug=debug)
-            else
-                # Show store utilization
-                # search_fill = Intsect.count_store_fill(source_board_1.search_store)
-                # println("Search store utilization: $(round(search_fill, digits=2))mb")
-                # move_fill = Intsect.count_store_fill(source_board_1.move_store)
-                # println("Move store utilization: $(round(move_fill, digits=2))mb")
-                # pinned_fill = Intsect.count_store_fill(source_board_1.pinned_store)
-                # println("Pinned store utilization: $(round(pinned_fill, digits=2))mb")
-                # println()
             end
-            if !is_source2
+            if owns_engine2
                 shutdown_engine(engine2, engine2_name; debug=debug)
-            else
-                # Show store utilization
-                # search_fill = Intsect.count_store_fill(source_board_2.search_store)
-                # println("Search store utilization: $(round(search_fill, digits=2))mb")
-                # move_fill = Intsect.count_store_fill(source_board_2.move_store)
-                # println("Move store utilization: $(round(move_fill, digits=2))mb")
-                # pinned_fill = Intsect.count_store_fill(source_board_2.pinned_store)
-                # println("Pinned store utilization: $(round(pinned_fill, digits=2))mb")
-                # println()
             end
             return source_board_1.victor
         end
@@ -319,10 +308,10 @@ function play_one_match(
         println("=== Game aborted after $max_moves moves (forced draw) ===")
     end
 
-    if !is_source1
+    if owns_engine1
         shutdown_engine(engine1, engine1_name; debug=debug)
     end
-    if !is_source2
+    if owns_engine2
         shutdown_engine(engine2, engine2_name; debug=debug)
     end
     return Intsect.DRAW
@@ -425,6 +414,10 @@ function faceoff(
     # Read starting positions
     positions = read_positions(positions_file)
 
+    # Spawn engines once and reuse across all games
+    proc1 = !engine1.is_source ? spawn_and_greet(engine1; debug=full_debug) : nothing
+    proc2 = !engine2.is_source ? spawn_and_greet(engine2; debug=full_debug) : nothing
+
     # Track results
     results = Dict("engine1" => 0, "engine2" => 0, "draws" => 0, "total_games" => 0, "errors" => 0)
 
@@ -438,7 +431,13 @@ function faceoff(
         # Game 1: Engine1 as White, Engine2 as Black
         try
             result1 = play_one_match(
-                engine1, engine2, time_limit_s; starting_position=position, debug=full_debug
+                engine1,
+                engine2,
+                time_limit_s;
+                starting_position=position,
+                debug=full_debug,
+                engine1_proc=proc1,
+                engine2_proc=proc2,
             )
 
             if result1 == WHITE
@@ -467,7 +466,13 @@ function faceoff(
         # Game 2: Engine2 as White, Engine1 as Black
         try
             result2 = play_one_match(
-                engine2, engine1, time_limit_s; starting_position=position, debug=full_debug
+                engine2,
+                engine1,
+                time_limit_s;
+                starting_position=position,
+                debug=full_debug,
+                engine1_proc=proc2,
+                engine2_proc=proc1,
             )
 
             if result2 == WHITE
@@ -506,6 +511,14 @@ function faceoff(
         open(results_path, "a") do io
             write(io, results_block)
         end
+    end
+
+    # Shutdown engines that we spawned
+    if proc1 !== nothing
+        shutdown_engine(proc1, engine1_name; debug=full_debug)
+    end
+    if proc2 !== nothing
+        shutdown_engine(proc2, engine2_name; debug=full_debug)
     end
 
     if !isempty(errors_log)
@@ -550,9 +563,9 @@ function run_arena(;
     end
 
     # Play each intsect engine against the next one
-    for i in 1:(length(intsect_specs)-1)
+    for i in 1:(length(intsect_specs) - 1)
         older_intsect = intsect_specs[i]
-        newer_intsect = intsect_specs[i+1]
+        newer_intsect = intsect_specs[i + 1]
         faceoff(
             older_intsect,
             newer_intsect;
@@ -576,7 +589,7 @@ function run_arena(;
     end
     # And check if the new engine is better against the existing engines than the previous build
     if length(intsect_specs) > 1
-        runner_up_intsect = intsect_specs[end-1]
+        runner_up_intsect = intsect_specs[end - 1]
         for existing in existing_specs
             faceoff(
                 runner_up_intsect,

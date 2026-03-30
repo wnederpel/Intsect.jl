@@ -2,7 +2,7 @@ using Intsect
 using PProf: PProf
 using Profile: Profile
 
-time_limit = 0.01
+time_limit = 0.02
 debug = false
 full_debug = false
 
