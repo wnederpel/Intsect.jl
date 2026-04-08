@@ -1,6 +1,6 @@
 mutable struct SuggestedActions
     index::Int
-    actions::UnsafeArray{Int32,1}
+    actions::Array{Int32,1}
     moving_loc_hs::HexSet
     goal_loc_hs::HexSet
 end
@@ -31,6 +31,9 @@ function add!(sa::SuggestedActions, placement::Placement, as_index::Int32)
     set!(sa.goal_loc_hs, goal_loc)
 
     sa.actions[sa.index += 1] = as_index
+    if sa.index >= length(sa.actions)
+        sa.index -= length(sa.actions)
+    end
     return nothing
 end
 
@@ -41,6 +44,9 @@ function add!(sa::SuggestedActions, action::Action, as_index::Int32)
     set!(sa.goal_loc_hs, goal_loc)
 
     sa.actions[sa.index += 1] = as_index
+    if sa.index >= length(sa.actions)
+        sa.index -= length(sa.actions)
+    end
     return nothing
 end
 
@@ -49,7 +55,7 @@ function add!(sa::SuggestedActions, action::Pass, as_index::Int32)
     return nothing
 end
 
-function contains(as_index, sa::SuggestedActions)
+function Base.contains(as_index::Int32, sa::SuggestedActions)
     if as_index == Int32(-1)
         return false
     end
@@ -71,7 +77,7 @@ end
 function contains_placement(as_index, placement::Placement, sa::SuggestedActions)
     goal_loc = placement.goal_loc
     if sa.goal_loc_hs[goal_loc]
-        return as_index in view(sa.actions, 1:(sa.index))
+        return as_index in sa.actions
     end
     return false
 end
@@ -80,7 +86,7 @@ function contains_move(as_index, action, sa::SuggestedActions)
     moving_loc = action.moving_loc
     goal_loc = action.goal_loc
     if sa.moving_loc_hs[moving_loc] && sa.goal_loc_hs[goal_loc]
-        return as_index in view(sa.actions, 1:(sa.index))
+        return as_index in sa.actions
     end
     return false
 end

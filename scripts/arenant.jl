@@ -3,7 +3,7 @@ using PProf: PProf
 using Profile: Profile
 
 time_limit = 0.02
-debug = false
+debug = true
 full_debug = false
 
 Arenant.run_arena(; debug=debug, time_limit_s=time_limit, full_debug=full_debug)

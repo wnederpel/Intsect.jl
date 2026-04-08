@@ -1,4 +1,36 @@
 
+const MAX_KILLER_PLY = PV_STORE_SIZE
+const KILLERS_PER_PLY = 2
+
+mutable struct KillerTable
+    moves::Matrix{Int32}  # MAX_KILLER_PLY × KILLERS_PER_PLY
+end
+
+function KillerTable()
+    return KillerTable(fill(Int32(-1), MAX_KILLER_PLY, KILLERS_PER_PLY))
+end
+
+function clear!(kt::KillerTable)
+    return kt.moves .= Int32(-1)
+end
+
+function store_killer!(kt::KillerTable, ply::Int, move::Int32)
+    if move == Int32(-1) || move == pass_index()
+        return nothing
+    end
+    # Don't store duplicates
+    if kt.moves[ply, 1] == move
+        return nothing
+    end
+    # Shift slot 1 → slot 2, new move → slot 1
+    kt.moves[ply, 2] = kt.moves[ply, 1]
+    return kt.moves[ply, 1] = move
+end
+
+function is_killer(kt::KillerTable, ply::Int, move::Int32)::Bool
+    return kt.moves[ply, 1] == move || kt.moves[ply, 2] == move
+end
+
 function get_best_move(board::Board; depth=5000, time_limit_s=10.0, debug=true)::Action
     timed_out = Ref(false)
     if time_limit_s <= 0
@@ -47,18 +79,27 @@ function iterative_deepening(
         board.pv_store[i] .= -1
     end
 
+    sa_array = Vector{SuggestedActions}(undef, 200)
+    for i in eachindex(sa_array)
+        sa_array[i] = SuggestedActions(Int32(-1) * ones(Int32, 20), board)
+    end
+
+    killer_table = KillerTable()
+
     @no_escape begin
         for depth in 1:iterative_deepening_depth
             debug && println("iterative deepening at depth $depth")
             debug && println("best, second best = $best_move, $second_best")
             extension_budget = depth ÷ 2
 
+            clear!(killer_table)
+
             buffer_idx = 1
-            buff = @alloc(eltype(Int32), VALID_BUFFER_SIZE)
-            sa = SuggestedActions(buff, board)
+
+            sa = sa_array[1]
             add!(sa, second_best)
 
-            best_score, _ = minimax(
+            best_score = minimax(
                 board,
                 initial_ply,
                 timed_out,
@@ -68,8 +109,9 @@ function iterative_deepening(
                 buffer_idx,
                 nodes_processed,
                 debug,
-                board.pv_store[1][1];
-                suggested_moves=sa,
+                board.pv_store[1][1],
+                killer_table;
+                suggested_moves_array=sa_array,
             )
             new_best_move = board.pv_store[1][1]
             if new_best_move != best_move
@@ -103,8 +145,9 @@ function minimax(
     buffer_idx::Int,
     nodes_processed::Ref{Int},
     debug::Bool,
-    pv_move::Int32;
-    suggested_moves::SuggestedActions,
+    pv_move::Int32,
+    killer_table::KillerTable;
+    suggested_moves_array::Vector{SuggestedActions},
     alpha::Float32=-Inf32,
     beta::Float32=Inf32,
     pv_node::Bool=true,
@@ -112,22 +155,28 @@ function minimax(
     final_lvl = depth <= 1
     if board.gameover || depth <= 0
         score = evaluate_board(board; debug=false)
-        return score, Int32(-1)
+        return score
     end
+
+    buffer =
+        buffer_idx <= length(PERFT_BUFFER) ? PERFT_BUFFER[buffer_idx] : default_buffer(AllocBuffer)
+    suggested_moves =
+        buffer_idx <= length(suggested_moves_array) ? suggested_moves_array[buffer_idx] :
+        DUMMY_SUGGESTED_ACTIONS
+
     current_hash = get_hash_value(board)
     search_entry = board.search_store[(current_hash & SEARCH_STORE_MASK) + 1]
 
     stored_suggested_move = Int32(-1)
-    stored_refutation_move = Int32(-1)
+
     if search_entry.full_hash == current_hash
         stored_score = search_entry.score
         stored_suggested_move = search_entry.action_chosen
-        stored_refutation_move = search_entry.refutation_move
         if search_entry.depth >= depth && !pv_node
             if search_entry.type == :exact
-                return stored_score, stored_refutation_move
+                return stored_score
             elseif search_entry.type == :lowerbound && stored_score >= beta
-                return stored_score, stored_refutation_move
+                return stored_score
             end
         end
         add!(suggested_moves, stored_suggested_move)
@@ -145,8 +194,7 @@ function minimax(
         yield()
     end
 
-    killer_move_by_me = Int32(-1)
-    buffer = depth <= length(PERFT_BUFFER) ? PERFT_BUFFER[buffer_idx] : default_buffer(AllocBuffer)
+    ply = Int(steps_below_initial_ply) + 1  # 1-indexed for Julia
 
     @no_escape buffer begin
         move_buffer = @alloc(eltype(Int32), VALID_BUFFER_SIZE)
@@ -156,16 +204,8 @@ function minimax(
         good_moves_buffer = @alloc(eltype(Int32), VALID_BUFFER_SIZE)
         normal_moves_buffer = @alloc(eltype(Int32), VALID_BUFFER_SIZE)
         bad_moves_buffer = @alloc(eltype(Int32), VALID_BUFFER_SIZE)
-        suggested_moves_buffer = @alloc(eltype(Int32), VALID_BUFFER_SIZE)
-
-        if !final_lvl
-            # Think about sharing killer moves between searches / different ply of the search.
-            # Then we can just pass a white and black suggested actions around and make it like circular with like max 20 entries. 
-            buff = @alloc(eltype(Int32), VALID_BUFFER_SIZE)
-            killer_moves_by_opp = SuggestedActions(buff, board)
-        else
-            killer_moves_by_opp = DUMMY_SUGGESTED_ACTIONS
-        end
+        suggested_moves_buffer = @alloc(eltype(Int32), length(suggested_moves.actions))
+        killer_moves_buffer = @alloc(eltype(Int32), VALID_BUFFER_SIZE)
 
         idx = order_moves!(
             ordered_move_buffer,
@@ -173,10 +213,13 @@ function minimax(
             move_buffer,
             pv_move,
             suggested_moves,
+            killer_table,
+            ply,
             good_moves_buffer,
             normal_moves_buffer,
             bad_moves_buffer,
             suggested_moves_buffer,
+            killer_moves_buffer,
         )
 
         for i in 1:idx
@@ -189,7 +232,7 @@ function minimax(
             new_depth = depth - 1
             # Here we can do search extensions, but the evaluation seems to jump between even and odd ply This needs to be compensated somehow
             # Maybe this is a general problem with the evaluation at the moment..
-            returned_score, killer_move_by_opp = minimax(
+            returned_score = minimax(
                 board,
                 initial_ply,
                 timed_out,
@@ -199,18 +242,14 @@ function minimax(
                 buffer_idx + 1,
                 nodes_processed,
                 debug,
-                board.pv_store[1][steps_below_initial_ply + 2]; # PV move to try first at next depth
+                board.pv_store[1][steps_below_initial_ply + 2], # PV move to try first at next depth
+                killer_table;
                 alpha=-beta,
                 beta=-alpha,
-                suggested_moves=killer_moves_by_opp, # These are good moves the opp might be able to make
+                suggested_moves_array=suggested_moves_array, # These are good moves the opp might be able to make
                 pv_node=pv_node && (i == 1),
             )
             score = -returned_score
-            if killer_move_by_opp != Int32(-1)
-                if !(contains(killer_move_by_opp, killer_moves_by_opp))
-                    add!(killer_moves_by_opp, killer_move_by_opp)
-                end
-            end
             undo(board)
 
             if score > score_at_depth || score_at_depth == -Inf32
@@ -244,7 +283,7 @@ function minimax(
             if beta <= score_at_depth
                 # beta cut off 
                 type = :lowerbound
-                killer_move_by_me = action_as_index
+                store_killer!(killer_table, ply, action_as_index)
                 break
             end
 
@@ -260,17 +299,12 @@ function minimax(
         # https://deepwiki.com/search/does-stock-fish-have-a-tt-and_9a5e715f-a810-42f7-8ffb-901171686393
         # https://www.chessprogramming.org/Triangular_PV-table
         entry = SearchStoreEntry(
-            current_hash,
-            score_at_depth,
-            Int32(depth),
-            action_chosen_at_depth,
-            type,
-            killer_move_by_me,
+            current_hash, score_at_depth, Int32(depth), action_chosen_at_depth, type, Int32(-1)
         )
         board.search_store[(current_hash & SEARCH_STORE_MASK) + 1] = entry
     end
 
-    return score_at_depth, killer_move_by_me
+    return score_at_depth
 end
 
 function search_debug_print(board, initial_ply, score_at_depth, action_chosen_at_depth)
@@ -322,19 +356,26 @@ function order_moves!(
     move_buffer,
     last_best::Int32,
     suggested_moves::SuggestedActions,
+    killer_table::KillerTable,
+    ply::Int,
     good_moves_buffer,
     normal_moves_buffer,
     bad_moves_buffer,
     suggested_moves_buffer,
+    killer_moves_buffer,
 )
     # Always try the last best move first if it's possible 
     # Validate that suggested moves are actually valid for the current position.
     valid_best_move = Int32(-1)
 
     suggested_moves_index = 0
+    killer_moves_index = 0
     good_moves_index = 0
     normal_moves_index = 0
     bad_moves_index = 0
+
+    # Ply for same-side killer (2 plies ago = same side to move)
+    same_side_ply = max(1, ply - 2)
 
     for move in 1:(board.action_index - 1)
         action_as_index = move_buffer[move]
@@ -343,6 +384,10 @@ function order_moves!(
 
         elseif contains(action_as_index, suggested_moves)
             suggested_moves_buffer[suggested_moves_index += 1] = action_as_index
+
+        elseif is_killer(killer_table, ply, action_as_index) ||
+            is_killer(killer_table, same_side_ply, action_as_index)
+            killer_moves_buffer[killer_moves_index += 1] = action_as_index
 
         elseif action_type(action_as_index) == Move
             move = ALL_MOVEMENTS[action_as_index - MAX_PLACEMENT_INDEX]
@@ -373,6 +418,9 @@ function order_moves!(
     end
     for move_i in 1:suggested_moves_index
         ordered_move_buffer[idx += 1] = suggested_moves_buffer[move_i]
+    end
+    for move_i in 1:killer_moves_index
+        ordered_move_buffer[idx += 1] = killer_moves_buffer[move_i]
     end
     for move_i in 1:good_moves_index
         ordered_move_buffer[idx += 1] = good_moves_buffer[move_i]

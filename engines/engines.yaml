@@ -1,6 +1,6 @@
 intsect:
   # - intsect 2026-03-06_1_negamax
-  - intsect 2026-03-06_2_suggested_actions
+  # - intsect 2026-03-06_2_suggested_actions
   # - intsect 2026-03-06_3_transposition_table
   - intsect 2026-03-13-4-transposition_table_pv_fix
   - source
