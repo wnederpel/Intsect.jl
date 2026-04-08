@@ -6,7 +6,7 @@ time_limit = 0.02
 debug = true
 full_debug = false
 
-Arenant.run_arena(; debug=debug, time_limit_s=time_limit, full_debug=full_debug)
+Arenant.run_arena(; debug=debug, time_limit_s=time_limit, full_debug=full_debug, results_path="./arenant_results.txt")
 
 # Profile.clear()
 # Profile.@profile Arenant.run_arena(; debug=debug, time_limit_s=time_limit, full_debug=full_debug)
