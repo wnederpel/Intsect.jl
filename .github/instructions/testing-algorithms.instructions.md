@@ -39,5 +39,11 @@ You can edit what engines fight each other in the arenant in engines.yaml
 
 The results will be stored in ./arenant_results.txt and you can read this file to see the score. the 'source' engine is the current state of the code. This command can take ~5 minutes. When calling the arenant, set a timer to expire at 8 minutes to avoid getting stuck! When it failed because of the time out, don't try again.
 
+**Important:** The `source` engine in arenant is always the current state of the code. The opponent engine(s) are configured in `engines/engines.yaml`.
+
+**Monitoring arenant progress:** Run arenant in async mode. Arenant prints RESULTS checkpoints every 10 positions (20 games). Use `get_terminal_output` to check progress. Look for lines like 
+`engine name:\n Wins: XX / YY (ZZ.Z%)`. XX are the wins by the engines, YY the total number of games, ZZ the win percentage.
+
+
 ## What to validate when
 this is vibes based, you decide!
