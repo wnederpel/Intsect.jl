@@ -84,6 +84,11 @@ struct SearchStoreEntry
     refutation_move::Int32
 end
 
+struct EvalStoreEntry
+    full_hash::UInt64
+    score::Float32
+end
+
 function PinnedStoreEntry()
     return PinnedStoreEntry(NO_HASH, HexSet())
 end
@@ -92,6 +97,9 @@ function MoveStoreEntry()
 end
 function SearchStoreEntry()
     return SearchStoreEntry(NO_HASH, 0.0f32, Int32(-1), pass_index(), :incomplete, -1)
+end
+function EvalStoreEntry()
+    return EvalStoreEntry(NO_HASH, 0.0f0)
 end
 
 function get_store_size(store_size_mb, entry_size)
@@ -111,6 +119,10 @@ const PINNED_STORE_MASK::Int = PINNED_STORE_SIZE - 1
 const SEARCH_STORE_SIZE_MB::Int = 64
 const SEARCH_STORE_SIZE::Int = get_store_size(SEARCH_STORE_SIZE_MB, sizeof(SearchStoreEntry))
 const SEARCH_STORE_MASK::Int = SEARCH_STORE_SIZE - 1
+
+const EVAL_STORE_SIZE_MB::Int = 4
+const EVAL_STORE_SIZE::Int = get_store_size(EVAL_STORE_SIZE_MB, sizeof(EvalStoreEntry))
+const EVAL_STORE_MASK::Int = EVAL_STORE_SIZE - 1
 
 function count_store_fill(store::Vector{T}) where {T}
     count_mb = 0
@@ -178,6 +190,7 @@ mutable struct Board
     move_store::Vector{MoveStoreEntry}
     pinned_store::Vector{PinnedStoreEntry}
     search_store::Vector{SearchStoreEntry}
+    eval_store::Vector{EvalStoreEntry}
     pv_store::MVector{PV_STORE_SIZE,MVector{PV_STORE_SIZE,Int32}}
     workspaces::Workspaces
     gametype::Type{<:Gametype}
@@ -195,6 +208,10 @@ function Board(tiles, tile_locs, gametype)
     search_store = Vector{SearchStoreEntry}(undef, SEARCH_STORE_SIZE)
     for i in 1:SEARCH_STORE_SIZE
         search_store[i] = SearchStoreEntry()
+    end
+    eval_store = Vector{EvalStoreEntry}(undef, EVAL_STORE_SIZE)
+    for i in 1:EVAL_STORE_SIZE
+        eval_store[i] = EvalStoreEntry()
     end
     return Board(
         tiles,
@@ -239,6 +256,7 @@ function Board(tiles, tile_locs, gametype)
         move_store,
         pinned_store,
         search_store,
+        eval_store,
         MVector{PV_STORE_SIZE,MVector{PV_STORE_SIZE,Int32}}(
             ntuple(_ -> MVector{PV_STORE_SIZE,Int32}(fill(Int32(-1), PV_STORE_SIZE)), PV_STORE_SIZE)
         ),
