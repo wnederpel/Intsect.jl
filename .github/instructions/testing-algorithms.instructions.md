@@ -14,12 +14,12 @@ applyTo: "src/ai/**"
 Choose the appropriate level(s) based on context:
 
 ### 1. Unit tests (`test/`)
-Run the test suite to verify correctness after any change:
+Run the test suite to verify correctness after any change that effects move generation, placement, game state, and perft correctness:
 ```
 julia --project=. -e 'import Pkg; Pkg.add("TestItems")'
 julia --project=. test/runtests.jl
 ```
-Tests cover move generation, placement, game state, and perft correctness.
+Unit tests do not cover search.
 
 ### 2. Perft correctness (`scripts/perft_test.jl`)
 Verifies move generation produces the correct number of nodes at each depth. Use after changes to move generation or game state logic. Run via MCP REPL.

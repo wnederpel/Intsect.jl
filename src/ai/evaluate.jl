@@ -19,8 +19,6 @@ function evaluate_board(board::Board; debug=false)::Float32
     =#
 
     score = 0.0f0
-    # is pinned will be used throughout the evaluation
-    update_ispinned_general!(board)
 
     queen_safety_factor = 1.0f0 + min(max(Float32(board.ply - 15) / 10.0f0, 0.0f0), 2.0f0)
 
@@ -38,14 +36,6 @@ function evaluate_board(board::Board; debug=false)::Float32
     top_hive = top_of_hive_score(board)
     debug && println("Top of hive score: $top_hive")
     score += top_hive
-
-    # Piece freedom: reward having unpinned, mobile pieces
-    white_freedom = piece_freedom_score(board, WHITE) * 0.5
-    score += white_freedom
-    debug && println("White piece freedom score: $white_freedom")
-    black_freedom = piece_freedom_score(board, BLACK) * 0.5
-    score -= black_freedom
-    debug && println("Black piece freedom score: $black_freedom")
 
     # Penalize keeping key pieces in hand
     white_hand = pieces_in_hand_penalty(board, WHITE)
@@ -143,76 +133,6 @@ function pieces_in_hand_penalty(board::Board, color)
     return penalty
 end
 
-function piece_freedom_score(board::Board, color)
-    # Assumes update_ispinned_general! has already been called
-    score = 0.0f0
-    my_queen_loc = color == WHITE ? board.queen_pos_white : board.queen_pos_black
-
-    for bug in 0x01:0x08
-        if get_tile_bug_num(board.placeable_tiles[color][bug]) == 0
-            # This just means that the tile is not yet placed apparently
-            continue
-        end
-        for num in 0x00:MAX_NUMS[bug]
-            semi_tile = tile_from_info_as_index(color, bug, num)
-            @inbounds loc = board.tile_locs[semi_tile + 1]
-
-            if loc == NOT_PLACED
-                break
-            end
-            if loc == UNDERGROUND || loc == INVALID_LOC
-                continue
-            end
-            tile = get_tile_on_board(board, loc)
-            if loc < 0
-                continue
-            end
-            height = get_tile_height(tile)
-            bug = get_tile_bug(tile)
-
-            if height > 1
-                # Piece is on top of the hive — it's counted by the top of hive score
-                continue
-            end
-
-            if board.ispinned[loc]
-                # Pinned (articulation point) — can't move
-                if bug == Integer(Bug.BEETLE)
-                    # Beetle pinned on the ground is very bad — it's your best piece stuck
-                    score -= 3.0f0
-                end
-                continue
-            end
-
-            # Piece is free — give score based on bug type
-            score += freedom_bug_score(bug)
-        end
-    end
-    return score
-end
-
-@inline function freedom_bug_score(bug)
-    if bug == Integer(Bug.ANT)
-        return 13.0f0
-    elseif bug == Integer(Bug.BEETLE)
-        return 12.0f0
-    elseif bug == Integer(Bug.MOSQUITO)
-        return 8.0f0
-    elseif bug == Integer(Bug.LADYBUG)
-        return 6.0f0
-    elseif bug == Integer(Bug.PILLBUG)
-        return 1.5f0
-    elseif bug == Integer(Bug.SPIDER)
-        return 0.5f0
-    elseif bug == Integer(Bug.GRASSHOPPER)
-        return 0.5f0
-    elseif bug == Integer(Bug.QUEEN)
-        return 2.5f0
-    else
-        return 0.0f0
-    end
-end
-
 function evaluate_queen_safety(board::Board, color, queen_loc)
     if queen_loc < 0
         # Queen is not yet placed
@@ -252,26 +172,12 @@ function evaluate_queen_safety(board::Board, color, queen_loc)
         else
             # A tile of my color is not bad not good
             if get_tile_color(tile) == color
-                # My pillbug is essential to have around, it can move the queen if needed
+                # My pillbug next to queen is great — it can move the queen if needed
                 pill_bug_bonus = 20.0f0
-                if get_tile_bug(tile) == Integer(Bug.PILLBUG)
+                tile_bug = get_tile_bug(tile)
+                if tile_bug == Integer(Bug.PILLBUG) || tile_bug == Integer(Bug.MOSQUITO)
                     score += pill_bug_bonus
-                    pill_bug_bonus = 0.0f0  # Only count the pillbug once, even if there are multiple adjacent
-                elseif get_tile_bug(tile) == Integer(Bug.MOSQUITO)
-                    for mos_neigh in allneighs(loc)
-                        mos_neigh_tile = get_tile_on_board(board, mos_neigh)
-                        if get_tile_bug(mos_neigh_tile) == Integer(Bug.PILLBUG)
-                            # A mosquito mimicking a pillbug is as good as a real pillbug
-                            score += pill_bug_bonus
-                            break
-                        end
-                    end
-                    pill_bug_bonus = 0.0f0  # Only count the pillbug once, even if there are multiple adjacent
-                else
-                    # It's bad if a pinned friendly piece is next to my queen (although we don't care about the pillbug, it can still move the queen)
-                    if board.ispinned[loc]
-                        score -= 5.0f0
-                    end
+                    pill_bug_bonus = 0.0f0
                 end
             else
                 # An opponent's tile is bad
@@ -285,17 +191,9 @@ function evaluate_queen_safety(board::Board, color, queen_loc)
     end
 
     if get_tile_bug(queen_tile) != Integer(Bug.QUEEN)
-        # Some other tile (a climber) in on top of the queen, that's bad if the queen is close to being
+        # Some other tile (a climber) is on top of the queen
         score -= 5 * total_free
-    else
-        if board.ispinned[queen_loc]
-            # The queen is pinned, that's not nice 
-            score -= 3.0f0
-        end
     end
-    # if total_free == 1
-    #     # Close to death
-    #     score -= 20.0f0
-    # end
+
     return score
 end
