@@ -22,22 +22,6 @@ function evaluate_board(board::Board; debug=false)::Float32
     # is pinned will be used throughout the evaluation
     update_ispinned_general!(board)
 
-    # This is redundant
-    # update_ispinned_general!(board)
-    # # Give score for having non-pinned pieces
-    # my_tile_score, my_pinning_score = freedom_score(board, WHITE)
-    # score += my_tile_score + my_pinning_score
-    # debug && println("White tile score: $my_tile_score, White pinning score: $my_pinning_score")
-    # opp_tile_score, opp_pinning_score = freedom_score(board, BLACK)
-    # score -= opp_tile_score + opp_pinning_score
-    # debug && println("Black tile score: $opp_tile_score, Black pinning score: $opp_pinning_score")
-
-    # This is too slow
-    # score += placement_score(board, WHITE)
-    # debug && println("White placement score: $(placement_score(board, WHITE))")
-    # score -= placement_score(board, BLACK)
-    # debug && println("Black placement score: $(placement_score(board, BLACK))")
-
     queen_safety_factor = 1.0f0 + min(max(Float32(board.ply - 15) / 10.0f0, 0.0f0), 2.0f0)
 
     # Evaluate queen safety, having my queen safe is good, having opponent queen safe is bad
@@ -70,109 +54,13 @@ function evaluate_board(board::Board; debug=false)::Float32
     black_hand = pieces_in_hand_penalty(board, BLACK)
     score -= black_hand
     debug && println("Black pieces-in-hand penalty: $black_hand")
+
     debug && println("Raw score before color adjustment: $score")
     if board.current_color == BLACK
         score *= -1
     end
     return score
 end
-
-function placement_score(board, color)
-    score_ref = Ref(0.0f0)
-    for_placement_locs(board, color) do loc
-        # It's good to have more placement options
-        score_ref[] += 0.05f0
-        return nothing
-    end
-    return score_ref[]
-end
-
-# function freedom_score(board, color)
-#     tile_score_ref = Ref(0.0f0)
-#     pinning_score = 0.0f0
-#     for_each_tile(board, color) do tile, loc
-#         if loc < 0
-#             if loc == UNDERGROUND
-#                 # The piece is underground, it happens
-#                 return nothing
-#             end
-#             error("for each tile returned tile $tile at loc $loc, which is invalid")
-#         end
-#         tile_score_ref[] += get_tile_score(board, tile, loc)
-
-#         return nothing
-#     end
-
-#     return tile_score_ref[], pinning_score
-# end
-
-# function get_pinning_score(board, tile, loc)
-#     has_one, neigh_loc = has_one_neigh_and_get(board, loc)
-#     if has_one
-#         neigh_tile = get_tile_on_board(board, neigh_loc)
-#         if get_tile_color(neigh_tile) != get_tile_color(tile)
-#             # tile is pinning an enemy piece, that's good
-#             pinning_bug = get_tile_bug(tile)
-#             pinned_bug = get_tile_bug(neigh_tile)
-#             pinned_bug_score = get_bug_score(pinned_bug)
-#             pinning_bug_score = get_bug_score(pinning_bug)
-#             if pinning_bug == Integer(Bug.MOSQUITO) && pinned_bug == Integer(Bug.MOSQUITO)
-#                 # This is quite bad, the mosquito is stuck, we need to compensate for the tile score that we gave
-#                 return -pinning_bug_score * 2.0f0
-#             end
-#             return pinned_bug_score + -pinning_bug_score * 0.25f0
-#         end
-#     end
-#     return 0.0f0
-# end
-
-# function get_tile_score(board, tile, loc)
-#     height = get_tile_height(tile)
-#     if height > 1
-#         # Pieces on top are computed separately
-#         return 0.0f0
-#     end
-#     # The bug score is positive if it's not pinned, otherwise it's negative
-#     bug = get_tile_bug(tile)
-#     bug_score = get_bug_score(bug)
-#     if board.ispinned[loc]
-#         if bug == Integer(Bug.BEETLE)
-#             # It's very bad if the beetle is pinned
-#             return -bug_score * 2.0f0
-#         end
-#         # It's not that bad when the piece is pinned, it can be freed and it keeps a black piece occupied
-#         return -bug_score * 0.5f0
-#     else
-#         # It's nice if it's free
-#         return bug_score
-#     end
-# end
-
-# @inline function get_max_bug_score()
-#     return 8.0f0
-# end
-
-# @inline function get_bug_score(bug)
-#     if bug == Integer(Bug.ANT)
-#         return 8.0f0
-#     elseif bug == Integer(Bug.GRASSHOPPER)
-#         return 2.0f0
-#     elseif bug == Integer(Bug.BEETLE)
-#         return 6.0f0
-#     elseif bug == Integer(Bug.SPIDER)
-#         return 2.0f0
-#     elseif bug == Integer(Bug.QUEEN)
-#         return 1.0f0
-#     elseif bug == Integer(Bug.LADYBUG)
-#         return 5.0f0
-#     elseif bug == Integer(Bug.PILLBUG)
-#         return 1.0f0
-#     elseif bug == Integer(Bug.MOSQUITO)
-#         return 6.0f0
-#     else
-#         return 0.0f0
-#     end
-# end
 
 function top_of_hive_score(board)
     score = 0.0f0
@@ -297,70 +185,10 @@ function piece_freedom_score(board::Board, color)
             end
 
             # Piece is free — give score based on bug type
-            bug_value = freedom_bug_score(board, bug, loc)
-
-            neigh_loc = EMPTY_TILE
-            neighs = 0
-            for n in allneighs(loc)
-                if get_tile_on_board(board, n) != EMPTY_TILE
-                    neigh_loc = n
-                    neighs += 1
-                    if bug != Integer(Bug.ANT) && bug != Integer(Bug.SPIDER)
-                        break
-                    end
-                end
-            end
-            # Discount the value if the piece is adjacent to a single enemy high lvl piece
-            if neighs == 1
-                neigh_tile = get_tile_on_board(board, neigh_loc)
-                # This is not idea regardless of the color, either you are pinning a good pice of yourself which is bad, or you are next to a strong enemy piece which you have to keep pinned
-                neigh_bug = get_tile_bug(neigh_tile)
-                neigh_bug_value = freedom_bug_score(neigh_bug)
-                heigh_bug_height = get_tile_height(neigh_tile)
-                if heigh_bug_height == 1
-                    # It's not that bad, the piece can still move, but it's less good
-                    # this value is 0.5 if the neigh is strong, 1 if it's weak
-                    discount_rate = (1 - neigh_bug_value / max_bug_score()) * 0.5f0 + 0.5f0
-                    bug_value *= discount_rate
-                end
-            elseif neighs >= 5
-                # The piece is stuck if it's an ant or spider
-                if bug == Integer(Bug.ANT) || bug == Integer(Bug.SPIDER)
-                    continue
-                end
-            end
-            score += bug_value
+            score += freedom_bug_score(bug)
         end
     end
     return score
-end
-
-@inline function max_bug_score()
-    return 13.0f0
-end
-
-function freedom_bug_score(board, bug, loc)
-    if bug == Integer(Bug.MOSQUITO)
-        # The mosquito's freedom is a bit special, it depends on what it's mimicking
-        # We take the best case (the one that gives the highest freedom score) among the possible mimics
-        best_score = 0.0f0
-        for n in allneighs(loc)
-            neigh_tile = get_tile_on_board(board, n)
-            if neigh_tile == EMPTY_TILE
-                continue
-            end
-            neigh_bug = get_tile_bug(neigh_tile)
-            score = freedom_bug_score(neigh_bug) - 0.5f0  # The mosquito is a bit less free than the bug it's mimicking, to account for the fact that it can't always mimic perfectly
-            if score > best_score
-                best_score = score
-                if best_score > max_bug_score() - 0.1f0
-                    return best_score
-                end
-            end
-        end
-        return best_score
-    end
-    return freedom_bug_score(bug)
 end
 
 @inline function freedom_bug_score(bug)
@@ -369,7 +197,7 @@ end
     elseif bug == Integer(Bug.BEETLE)
         return 12.0f0
     elseif bug == Integer(Bug.MOSQUITO)
-        return 0.0f0
+        return 8.0f0
     elseif bug == Integer(Bug.LADYBUG)
         return 6.0f0
     elseif bug == Integer(Bug.PILLBUG)
@@ -413,7 +241,9 @@ function evaluate_queen_safety(board::Board, color, queen_loc)
     score = 0.0f0
 
     total_free = 0
-    for loc in allneighs(queen_loc)
+    queen_neighs = allneighs(queen_loc)
+    for i in 1:6
+        loc = queen_neighs[i]
         tile = get_tile_on_board(board, loc)
         # An empty tile is good
         if tile == EMPTY_TILE
@@ -453,6 +283,7 @@ function evaluate_queen_safety(board::Board, color, queen_loc)
             end
         end
     end
+
     if get_tile_bug(queen_tile) != Integer(Bug.QUEEN)
         # Some other tile (a climber) in on top of the queen, that's bad if the queen is close to being
         score -= 5 * total_free

@@ -16,6 +16,7 @@ Choose the appropriate level(s) based on context:
 ### 1. Unit tests (`test/`)
 Run the test suite to verify correctness after any change:
 ```
+julia --project=. -e 'import Pkg; Pkg.add("TestItems")'
 julia --project=. test/runtests.jl
 ```
 Tests cover move generation, placement, game state, and perft correctness.
@@ -28,16 +29,12 @@ Measures KN/s and memory per node. Use to verify performance improvements or cat
 
 ### 4. Arenant matches (`scripts/arenant.jl`)
 Runs matches against other engines to test playing strength. Use after changes to search or evaluation:
-```julia
 
-time_limit = 0.02
-debug = true
-full_debug = false
-
-Arenant.run_arena(; debug=debug, time_limit_s=time_limit, full_debug=full_debug, results_path="./arenant_results.txt")
-
+Do this via powershell
+```powershell
+julia --project=. --startup-file=no -e 'using Intsect; Intsect.Arenant.run_arena(debug=true, time_limit_s=0.02, full_debug=false, results_path="./arenant_results.txt")'
 ```
-Run via MCP REPL. Engine binaries are in `engines/`.
+you can edit the parameters.
 You can edit what engines fight each other in the arenant in engines.yaml
 
 The results will be stored in ./arenant_results.txt and you can read this file to see the score. the 'source' engine is the current state of the code. This command can take ~5 minutes. When calling the arenant, set a timer to expire at 8 minutes to avoid getting stuck! When it failed because of the time out, don't try again.
