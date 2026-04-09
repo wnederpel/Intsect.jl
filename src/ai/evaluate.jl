@@ -9,6 +9,14 @@ function evaluate_board(board::Board; debug=false)::Float32
             return -Inf32
         end
     end
+
+    # Check eval cache
+    current_hash = get_hash_value(board)
+    eval_entry = board.eval_store[(current_hash & EVAL_STORE_MASK) + 1]
+    if eval_entry.full_hash == current_hash
+        return eval_entry.score
+    end
+
     #= 
     To be extended with other evaluations. Simple for now to just the search working.
     Pinned pieces: re-compute what's pinned, then give score if good pieces are not pinned
@@ -49,6 +57,10 @@ function evaluate_board(board::Board; debug=false)::Float32
     if board.current_color == BLACK
         score *= -1
     end
+
+    # Store in eval cache
+    board.eval_store[(current_hash & EVAL_STORE_MASK) + 1] = EvalStoreEntry(current_hash, score)
+
     return score
 end
 
