@@ -162,6 +162,8 @@ struct Board {
     std::array<PinnedStoreEntry, PINNED_STORE_SIZE> pinned_store{};
     MoveGenWorkspaces workspaces{};
 
+    int action_index = 0; // Next position in the zero-based action buffer
+
     Variant variant = Variant::MLP;
 
     Board() {
@@ -242,7 +244,7 @@ struct Board {
                hash_history == other.hash_history;
     }
 
-    [[nodiscard]] bool do_action(const Action& action) {
+    bool do_action(const Action& action) {
         bool applied = false;
         switch (action.kind) {
         case ActionKind::Placement:

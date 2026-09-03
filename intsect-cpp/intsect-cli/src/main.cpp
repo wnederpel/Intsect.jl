@@ -5,7 +5,7 @@
 #include "intsect/board_visualization.hpp"
 #include "intsect/game_string.hpp"
 #include "intsect/move_generation.hpp"
-#include "intsect/tile.hpp"
+#include "intsect/perft.hpp"
 #include "intsect/types.hpp"
 #include "intsect/version.hpp"
 
@@ -98,6 +98,7 @@ void cmd_newgame(EngineState& state, const std::string& param) {
 
     state.reset(intsect::parse_game_type_string(parts[0]));
 
+    // Apply moves from the game string to the board.
     for (size_t i = 3; i < parts.size(); ++i) {
         const auto action = intsect::action_from_move_string(*state.board, parts[i]);
         if (!action.has_value()) {
@@ -142,6 +143,11 @@ void cmd_play(EngineState& state, const std::string& move_str) {
     }
     state.move_history.push_back(move_str);
     std::cout << state.game_string() << '\n';
+    std::cout << "ok\n";
+}
+
+void cmd_perft(EngineState& state, int depth) {
+    perft_with_output(state.board.value(), depth);
     std::cout << "ok\n";
 }
 
@@ -222,6 +228,18 @@ int main() {
         } else if (cmd == "validmoves") {
             if (require_game(state)) {
                 cmd_validmoves(state);
+            }
+        } else if (cmd == "perft") {
+            if (require_game(state)) {
+                int count = 4;
+                if (!rest.empty()) {
+                    // Parse the depth parameter from the command arguments.
+                    // n_iss creates a new stream from rest to extract the depth value.
+                    std::istringstream n_iss(rest);
+                    if (!(n_iss >> count) || count < 1)
+                        count = 1;
+                }
+                cmd_perft(state, count);
             }
         } else if (cmd == "bestmove") {
             if (require_game(state)) {

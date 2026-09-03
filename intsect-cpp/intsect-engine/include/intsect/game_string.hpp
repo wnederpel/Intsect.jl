@@ -8,7 +8,9 @@
 #include "intsect/types.hpp"
 
 #include <array>
+#include <iostream>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -21,8 +23,8 @@ inline std::string tile_name(uint8_t tile) {
     if (tile == EMPTY_TILE)
         return "empty";
 
-    const Color color     = get_tile_color(tile);
-    const Bug bug         = get_tile_bug(tile);
+    const Color color = get_tile_color(tile);
+    const Bug bug = get_tile_bug(tile);
     const uint8_t bug_num = get_tile_bug_num(tile);
 
     std::string name;
@@ -64,7 +66,7 @@ inline std::string tile_name(uint8_t tile) {
 }
 
 // Look up a tile by UHP short name ("wQ", "bA1", etc.).
-// Returns EMPTY_TILE if the name is unrecognised.
+// Returns EMPTY_TILE if the name is unrecognized.
 inline uint8_t tile_by_name(std::string_view name) {
     if (name.size() < 2 || name.size() > 3)
         return EMPTY_TILE;
@@ -129,7 +131,7 @@ inline std::string move_string_goal(const Board& board, int goal_loc,
                                     int moving_loc = INVALID_LOC) {
     for (Direction dir : DIRECTION_ORDER) {
         const int neigh_loc = apply_direction(goal_loc, dir);
-        uint8_t neigh_tile  = board.get_tile_on_board(neigh_loc);
+        uint8_t neigh_tile = board.get_tile_on_board(neigh_loc);
 
         if (neigh_tile == EMPTY_TILE)
             continue;
@@ -178,7 +180,7 @@ inline std::string move_string_from_action(const Board& board, const Action& act
     }
     case ActionKind::Climb: {
         const uint8_t moving_tile = board.get_tile_on_board(action.from);
-        const uint8_t goal_tile   = board.get_tile_on_board(action.to);
+        const uint8_t goal_tile = board.get_tile_on_board(action.to);
         if (goal_tile != EMPTY_TILE) {
             // Climbing onto another piece: just name the target piece.
             return tile_name(moving_tile) + " " + tile_name(goal_tile);
@@ -200,9 +202,9 @@ inline std::optional<Action> action_from_move_string(const Board& board, const s
         return Action::make_pass();
 
     // Split "piece_name [pos_token]"
-    const auto space             = s.find(' ');
+    const auto space = s.find(' ');
     const std::string piece_name = (space == std::string::npos) ? s : s.substr(0, space);
-    const std::string pos_token  = (space == std::string::npos) ? "" : s.substr(space + 1);
+    const std::string pos_token = (space == std::string::npos) ? "" : s.substr(space + 1);
 
     const uint8_t piece_tile = tile_by_name(piece_name);
     if (piece_tile == EMPTY_TILE)
@@ -237,7 +239,7 @@ inline std::optional<Action> action_from_move_string(const Board& board, const s
         ref_name = pos_token.substr(0, pos_token.size() - 1);
     } else {
         // No direction indicator → beetle/mosquito climbing on top of ref piece.
-        ref_name               = pos_token;
+        ref_name = pos_token;
         const uint8_t ref_tile = tile_by_name(ref_name);
         if (ref_tile == EMPTY_TILE)
             return std::nullopt;
@@ -258,7 +260,7 @@ inline std::optional<Action> action_from_move_string(const Board& board, const s
     if (ref_loc < 0)
         return std::nullopt;
 
-    const int goal_loc   = apply_direction(ref_loc, goal_dir);
+    const int goal_loc = apply_direction(ref_loc, goal_dir);
     const int moving_loc = board.get_loc(piece_tile);
 
     if (moving_loc == NOT_PLACED)
@@ -302,6 +304,31 @@ inline Variant parse_game_type_string(const std::string& s) {
             flags |= static_cast<uint8_t>(Variant::P);
     }
     return static_cast<Variant>(flags);
+}
+
+inline Board parse_game_string(const std::string& s) {
+    if (s.find(';') == std::string::npos) {
+        // GameTypeString only (e.g. "Base+MLP").
+        Variant v = parse_game_type_string(s);
+        Board board = Board(v);
+        return board;
+    }
+
+    // Full GameString: split on ';', parse variant, do actions
+    std::vector<std::string> parts;
+    {
+        std::istringstream iss(s);
+        std::string token;
+        while (std::getline(iss, token, ';'))
+            parts.push_back(token);
+    }
+
+    Board board = Board(parse_game_type_string(parts[0]));
+    for (size_t i = 3; i < parts.size(); ++i) {
+        const auto action = intsect::action_from_move_string(board, parts[i]);
+        board.do_action(action.value());
+    }
+    return board;
 }
 
 inline std::string game_state_string(const Board& board) {

@@ -284,9 +284,9 @@ TEST_CASE("Move generation spider cannot move to itself") {
     put(board, bA3_loc, Color::Black, Bug::ANT, 2);
     put(board, wS1_loc, Color::White, Bug::SPIDER);
 
-    HexSet spider_moves{};
-    spider_moves(board, wS1_loc, spider_moves);
-    CHECK(spider_moves.count() == 0);
+    HexSet spider_move_set{};
+    spider_moves(board, wS1_loc, spider_move_set);
+    CHECK(spider_move_set.count() == 0);
 
     HexSet ant_like_moves{};
     ant_moves(board, wS1_loc, ant_like_moves);

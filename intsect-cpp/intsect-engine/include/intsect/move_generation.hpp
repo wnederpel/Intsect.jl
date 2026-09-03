@@ -17,6 +17,20 @@ inline constexpr std::array<Direction, 6> JULIA_NEIGH_ORDER = {
 inline constexpr std::array<Direction, 6> MOVEGEN_DIRECTION_ORDER = {
     Direction::NW, Direction::NE, Direction::E, Direction::SE, Direction::SW, Direction::W};
 
+struct ActionArraySink {
+    Board& board;
+    std::array<Action, VALID_BUFFER_SIZE>& actions;
+
+    void push_back(Action action) {
+        actions[static_cast<size_t>(board.action_index)] = action;
+        ++board.action_index;
+    }
+
+    [[nodiscard]] bool empty() const noexcept {
+        return board.action_index == 0;
+    }
+};
+
 inline std::array<int, 6> all_neighs(int loc) noexcept {
     return {apply_direction(loc, Direction::E),  apply_direction(loc, Direction::SE),
             apply_direction(loc, Direction::SW), apply_direction(loc, Direction::W),
@@ -475,7 +489,7 @@ inline void bugmoves(Board& board, int loc, int bug, uint8_t height, const HexSe
     }
 }
 
-inline void add_moves(Board& board, const HexSet& ispinned, std::vector<Action>& out_actions,
+inline void add_moves(Board& board, const HexSet& ispinned, ActionArraySink& out_actions,
                       Color current_color) {
     HexSet& move_to_set = board.workspaces.move_to_set;
     HexSet& pillbug_throw_from = board.workspaces.pillbug_throw_from;
@@ -608,7 +622,7 @@ inline void for_placement_locs(Board& board, Color current_color, const auto& ca
     });
 }
 
-inline void first_placements(const Board& board, std::vector<Action>& out_actions,
+inline void first_placements(const Board& board, ActionArraySink& out_actions,
                              Color current_color) {
     const size_t color_i = static_cast<size_t>(static_cast<uint8_t>(current_color) - 1u);
     for (uint8_t tile : board.placeable_tiles[color_i]) {
@@ -617,7 +631,7 @@ inline void first_placements(const Board& board, std::vector<Action>& out_action
     }
 }
 
-inline void second_placements(const Board& board, std::vector<Action>& out_actions,
+inline void second_placements(const Board& board, ActionArraySink& out_actions,
                               Color current_color) {
     const size_t color_i = static_cast<size_t>(static_cast<uint8_t>(current_color) - 1u);
     for (int loc : all_neighs(MID)) {
@@ -628,7 +642,7 @@ inline void second_placements(const Board& board, std::vector<Action>& out_actio
     }
 }
 
-inline void queen_placements(Board& board, std::vector<Action>& out_actions, Color current_color) {
+inline void queen_placements(Board& board, ActionArraySink& out_actions, Color current_color) {
     const uint8_t queen_tile = (current_color == Color::White)
                                    ? tile_from_info(Color::White, Bug::QUEEN, 0)
                                    : tile_from_info(Color::Black, Bug::QUEEN, 0);
@@ -638,7 +652,7 @@ inline void queen_placements(Board& board, std::vector<Action>& out_actions, Col
     });
 }
 
-inline void add_placements(Board& board, std::vector<Action>& out_actions, Color current_color) {
+inline void add_placements(Board& board, ActionArraySink& out_actions, Color current_color) {
     const size_t color_i = static_cast<size_t>(static_cast<uint8_t>(current_color) - 1u);
     for_placement_locs(board, current_color, [&](int placement_loc) {
         for (uint8_t tile : board.placeable_tiles[color_i]) {
@@ -648,8 +662,7 @@ inline void add_placements(Board& board, std::vector<Action>& out_actions, Color
     });
 }
 
-inline void valid_actions_general(Board& board, std::vector<Action>& out_actions,
-                                  Color current_color) {
+inline void valid_actions_general(Board& board, ActionArraySink& out_actions, Color current_color) {
     if (board.queen_placed[static_cast<size_t>(static_cast<uint8_t>(current_color) - 1u)]) {
         update_ispinned_general(board);
         add_moves(board, board.ispinned, out_actions, current_color);
@@ -661,14 +674,10 @@ inline void valid_actions_general(Board& board, std::vector<Action>& out_actions
         out_actions.push_back(Action::make_pass());
 }
 
-inline std::vector<Action> get_valid_actions(Board& board, Color current_color) {
-    // TODO: There needs to be another version of the valid_actions method that also accepts the
-    // out_actions as an input to avoid allocations
-    std::vector<Action> out_actions;
-    out_actions.reserve(VALID_BUFFER_SIZE);
-
+inline void get_valid_actions_impl(Board& board, ActionArraySink& out_actions,
+                                   Color current_color) {
     if (board.gameover)
-        return out_actions;
+        return;
 
     const size_t color_i = static_cast<size_t>(static_cast<uint8_t>(current_color) - 1u);
     const bool need_to_place_queen = !board.queen_placed[color_i] && board.turn == 4;
@@ -683,12 +692,34 @@ inline std::vector<Action> get_valid_actions(Board& board, Color current_color) 
         second_placements(board, out_actions, current_color);
     else
         valid_actions_general(board, out_actions, current_color);
+}
 
-    return out_actions;
+inline std::vector<Action> get_valid_actions(Board& board, Color current_color) {
+    std::array<Action, VALID_BUFFER_SIZE> action_buffer{};
+    board.action_index = 0;
+    ActionArraySink sink{board, action_buffer};
+    get_valid_actions_impl(board, sink, current_color);
+    const size_t action_count = static_cast<size_t>(board.action_index);
+    return std::vector<Action>(action_buffer.begin(),
+                               action_buffer.begin() + static_cast<std::ptrdiff_t>(action_count));
 }
 
 inline std::vector<Action> get_valid_actions(Board& board) {
     return get_valid_actions(board, board.current_color);
+}
+
+// In-place zero-allocation version for hot paths (like search).
+// Fills array buffer by mutating it; board.action_index is the action count.
+inline void get_valid_actions_into(Board& board, std::array<Action, VALID_BUFFER_SIZE>& out_actions,
+                                   Color current_color) {
+    board.action_index = 0;
+    ActionArraySink sink{board, out_actions};
+    get_valid_actions_impl(board, sink, current_color);
+}
+
+inline void get_valid_actions_into(Board& board,
+                                   std::array<Action, VALID_BUFFER_SIZE>& out_actions) {
+    get_valid_actions_into(board, out_actions, board.current_color);
 }
 
 } // namespace intsect

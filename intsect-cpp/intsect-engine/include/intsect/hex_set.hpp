@@ -3,6 +3,7 @@
 #include "types.hpp"
 
 #include <array>
+#include <bit>
 #include <cstdint>
 
 namespace intsect {

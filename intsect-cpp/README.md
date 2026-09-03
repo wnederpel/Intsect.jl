@@ -54,8 +54,9 @@ Notes:
 
 ## Phase summaries
 
+- Inter-phase engineering summary: `intsect-docs/INTER_PHASE_SUMMARY.md`
 - Phase 0: `intsect-docs/PHASE_0_SUMMARY.md`
-- Phase 1: `intsect-docs/PHASE_1_SUMMARY.md`
+- Phase 1: `intsect-docs/PHASE_1_SUMMARY.md`s
 - Phase 2: `intsect-docs/PHASE_2_SUMMARY.md`
 
 ## Run Tests

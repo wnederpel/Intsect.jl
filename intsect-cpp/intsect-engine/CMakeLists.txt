@@ -2,7 +2,8 @@
 # For Phase 0 it holds only a version function so the target builds cleanly.
 
 add_library(intsect-engine STATIC
-  src/version.cpp)
+  src/version.cpp
+  src/perft.cpp)
 
 target_include_directories(intsect-engine PUBLIC include)
 
