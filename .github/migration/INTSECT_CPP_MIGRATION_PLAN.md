@@ -211,20 +211,18 @@ Build:
 2. A small CLI or tool target that runs perft over a game string and depth range.
 3. A test corpus of positions in `intsect-tests/fixtures/perft_fixtures`.
 
-Validation in this phase:
+## Phase 5: (Cross-engine) perft comparison
 
-- Internal consistency checks.
-- Duplicate-move checks at shallow depth.
-- Stability under repeated runs.
-- Regression positions added whenever a bug is found.
+The C++ comparison tool should:
 
-Definition of done:
-
-- C++ perft is stable on the agreed position corpus.
-- Perft can be used as the first serious migration gate.
+1. Compare the C++ engine against external executables (which can be assumed to be uhp compliant).
+2. Use the Julia executable as one oracle.
+3. Also compare against Nokamute and Mzinga.
+4. Search back to the first position where results diverge, in the same spirit as the Julia perft comparison flow.
+5. Look at the Julia implementation of this idea. It's in the perft.jl file in the verify_perft function.
 
 
-## Phase 4.5: full uhp compliance
+## Phase 5.5: full uhp compliance
 
 Implement all uhp commands
 Switch to assertion in essentially all parts of the code instead of passing flags around to indicate success. 
@@ -233,20 +231,6 @@ Implement near error handling around user commands so that it both looks and fee
 Ask for a resource on what uhp compliance exactly means. I will provide a wiki and an engine that tests it. 
 
 
-## Phase 5: Cross-engine perft comparison
-
-This topic is deferred until Phase 4 is stable.
-
-When it starts, implement it in C++, not Julia.
-
-The C++ comparison tool should:
-
-1. Compare the C++ engine against external executables.
-2. Use the Julia executable as one oracle.
-3. Also compare against Nokamute and Mzinga.
-4. Search back to the first position where results diverge, in the same spirit as the Julia perft comparison flow.
-
-This is intentionally deferred. Do not spend time on it before C++ move generation and C++ perft are credible.
 
 ## Phase 6: Search and evaluation
 

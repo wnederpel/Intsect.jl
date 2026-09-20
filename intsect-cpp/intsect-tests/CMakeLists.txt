@@ -7,9 +7,11 @@ add_executable(intsect-tests
   unit/tile_test.cpp
   unit/hex_set_test.cpp
   unit/board_state_test.cpp
-  unit/move_generation_test.cpp)
+  unit/move_generation_test.cpp
+  unit/perft_diff_test.cpp)
 
 target_link_libraries(intsect-tests PRIVATE
+  intsect-tooling
   intsect-engine
   intsect_options)
 

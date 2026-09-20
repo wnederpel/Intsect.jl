@@ -7,7 +7,6 @@
 #include <cstring>
 #include <doctest/doctest.h>
 
-
 TEST_CASE("engine version is non-empty") {
     const char* v = intsect::version();
     REQUIRE(v != nullptr);
