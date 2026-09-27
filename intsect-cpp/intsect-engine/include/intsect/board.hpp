@@ -295,15 +295,15 @@ struct Board {
 
         reverse_post_action_general_update();
 
+        // This assumes the color is already back at the color that made the change.
+        inverse_post_action_hexset_and_hash_update(action);
+
         just_moved_loc = (ply == 1) ? INVALID_LOC : history[static_cast<size_t>(ply) - 2u].to;
 
         // check_gameover recomputes queen_pos_white/black from restored tile locations.
         gameover = false;
         victor = Color::None;
         check_gameover(true);
-
-        recompute_piece_sets();
-        recompute_hashes();
         return true;
     }
 
@@ -472,8 +472,13 @@ struct Board {
     }
 
     void post_action_update(const Action& action) {
-        just_moved_loc = action.to;
+        post_action_hexset_and_hash_update(action);
+        post_action_pillbug_update(action);
+        post_action_general_update();
+    }
 
+    void post_action_general_update() {
+        check_gameover(false);
         ++ply;
         if (current_color == Color::White) {
             current_color = Color::Black;
@@ -481,12 +486,192 @@ struct Board {
             current_color = Color::White;
             ++turn;
         }
-
-        check_gameover(false);
-        recompute_piece_sets();
-        recompute_hashes();
         hash_history[static_cast<size_t>(ply) - 2u] = full_hash();
         check_draw();
+    }
+
+    void post_action_pillbug_update(const Action& action) {
+        just_moved_loc = action.to;
+    }
+
+    void post_action_hexset_and_hash_update(const Action& action) {
+        const auto toggle_tile_on_hex_set = [this](Color color, int loc) {
+            pieces[color_index(color)].toggle(loc);
+        };
+        const auto tile_without_height = [](uint8_t tile) {
+            return static_cast<uint8_t>(tile & static_cast<uint8_t>(~HEIGHT_MASK));
+        };
+        const auto xor_piece_hash = [this](uint8_t tile_no_height, int loc, int under_height) {
+            hash ^= detail::piece_hash_value(tile_no_height, loc, under_height);
+        };
+        const auto xor_location_hash = [this](int loc) {
+            location_hash ^= detail::location_hash_value(loc);
+        };
+
+        // Incremental state maintenance (Julia parity): after do_* has already
+        // applied board mutations, XOR out/in only the affected top-piece and
+        // occupancy contributions instead of recomputing full piece sets/hashes.
+        // Placement uses current_color directly, Move infers moved color from
+        // the tile now on action.to (pillbug can move opponent pieces), and
+        // Climb uses underworld heights as they stand post-move.
+
+        switch (action.kind) {
+        case ActionKind::Placement:
+            // This assumes the color is not yet changed.
+            toggle_tile_on_hex_set(current_color, action.to);
+            xor_piece_hash(tile_without_height(action.tile), action.to, 0);
+            xor_location_hash(action.to);
+            break;
+        case ActionKind::Move: {
+            // This is not necessarily the current color, because the pillbug can move other pieces.
+            const uint8_t moved_tile = get_tile_on_board(action.to);
+            const Color moved_color = get_tile_color(moved_tile);
+            const uint8_t moved_tile_no_height = tile_without_height(moved_tile);
+
+            toggle_tile_on_hex_set(moved_color, action.to);
+            toggle_tile_on_hex_set(moved_color, action.from);
+
+            xor_piece_hash(moved_tile_no_height, action.to, 0);
+            xor_piece_hash(moved_tile_no_height, action.from, 0);
+
+            xor_location_hash(action.to);
+            xor_location_hash(action.from);
+            break;
+        }
+        case ActionKind::Climb: {
+            const size_t from_idx = static_cast<size_t>(action.from);
+            const size_t to_idx = static_cast<size_t>(action.to);
+            const uint8_t opened_tile = get_tile_on_board(action.from);
+            const uint8_t moved_tile = get_tile_on_board(action.to);
+            const uint8_t moved_tile_no_height = tile_without_height(moved_tile);
+
+            // This is necessarily the current color, because the pillbug cannot make climbs.
+            const Color moved_color = current_color;
+
+            toggle_tile_on_hex_set(moved_color, action.from);
+            if (opened_tile != EMPTY_TILE) {
+                // This is like a color tile was placed at the moving loc.
+                toggle_tile_on_hex_set(get_tile_color(opened_tile), action.from);
+            } else {
+                // The opened tile is empty so the location has to be removed from the location
+                // hash.
+                xor_location_hash(action.from);
+            }
+
+            if (get_tile_height(moved_tile) > 1u) {
+                const uint8_t covered_tile = underworld[to_idx][underworld_sizes[to_idx] - 1u];
+                // This is like a color tile was removed at the goal loc.
+                toggle_tile_on_hex_set(get_tile_color(covered_tile), action.to);
+            } else {
+                // The height is zero, so there was no tile at the goal loc, add it to the location
+                // hash.
+                xor_location_hash(action.to);
+            }
+            toggle_tile_on_hex_set(moved_color, action.to);
+
+            xor_piece_hash(moved_tile_no_height, action.to,
+                           static_cast<int>(underworld_sizes[to_idx]));
+
+            const int old_from_underworld_height = static_cast<int>(underworld_sizes[from_idx]) +
+                                                   ((opened_tile != EMPTY_TILE) ? 1 : 0);
+            xor_piece_hash(moved_tile_no_height, action.from, old_from_underworld_height);
+            break;
+        }
+        case ActionKind::Pass:
+            break;
+        }
+    }
+
+    void inverse_post_action_hexset_and_hash_update(const Action& action) {
+        const auto toggle_tile_on_hex_set = [this](Color color, int loc) {
+            pieces[color_index(color)].toggle(loc);
+        };
+        const auto tile_without_height = [](uint8_t tile) {
+            return static_cast<uint8_t>(tile & static_cast<uint8_t>(~HEIGHT_MASK));
+        };
+        const auto xor_piece_hash = [this](uint8_t tile_no_height, int loc, int under_height) {
+            hash ^= detail::piece_hash_value(tile_no_height, loc, under_height);
+        };
+        const auto xor_location_hash = [this](int loc) {
+            location_hash ^= detail::location_hash_value(loc);
+        };
+
+        switch (action.kind) {
+        case ActionKind::Placement:
+            // This assumes the color is already back at the color that made the change.
+            toggle_tile_on_hex_set(current_color, action.to);
+            xor_piece_hash(tile_without_height(action.tile), action.to, 0);
+            xor_location_hash(action.to);
+            break;
+
+        case ActionKind::Move: {
+            const int goal_loc = action.to;
+            const int moving_loc = action.from;
+
+            // This is not necessarily the current color, because the pillbug can move other pieces.
+            const uint8_t moved_tile = get_tile_on_board(moving_loc);
+            const Color moved_color = get_tile_color(moved_tile);
+            const uint8_t moved_tile_no_height = tile_without_height(moved_tile);
+
+            toggle_tile_on_hex_set(moved_color, goal_loc);
+            toggle_tile_on_hex_set(moved_color, moving_loc);
+
+            // The moved tile is now back at the moving loc.
+            xor_piece_hash(moved_tile_no_height, goal_loc, 0);
+            xor_piece_hash(moved_tile_no_height, moving_loc, 0);
+
+            xor_location_hash(goal_loc);
+            xor_location_hash(moving_loc);
+            break;
+        }
+
+        case ActionKind::Climb: {
+            const int goal_loc = action.to;
+            const int moving_loc = action.from;
+            const size_t goal_idx = static_cast<size_t>(goal_loc);
+            const size_t moving_idx = static_cast<size_t>(moving_loc);
+
+            // This assumes the color is already back at the color that made the change.
+            const uint8_t opened_tile = get_tile_on_board(goal_loc);
+            const uint8_t moved_tile = get_tile_on_board(moving_loc);
+            const uint8_t moved_tile_no_height = tile_without_height(moved_tile);
+
+            // This is necessarily the current color, because the pillbug cannot make throw moves.
+            const Color moved_color = current_color;
+
+            toggle_tile_on_hex_set(moved_color, goal_loc);
+            if (opened_tile != EMPTY_TILE) {
+                // This is like a color tile was placed at the goal loc.
+                toggle_tile_on_hex_set(get_tile_color(opened_tile), goal_loc);
+            } else {
+                // There is nothing at the goal loc anymore, remove it from the location hash.
+                xor_location_hash(goal_loc);
+            }
+
+            if (get_tile_height(moved_tile) > 1u) {
+                const uint8_t covered_tile =
+                    underworld[moving_idx][underworld_sizes[moving_idx] - 1u];
+                // This is like a color tile was removed at the moving loc.
+                toggle_tile_on_hex_set(get_tile_color(covered_tile), moving_loc);
+            } else {
+                // The tile was new at the goal loc, add it to the location hash.
+                xor_location_hash(moving_loc);
+            }
+            toggle_tile_on_hex_set(moved_color, moving_loc);
+
+            // To correctly undo the hash change, use the heights as they were before the undo.
+            const int old_goal_loc_height = static_cast<int>(underworld_sizes[goal_idx]) +
+                                            ((opened_tile != EMPTY_TILE) ? 1 : 0);
+            const int old_moving_loc_height = static_cast<int>(underworld_sizes[moving_idx]);
+
+            xor_piece_hash(moved_tile_no_height, goal_loc, old_goal_loc_height);
+            xor_piece_hash(moved_tile_no_height, moving_loc, old_moving_loc_height);
+            break;
+        }
+
+        case ActionKind::Pass:
+            break;
+        }
     }
 
     void check_draw() {

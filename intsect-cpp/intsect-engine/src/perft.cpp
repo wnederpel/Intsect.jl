@@ -6,11 +6,21 @@
 
 #include <chrono>
 #include <iostream>
+#include <string>
 #include <vector>
 
 namespace intsect {
 
 namespace {
+
+std::string format_with_thousands_sep(size_t value) {
+    std::string digits = std::to_string(value);
+    const int insert_from = static_cast<int>(digits.size()) - 3;
+    for (int i = insert_from; i > 0; i -= 3) {
+        digits.insert(static_cast<size_t>(i), ".");
+    }
+    return digits;
+}
 
 struct PerftContext {
     std::vector<std::array<Action, VALID_BUFFER_SIZE>> action_buffers;
@@ -69,10 +79,11 @@ void perft_with_output(Board& board, int depth) {
         const double seconds = std::chrono::duration<double>(elapsed).count();
         const double kilo_nodes_per_second =
             (seconds > 0.0) ? static_cast<double>(result) / seconds / 1000.0 : 0.0;
+        const size_t knps_rounded = static_cast<size_t>(kilo_nodes_per_second + 0.5);
 
-        std::cout << "perft(" << i << ") = " << result << "\n"
+        std::cout << "perft(" << i << ") = " << format_with_thousands_sep(result) << "\n"
                   << "  time = " << seconds << " s, "
-                  << "speed = " << kilo_nodes_per_second << " KN/s\n";
+                  << "speed = " << format_with_thousands_sep(knps_rounded) << " KN/s\n";
     }
 }
 

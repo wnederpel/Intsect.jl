@@ -54,6 +54,7 @@ inline std::array<int, 6> all_neighs(int loc) noexcept {
 
 [[nodiscard]] inline uint8_t get_slide_neighs(const Board& board,
                                               const std::array<int, 6>& all_neighbors) noexcept {
+    // perf: possible target for micro optimization
     int occupied = 0;
     for (int i = 5; i >= 0; --i) {
         occupied <<= 1;
@@ -99,6 +100,7 @@ inline void grasshopper_moves(const Board& board, int startloc, HexSet& move_to_
 }
 
 inline void update_ispinned_general(Board& board) {
+    // perf: potential target for micro optimization
     board.ispinned.clear();
 
     PinnedStoreEntry& pinned_entry =
@@ -218,6 +220,7 @@ inline void ant_moves(Board& board, int startloc, HexSet& move_to_set) {
 
 inline void moves_to_depth(Board& board, int startloc, int depth, HexSet& move_to_set, int cur_loc,
                            int prev_loc) {
+    // perf: potential target for caching
     if (depth == 0) {
         if (cur_loc != startloc)
             move_to_set.set(cur_loc);
@@ -300,6 +303,8 @@ inline void beetle_moves(Board& board, int startloc, uint8_t height, HexSet& mov
 }
 
 inline void ladybug_moves(Board& board, int startloc, HexSet& move_to_set) {
+    // perf: potential target for caching (note that we'd need a location + height cache, although
+    // this is far from the full hash, using the full hash might work wel enough)
     const uint8_t tmp_tile = board.get_tile_on_board(startloc);
     board.set_tile_on_board(startloc, EMPTY_TILE);
 
