@@ -5,7 +5,6 @@
 #include "intsect/game_string.hpp"
 #include "intsect/move_generation.hpp"
 #include "intsect/perft.hpp"
-#include "intsect/version.hpp"
 
 #include <array>
 #include <cctype>
@@ -204,50 +203,6 @@ run_oracle_session(const std::string& oracle_path, const std::vector<std::string
     }
 
     return std::nullopt;
-}
-
-void print_usage() {
-    std::cout << "intsect-tools " << intsect::version() << "\n\n"
-              << "Usage:\n"
-              << "  intsect-tools perft-compare [--position <GameString>] [--depth <N>]\n"
-              << "                             [--oracle-path <path>]\n\n"
-              << "Defaults:\n"
-              << "  --position   Base+MLP;InProgress;White[1]\n"
-              << "  --depth      4\n"
-              << "  --oracle-path engines/nokamute(.exe) auto-discovered\n";
-}
-
-[[nodiscard]] bool parse_cli(int argc, char** argv, Options& out) {
-    if (argc <= 1) {
-        print_usage();
-        return false;
-    }
-
-    const std::string cmd = argv[1];
-    if (cmd != "perft-compare") {
-        print_usage();
-        return false;
-    }
-
-    for (int i = 2; i < argc; ++i) {
-        const std::string arg = argv[i];
-        if (arg == "--position" && i + 1 < argc) {
-            out.position = argv[++i];
-        } else if (arg == "--depth" && i + 1 < argc) {
-            out.depth = std::max(1, std::atoi(argv[++i]));
-        } else if (arg == "--oracle-path" && i + 1 < argc) {
-            out.oracle_path = argv[++i];
-        } else if (arg == "--help" || arg == "-h") {
-            print_usage();
-            return false;
-        } else {
-            std::cerr << "Unknown argument: " << arg << "\n";
-            print_usage();
-            return false;
-        }
-    }
-
-    return true;
 }
 
 [[nodiscard]] std::optional<size_t> oracle_perft_count(const std::string& oracle_path,

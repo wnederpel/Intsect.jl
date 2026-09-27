@@ -108,6 +108,7 @@ TEST_CASE("perft diff: diff test 10 - draws") {
 
 TEST_CASE("perft diff: diff test 10 - draws") {
     // TODO: speed up these tests, use vtune for profiling memory and performance. Test case 4 takes
-    // 22 secs for example. test 1 takes 5, test 5 takes 55 seconds!
+    // 22 secs for example. test 1 takes 5, test 5 takes 55 seconds!, test 8 takes 4 seconds, maybe
+    // that's an easy target to start with. All tests pass tho so that's amazing!
     assert(false);
 }
