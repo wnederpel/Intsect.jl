@@ -6,6 +6,7 @@
 #include "intsect/game_string.hpp"
 #include "intsect/move_generation.hpp"
 #include "intsect/perft.hpp"
+#include "intsect/search.hpp"
 #include "intsect/types.hpp"
 #include "intsect/version.hpp"
 
@@ -19,9 +20,6 @@ namespace {
 
 using intsect::Action;
 using intsect::Board;
-using intsect::Bug;
-using intsect::Color;
-using intsect::ROW_SIZE;
 using intsect::Variant;
 
 // ---- Engine state ----
@@ -151,6 +149,13 @@ void cmd_perft(EngineState& state, int depth) {
     std::cout << "ok\n";
 }
 
+void cmd_best_move(EngineState& state) {
+    Action action = get_best_action(state.board.value(), 1);
+    std::string action_string = intsect::move_string_from_action(state.board.value(), action);
+    std::cout << "Best move = " << action_string << "\n";
+    std::cout << "ok\n";
+}
+
 void cmd_undo(EngineState& state, int count) {
     if (!state.has_game()) {
         std::cout << "err No game in progress. Use newgame first.\n";
@@ -243,8 +248,7 @@ int main() {
             }
         } else if (cmd == "bestmove") {
             if (require_game(state)) {
-                std::cout << "err bestmove not yet implemented\n";
-                std::cout << "ok\n";
+                cmd_best_move(state);
             }
         } else if (cmd == "undo") {
             int count = 1;

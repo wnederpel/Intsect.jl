@@ -8,7 +8,6 @@
 #include "intsect/types.hpp"
 
 #include <array>
-#include <iostream>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -72,9 +71,9 @@ inline uint8_t tile_by_name(std::string_view name) {
         return EMPTY_TILE;
 
     Color color{};
-    if (name[0] == 'w')
+    if (name[0] == 'w' || name[0] == 'W')
         color = Color::White;
-    else if (name[0] == 'b')
+    else if (name[0] == 'b' || name[0] == 'B')
         color = Color::Black;
     else
         return EMPTY_TILE;
@@ -82,27 +81,35 @@ inline uint8_t tile_by_name(std::string_view name) {
     Bug bug{};
     switch (name[1]) {
     case 'A':
+    case 'a':
         bug = Bug::ANT;
         break;
     case 'G':
+    case 'g':
         bug = Bug::GRASSHOPPER;
         break;
     case 'B':
+    case 'b':
         bug = Bug::BEETLE;
         break;
     case 'S':
+    case 's':
         bug = Bug::SPIDER;
         break;
     case 'Q':
+    case 'q':
         bug = Bug::QUEEN;
         break;
     case 'L':
+    case 'l':
         bug = Bug::LADYBUG;
         break;
     case 'P':
+    case 'p':
         bug = Bug::PILLBUG;
         break;
     case 'M':
+    case 'm':
         bug = Bug::MOSQUITO;
         break;
     default:
